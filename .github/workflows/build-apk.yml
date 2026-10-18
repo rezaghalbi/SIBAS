@@ -37,6 +37,12 @@ jobs:
       - name: Run Static Analysis
         run: flutter analyze --no-fatal-infos
 
+      - name: Generate Android Scaffolding if Missing
+        run: |
+          if [ ! -d "android" ]; then
+            flutter create . --platforms=android --org com.sibas.poltekkes
+          fi
+
       - name: Build Android APK (Release)
         run: flutter build apk --release --no-tree-shake-icons
 
