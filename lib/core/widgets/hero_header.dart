@@ -47,10 +47,10 @@ class HeroHeader extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
+                          color: Colors.white.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.25),
+                            color: Colors.white.withValues(alpha: 0.25),
                             width: 1,
                           ),
                         ),
@@ -85,7 +85,7 @@ class HeroHeader extends StatelessWidget {
                             Text(
                               subtitle!,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.85),
+                                color: Colors.white.withValues(alpha: 0.85),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                               ),

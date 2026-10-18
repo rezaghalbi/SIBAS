@@ -112,7 +112,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 },
                 icon: Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.logout_rounded, color: Colors.white, size: 20),
                 ),
               ),
@@ -237,8 +237,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   IconButton(
                     icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryMain),
                     onPressed: () {
-                      ref.refresh(adminMetricsProvider);
-                      ref.refresh(adminTransactionsProvider);
+                      final _ = ref.refresh(adminMetricsProvider);
+                      final _ = ref.refresh(adminTransactionsProvider);
                     },
                   ),
                 ],
@@ -321,8 +321,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                       context,
                                       transactionData: item,
                                       onVerificationComplete: () {
-                                        ref.refresh(adminMetricsProvider);
-                                        ref.refresh(adminTransactionsProvider);
+                                        final _ = ref.refresh(adminMetricsProvider);
+                                        final _ = ref.refresh(adminTransactionsProvider);
                                       },
                                     );
                                   },

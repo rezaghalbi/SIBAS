@@ -63,7 +63,7 @@ class DashboardScreen extends ConsumerWidget {
                 icon: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.logout_rounded, color: Colors.white, size: 20),
@@ -207,7 +207,7 @@ class DashboardScreen extends ConsumerWidget {
               backgroundColor: AppColors.primaryMain,
               foregroundColor: Colors.white,
               elevation: 4,
-              shadowColor: AppColors.primaryMain.withOpacity(0.4),
+              shadowColor: AppColors.primaryMain.withValues(alpha: 0.4),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),

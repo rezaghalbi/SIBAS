@@ -46,7 +46,7 @@ class SaldoHeroCard extends StatelessWidget {
               Text(
                 hasActiveRate ? 'Saldo Tabungan Sampah' : 'Total Sampah Terkumpul',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,
@@ -55,7 +55,7 @@ class SaldoHeroCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Text(
@@ -88,14 +88,14 @@ class SaldoHeroCard extends StatelessWidget {
               children: [
                 Icon(
                   Icons.scale_rounded,
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                   size: 16,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   'Total Kontribusi: ${totalWeightKg.toStringAsFixed(1)} kg',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                   ),
@@ -132,7 +132,7 @@ class SaldoHeroCard extends StatelessWidget {
             Text(
               'Fokus metrik penimbangan sampah daur ulang',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.85),
+                color: Colors.white.withValues(alpha: 0.85),
                 fontSize: 12,
               ),
             ),

@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../history/domain/models/transaction_model.dart';
 import '../domain/models/admin_metrics_model.dart';
 
 /// Repository untuk operasional Admin (Metrics, Verifikasi RPC, List Transaksi, & Audit)

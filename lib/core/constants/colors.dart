@@ -13,6 +13,7 @@ class AppColors {
   /// Mint & Accent
   static const Color mint = Color(0xFFDFF3E8);
   static const Color mintAccent = mint;
+  static const Color accent = primaryLight;
   static const Color mintSoftBackground = Color(0xFFEEF8F2);
 
   /// App Backgrounds & Surface
@@ -37,14 +38,18 @@ class AppColors {
   /// Menunggu Validasi / Verifikasi
   static const Color statusPendingText = Color(0xFFB45309);
   static const Color statusPendingBg = Color(0xFFFEF3C7);
+  static const Color statusPending = statusPendingText;
 
   /// Disetujui / Diterima
   static const Color statusApprovedText = Color(0xFF15803D);
   static const Color statusApprovedBg = Color(0xFFDCFCE7);
+  static const Color statusApproved = statusApprovedText;
 
   /// Ditolak / Kedaluwarsa
   static const Color statusRejectedText = Color(0xFFB91C1C);
   static const Color statusRejectedBg = Color(0xFFFEE2E2);
+  static const Color statusRejected = statusRejectedText;
+  static const Color statusExpired = Color(0xFF6B7280);
 
   /// Danger / Error
   static const Color danger = Color(0xFFB91C1C);

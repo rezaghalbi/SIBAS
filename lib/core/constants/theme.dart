@@ -93,7 +93,7 @@ class AppTheme {
           fontSize: 14,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.cardSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(

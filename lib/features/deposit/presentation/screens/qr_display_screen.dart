@@ -175,7 +175,7 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                                 width: 240,
                                 height: 240,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.92),
+                                  color: Colors.white.withValues(alpha: 0.92),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Center(

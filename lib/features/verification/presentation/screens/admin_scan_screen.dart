@@ -56,8 +56,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
         context,
         transactionData: txData,
         onVerificationComplete: () {
-          ref.refresh(adminMetricsProvider);
-          ref.refresh(adminTransactionsProvider);
+          final _ = ref.refresh(adminMetricsProvider);
+          final _ = ref.refresh(adminTransactionsProvider);
         },
       );
     } catch (e) {
@@ -195,7 +195,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
+                    color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
@@ -247,7 +247,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
 
           if (_isProcessing)
             Container(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withValues(alpha: 0.6),
               child: const Center(
                 child: CircularProgressIndicator(color: AppColors.mintAccent),
               ),
