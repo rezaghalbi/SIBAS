@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -19,12 +18,6 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
 
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   final _searchController = TextEditingController();
-
-  final _currencyFormat = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  );
 
   @override
   void dispose() {
@@ -237,8 +230,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   IconButton(
                     icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryMain),
                     onPressed: () {
-                      final _ = ref.refresh(adminMetricsProvider);
-                      final _ = ref.refresh(adminTransactionsProvider);
+                      ref.invalidate(adminMetricsProvider);
+                      ref.invalidate(adminTransactionsProvider);
                     },
                   ),
                 ],
@@ -286,9 +279,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(14),
-                          leading: CircleAvatar(
+                          leading: const CircleAvatar(
                             backgroundColor: AppColors.mintSoftBackground,
-                            child: const Icon(Icons.recycling_rounded, color: AppColors.primaryMain),
+                            child: Icon(Icons.recycling_rounded, color: AppColors.primaryMain),
                           ),
                           title: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -321,8 +314,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                       context,
                                       transactionData: item,
                                       onVerificationComplete: () {
-                                        final _ = ref.refresh(adminMetricsProvider);
-                                        final _ = ref.refresh(adminTransactionsProvider);
+                                        ref.invalidate(adminMetricsProvider);
+                                        ref.invalidate(adminTransactionsProvider);
                                       },
                                     );
                                   },

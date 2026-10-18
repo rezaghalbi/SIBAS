@@ -56,8 +56,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
         context,
         transactionData: txData,
         onVerificationComplete: () {
-          final _ = ref.refresh(adminMetricsProvider);
-          final _ = ref.refresh(adminTransactionsProvider);
+          ref.invalidate(adminMetricsProvider);
+          ref.invalidate(adminTransactionsProvider);
         },
       );
     } catch (e) {
@@ -83,12 +83,14 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
       // Pada perangkat nyata atau fallback desktop/web, buka prompt dialog konfirmasi UUID/analisis gambar
       _showManualInputDialog(prefilled: 'tx_${image.name.hashCode.abs()}');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal membuka galeri: ${e.toString()}'),
-          backgroundColor: AppColors.danger,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal membuka galeri: ${e.toString()}'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
     }
   }
 

@@ -120,11 +120,11 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.mintAccent),
                   ),
-                  child: Row(
+                  child: const Row(
                     children: [
-                      const Icon(Icons.info_outline_rounded, color: AppColors.primaryMain, size: 22),
-                      const SizedBox(width: 10),
-                      const Expanded(
+                      Icon(Icons.info_outline_rounded, color: AppColors.primaryMain, size: 22),
+                      SizedBox(width: 10),
+                      Expanded(
                         child: Text(
                           'Timbang dan masukkan berat sampah secara manual (kg). QR Code akan berlaku selama 2 jam untuk dipindai petugas.',
                           style: TextStyle(fontSize: 12, color: AppColors.primaryDark, height: 1.3),
@@ -245,11 +245,11 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
                 TextFormField(
                   controller: _weightController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'Masukkan berat (contoh: 2.5)',
-                    prefixIcon: const Icon(Icons.scale_rounded, color: AppColors.primaryMain),
+                    prefixIcon: Icon(Icons.scale_rounded, color: AppColors.primaryMain),
                     suffixText: 'kg',
-                    suffixStyle: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+                    suffixStyle: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primaryDark),
                   ),
                   onChanged: (val) {
                     setState(() {

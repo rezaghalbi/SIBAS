@@ -193,7 +193,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                                       context,
                                       transactionData: item,
                                       onVerificationComplete: () {
-                                        final _ = ref.refresh(adminTransactionsProvider);
+                                        ref.invalidate(adminTransactionsProvider);
                                       },
                                     );
                                   },
