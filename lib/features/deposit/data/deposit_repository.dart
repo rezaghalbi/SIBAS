@@ -47,12 +47,13 @@ class DepositRepository {
     ),
   ];
 
-  /// Mengambil daftar kategori sampah dari Supabase
+  /// Mengambil daftar kategori sampah dari tabel `trash_types`
   Future<List<WasteCategoryModel>> getCategories() async {
     try {
       final response = await _client
-          .from('waste_categories')
+          .from('trash_types')
           .select()
+          .eq('is_active', true)
           .order('name', ascending: true);
 
       final list = (response as List<dynamic>)
@@ -67,7 +68,6 @@ class DepositRepository {
   }
 
   /// Membuat draf transaksi penyetoran sampah baru
-  /// Masa kedaluwarsa diset 2 jam dari waktu pembuatan (sesuai prd.md)
   Future<TransactionModel> createDepositTransaction({
     required String userId,
     required String categoryId,
@@ -82,21 +82,19 @@ class DepositRepository {
       final response = await _client
           .from('transactions')
           .insert({
-            'user_id': userId,
-            'category_id': categoryId.startsWith('cat_') ? null : categoryId,
-            'category_name': categoryName,
+            'mahasiswa_id': userId,
+            'trash_type_id': categoryId.startsWith('cat_') ? null : categoryId,
             'weight': weightKg,
             'estimated_amount': estimatedAmount,
             'status': 'PENDING',
-            'created_at': now.toIso8601String(),
-            'expires_at': expiresAt.toIso8601String(),
+            'qr_expires_at': expiresAt.toIso8601String(),
           })
-          .select()
+          .select('*, trash_types(name)')
           .single();
 
       return TransactionModel.fromJson(response);
     } catch (e) {
-      // Fallback lokal jika supabase schema mock / offline
+      // Fallback lokal jika supabase offline / mock data
       return TransactionModel(
         id: 'tx_${DateTime.now().millisecondsSinceEpoch}',
         userId: userId,
@@ -116,7 +114,7 @@ class DepositRepository {
     try {
       final response = await _client
           .from('transactions')
-          .select('*, waste_categories(name)')
+          .select('*, trash_types(name)')
           .eq('id', transactionId)
           .maybeSingle();
 
