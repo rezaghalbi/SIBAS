@@ -5,7 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AppSupabase {
   AppSupabase._();
 
-  static SupabaseClient get client => Supabase.instance.client;
+  static SupabaseClient get client {
+    try {
+      return Supabase.instance.client;
+    } catch (e) {
+      throw StateError('SupabaseClient diakses sebelum AppSupabase.initialize() selesai.');
+    }
+  }
 
   static Future<void> initialize({
     required String url,
@@ -18,5 +24,5 @@ class AppSupabase {
   }
 }
 
-/// Shortcut getter klien supabase sesuai contracts.md
-final supabase = Supabase.instance.client;
+/// Shortcut getter klien supabase yang aman dari LateInitializationError
+SupabaseClient get supabase => Supabase.instance.client;
