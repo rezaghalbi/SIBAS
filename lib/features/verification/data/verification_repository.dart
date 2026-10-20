@@ -56,7 +56,7 @@ class VerificationRepository {
     try {
       var queryBuilder = _client
           .from('transactions')
-          .select('*, profiles(full_name, nim), waste_categories(name)')
+          .select('*, profiles(full_name, nim), trash_types(name)')
           .order('created_at', ascending: false);
 
       final res = await queryBuilder;

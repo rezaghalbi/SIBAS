@@ -11,7 +11,7 @@ class TransactionModel {
   final String? rejectionReason;
   final String? adminId;
   final DateTime createdAt;
-  final DateTime? expiresAt;
+  final DateTime? qrExpiresAt;
 
   const TransactionModel({
     required this.id,
@@ -25,7 +25,7 @@ class TransactionModel {
     this.rejectionReason,
     this.adminId,
     required this.createdAt,
-    this.expiresAt,
+    this.qrExpiresAt,
   });
 
   bool get isPending => status.toUpperCase() == 'PENDING';
@@ -36,8 +36,8 @@ class TransactionModel {
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     // Menangani relasi join kategori jika ada
     String catName = 'Sampah Daur Ulang';
-    if (json['waste_categories'] != null && json['waste_categories'] is Map) {
-      catName = (json['waste_categories']['name'] as String?) ?? catName;
+    if (json['trash_types'] != null && json['trash_types'] is Map) {
+      catName = (json['trash_types']['name'] as String?) ?? catName;
     } else if (json['category_name'] != null) {
       catName = json['category_name'] as String;
     }
@@ -60,8 +60,8 @@ class TransactionModel {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
-      expiresAt: json['expires_at'] != null
-          ? DateTime.tryParse(json['expires_at'] as String)
+      qrExpiresAt: json['qr_expires_at'] != null
+          ? DateTime.tryParse(json['qr_expires_at'] as String)
           : null,
     );
   }
@@ -78,7 +78,7 @@ class TransactionModel {
       'rejection_reason': rejectionReason,
       'admin_id': adminId,
       'created_at': createdAt.toIso8601String(),
-      'expires_at': expiresAt?.toIso8601String(),
+      'qr_expires_at': qrExpiresAt?.toIso8601String(),
     };
   }
 }
