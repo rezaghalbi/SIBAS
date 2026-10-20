@@ -18,17 +18,23 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final response = await _client.auth.signInWithPassword(
-      email: email.trim(),
-      password: password,
-    );
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: email.trim(),
+        password: password,
+      );
 
-    final user = response.user;
-    if (user == null) {
-      throw const AuthException('Gagal masuk: Data pengguna tidak ditemukan');
-    }
+      final user = response.user;
+      if (user == null) {
+        throw const AuthException('Gagal masuk: Data pengguna tidak ditemukan');
+      }
 
     return await getUserProfile(user.id, emailFallback: user.email);
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      throw AuthException('Gagal masuk: ${e.toString()}');
+    }
   }
 
   /// Registrasi akun baru dengan metadata sesuai contracts.md & prd.md

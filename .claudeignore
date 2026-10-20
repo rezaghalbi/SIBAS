@@ -1,0 +1,26 @@
+# Flutter & Dart Build Artifacts
+.dart_tool/
+.pub-cache/
+.pub/
+build/
+
+# Native Platform Folders (Kecuali jika sedang memodifikasi konfigurasi native)
+android/
+ios/
+macos/
+windows/
+linux/
+.fvm/
+
+# Binary & Web Build
+*.apk
+*.aab
+*.png
+*.jpg
+*.jpeg
+*.svg
+web/icons/
+
+# Git & Logs
+.git/
+*.log
