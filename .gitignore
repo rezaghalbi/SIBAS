@@ -37,3 +37,6 @@ lib/generated_plugin_registrant.dart
 undecorated_symbol_map.json
 
 
+
+# Continue extension local state
+.continue/

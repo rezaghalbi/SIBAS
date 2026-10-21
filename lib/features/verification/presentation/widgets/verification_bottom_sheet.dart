@@ -169,7 +169,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
   @override
   Widget build(BuildContext context) {
     final profile = widget.transactionData['profiles'] as Map<String, dynamic>?;
-    final category = widget.transactionData['waste_categories'] as Map<String, dynamic>?;
+    final category = widget.transactionData['trash_types'] as Map<String, dynamic>?;
 
     final studentName = (profile?['full_name'] as String?) ?? 'Mahasiswa';
     final studentNim = (profile?['nim'] as String?) ?? '-';

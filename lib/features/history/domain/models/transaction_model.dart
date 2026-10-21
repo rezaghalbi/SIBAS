@@ -44,8 +44,8 @@ class TransactionModel {
 
     return TransactionModel(
       id: json['id'] as String,
-      userId: (json['user_id'] as String?) ?? '',
-      categoryId: json['category_id'] as String?,
+      userId: (json['mahasiswa_id'] as String?) ?? '',
+      categoryId: json['trash_type_id'] as String?,
       categoryName: catName,
       weight: (json['weight'] != null) ? (json['weight'] as num).toDouble() : 0.0,
       estimatedAmount: json['estimated_amount'] != null
@@ -69,8 +69,8 @@ class TransactionModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'user_id': userId,
-      'category_id': categoryId,
+      'mahasiswa_id': userId,
+      'trash_type_id': categoryId,
       'weight': weight,
       'estimated_amount': estimatedAmount,
       'final_amount': finalAmount,

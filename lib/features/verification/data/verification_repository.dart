@@ -148,7 +148,7 @@ class VerificationRepository {
     try {
       final res = await _client
           .from('transactions')
-          .select('*, profiles(full_name, nim), waste_categories(name, price_per_kg)')
+          .select('*, profiles(full_name, nim), trash_types(name, price_per_kg)')
           .eq('id', transactionId)
           .maybeSingle();
 

@@ -12,8 +12,8 @@ class TransactionRepository {
     try {
       final response = await _client
           .from('transactions')
-          .select('*, waste_categories(name)')
-          .eq('user_id', userId)
+          .select('*, trash_types(name)')
+          .eq('mahasiswa_id', userId)
           .order('created_at', ascending: false)
           .limit(limit);
 
@@ -31,7 +31,7 @@ class TransactionRepository {
     return _client
         .from('transactions')
         .stream(primaryKey: ['id'])
-        .eq('user_id', userId)
+        .eq('mahasiswa_id', userId)
         .order('created_at', ascending: false);
   }
 }

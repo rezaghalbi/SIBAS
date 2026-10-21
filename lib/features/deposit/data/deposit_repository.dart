@@ -104,7 +104,7 @@ class DepositRepository {
         estimatedAmount: estimatedAmount,
         status: 'PENDING',
         createdAt: now,
-        expiresAt: expiresAt,
+        qrExpiresAt: expiresAt,
       );
     }
   }

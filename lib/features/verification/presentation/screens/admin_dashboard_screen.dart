@@ -261,7 +261,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     (context, index) {
                       final item = txList[index];
                       final profile = item['profiles'] as Map<String, dynamic>?;
-                      final category = item['waste_categories'] as Map<String, dynamic>?;
+                      final category = item['trash_types'] as Map<String, dynamic>?;
 
                       final name = (profile?['full_name'] as String?) ?? 'Mahasiswa';
                       final nim = (profile?['nim'] as String?) ?? '-';
