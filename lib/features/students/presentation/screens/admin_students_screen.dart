@@ -42,7 +42,8 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
 
   Future<void> _muatUlang() async {
     try {
-      await ref.refresh(studentsProvider.future);
+      ref.invalidate(studentsProvider);
+      await ref.read(studentsProvider.future);
     } catch (_) {
       // Pesan kegagalan sudah tampil pada kartu status.
     }
