@@ -39,8 +39,16 @@
   dipakai layar.
 - `create_deposit` dengan TTL 30 menghasilkan `qr_expires_at` 30 menit; data uji
   `BS-2026-0018` sudah dihapus dan TTL dikembalikan ke 120.
-- Belum ada run CI untuk batch ini; `flutter analyze`/`flutter test` tidak bisa
-  dijalankan lokal. Menunggu izin push untuk CI Analyze & Test + preview.
+- Run pertama (`39859587839`/`39859587841`) gagal karena satu warning
+  `unused_result`; diperbaiki di commit `cd1f4d0`. `flutter analyze`/`test`
+  tidak bisa dijalankan lokal, jadi CI tetap sumber bukti.
+- CI akhir hijau: Analyze & Test `39859747731` (analyze + test), Build
+  `39859747698` (APK + preview Vercel).
+- Preview `https://sibas-olpko6e8i-rezaghalbis-projects.vercel.app` diuji
+  dengan akun admin/mahasiswa: daftar 5 mahasiswa tampil, pencarian
+  Pengajuan/Riwayat memberi empty state, simpan Pengaturan TTL 45 berhasil
+  (DB terverifikasi 45, lalu dikembalikan 120), Pusat Informasi mahasiswa
+  menampilkan 3 "Belum diatur". Tidak ada runtime exception/console error.
 
 **Blocked (langkah dashboard/user)**
 - Site URL Supabase masih `http://localhost:3000`; Redirect URL
