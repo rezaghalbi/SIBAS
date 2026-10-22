@@ -21,6 +21,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   bool _isLoading = false;
   bool _isResending = false;
   String? _verificationNotice;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -37,6 +38,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   }
 
   Future<void> _handleLogin() async {
+    // Pesan lama dibersihkan supaya tidak menyesatkan percobaan berikutnya.
+    setState(() {
+      _errorMessage = null;
+      _verificationNotice = null;
+    });
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -45,30 +51,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             _emailController.text,
             _passwordController.text,
           );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Selamat datang di SIBAS!'),
-            backgroundColor: AppColors.primaryMain,
-          ),
-        );
-      }
     } catch (e) {
       if (mounted) {
         final needsVerification = isEmailNotConfirmed(e);
         setState(() {
           _verificationNotice = needsVerification ? authErrorMessage(e) : null;
+          // Kegagalan selain verifikasi email ditampilkan permanen di form,
+          // bukan SnackBar 4 detik yang mudah terlewat.
+          _errorMessage = needsVerification ? null : authErrorMessage(e);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authErrorMessage(e)),
-            backgroundColor: AppColors.danger,
-          ),
-        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _handleForgotPassword() async {
+    setState(() {
+      _errorMessage = 'Atur ulang kata sandi belum tersedia di aplikasi. '
+          'Hubungi admin bank sampah untuk mengatur ulang kata sandi akun Anda.';
+    });
   }
 
   Future<void> _handleResend() async {
@@ -312,7 +314,63 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                             return null;
                           },
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _handleForgotPassword,
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: const Size(0, 32),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Lupa kata sandi?',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.primaryMain,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Kegagalan login ditampilkan menetap sampai percobaan berikutnya.
+                        if (_errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.statusRejectedBg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.danger.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.error_outline_rounded,
+                                  size: 18,
+                                  color: AppColors.danger,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(
+                                      fontSize: 12.5,
+                                      color: AppColors.danger,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
 
                         // Tombol Submit
                         ElevatedButton(
