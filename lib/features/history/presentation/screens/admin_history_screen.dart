@@ -5,8 +5,13 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/utils/status_helper.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../verification/data/csv_export.dart';
+import '../../../verification/data/csv_download_stub.dart'
+    if (dart.library.js_interop) '../../../verification/data/csv_download_web.dart';
 import '../../../verification/presentation/providers/verification_provider.dart';
 import '../../../verification/presentation/widgets/verification_bottom_sheet.dart';
+import '../../../withdrawal/domain/models/withdrawal_model.dart';
+import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 
 /// Riwayat seluruh penyetoran (semua status) untuk Admin,
 /// dengan filter status & filter tanggal cepat sesuai prd.md.
@@ -56,6 +61,51 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
     return '7 hari';
   }
 
+  /// Ekspor baris yang sedang tampil (setelah filter status/tanggal).
+  Future<void> _eksporSetoran(List<Map<String, dynamic>> data) async {
+    if (data.isEmpty) {
+      _pesan('Tidak ada data untuk diekspor');
+      return;
+    }
+    final terunduh = await simpanCsv(
+      'rekap-setoran-${_capWaktu()}.csv',
+      bangunCsvSetoran(data),
+    );
+    if (!mounted) return;
+    _pesan(terunduh ? 'CSV diunduh' : 'CSV disalin ke papan klip');
+  }
+
+  Future<void> _eksporPenarikan() async {
+    List<WithdrawalModel> data;
+    try {
+      data = await ref.read(adminWithdrawalsProvider(null).future);
+    } catch (_) {
+      if (!mounted) return;
+      _pesan('Gagal memuat data penarikan');
+      return;
+    }
+    if (data.isEmpty) {
+      _pesan('Tidak ada data untuk diekspor');
+      return;
+    }
+    final terunduh = await simpanCsv(
+      'rekap-penarikan-${_capWaktu()}.csv',
+      bangunCsvPenarikan(data),
+    );
+    if (!mounted) return;
+    _pesan(terunduh ? 'CSV diunduh' : 'CSV disalin ke papan klip');
+  }
+
+  void _pesan(String teks) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(teks)));
+  }
+
+  static String _capWaktu() {
+    final now = DateTime.now();
+    String dua(int n) => n.toString().padLeft(2, '0');
+    return '${now.year}${dua(now.month)}${dua(now.day)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final txState = ref.watch(adminTransactionsProvider);
@@ -69,6 +119,25 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
         title: const Text('Riwayat Penyetoran'),
         backgroundColor: AppColors.primaryMain,
         foregroundColor: Colors.white,
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: 'Ekspor CSV',
+            icon: const Icon(Icons.download_rounded),
+            onSelected: (jenis) {
+              if (jenis == 'penarikan') {
+                _eksporPenarikan();
+                return;
+              }
+              final semua =
+                  ref.read(adminTransactionsProvider).valueOrNull ?? const [];
+              _eksporSetoran(semua.where(_match).toList());
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'setoran', child: Text('Rekap setoran')),
+              PopupMenuItem(value: 'penarikan', child: Text('Rekap penarikan')),
+            ],
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
