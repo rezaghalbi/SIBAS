@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/glass_panel.dart';
+import '../../../profile/domain/validasi_profil.dart';
 import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
 
@@ -17,6 +18,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _nimController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -28,6 +30,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   void dispose() {
     _fullNameController.dispose();
     _nimController.dispose();
+    _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -46,6 +49,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _passwordController.text,
             fullName: _fullNameController.text,
             nim: _nimController.text,
+            phone: _phoneController.text.trim(),
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -196,6 +200,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             }
                             return null;
                           },
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Nomor WhatsApp — dipakai admin untuk menghubungi.
+                        Text(
+                          'Nomor WhatsApp',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          autocorrect: false,
+                          decoration: const InputDecoration(
+                            hintText: 'Contoh: 081234567890',
+                            helperText: 'Dipakai admin untuk menghubungi Anda',
+                            helperMaxLines: 2,
+                            prefixIcon: Icon(Icons.chat_outlined, color: AppColors.primaryMain, size: 20),
+                          ),
+                          validator: validasiNomorWa,
                         ),
                         const SizedBox(height: 14),
 

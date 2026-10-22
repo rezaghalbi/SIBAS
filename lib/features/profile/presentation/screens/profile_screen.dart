@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/network/api_guard.dart';
@@ -48,15 +49,6 @@ class ProfileScreen extends ConsumerWidget {
 
     if (confirmed != true) return;
     await ref.read(currentUserProvider.notifier).logout();
-  }
-
-  Future<void> _openChangeName(BuildContext context, String currentName) async {
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (_) => _ChangeNameDialog(initialName: currentName),
-    );
-    if (saved != true || !context.mounted) return;
-    _snack(context, 'Nama berhasil diperbarui');
   }
 
   Future<void> _openChangePassword(BuildContext context) async {
@@ -113,6 +105,17 @@ class ProfileScreen extends ConsumerWidget {
     final userState = ref.watch(currentUserProvider);
     final user = userState.valueOrNull;
     final emailVerified = ref.watch(authRepositoryProvider).isEmailVerified;
+    final avatarUrl = ref.watch(avatarUrlProvider).valueOrNull;
+    final inisial = user == null
+        ? const SizedBox.shrink()
+        : Text(
+            _initials(user.fullName),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -152,6 +155,7 @@ class ProfileScreen extends ConsumerWidget {
                           Container(
                             width: 54,
                             height: 54,
+                            clipBehavior: Clip.antiAlias,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
@@ -160,14 +164,15 @@ class ProfileScreen extends ConsumerWidget {
                               ),
                             ),
                             alignment: Alignment.center,
-                            child: Text(
-                              _initials(user.fullName),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+                            child: avatarUrl == null
+                                ? inisial
+                                : Image.network(
+                                    avatarUrl,
+                                    width: 54,
+                                    height: 54,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => inisial,
+                                  ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -272,11 +277,11 @@ class ProfileScreen extends ConsumerWidget {
                   child: Column(
                     children: [
                       _MenuTile(
-                        icon: Icons.badge_outlined,
-                        label: 'Ubah Nama',
+                        icon: Icons.edit_outlined,
+                        label: 'Edit Profil',
                         onTap: user == null
                             ? null
-                            : () => _openChangeName(context, user.fullName),
+                            : () => context.push('/profile/edit'),
                       ),
                       const Divider(
                         height: 1,
@@ -472,8 +477,8 @@ class _ProfileCard extends StatelessWidget {
           const SizedBox(height: 4),
           const Divider(height: 20, color: AppColors.borderLine),
           const Text(
-            'Nama dan kata sandi bisa diubah lewat menu di bawah. Data lain '
-            'hubungi admin bila perlu diperbarui.',
+            'Nama, NIM, nomor WhatsApp, dan foto bisa diubah lewat menu Edit '
+            'Profil. Data lain hubungi admin bila perlu diperbarui.',
             style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
         ],
@@ -599,113 +604,6 @@ class _ErrorBanner extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ChangeNameDialog extends ConsumerStatefulWidget {
-  final String initialName;
-
-  const _ChangeNameDialog({required this.initialName});
-
-  @override
-  ConsumerState<_ChangeNameDialog> createState() => _ChangeNameDialogState();
-}
-
-class _ChangeNameDialogState extends ConsumerState<_ChangeNameDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _name = TextEditingController(
-    text: widget.initialName,
-  );
-  bool _saving = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    if (_saving) return;
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    try {
-      await ref.read(authRepositoryProvider).updateFullName(_name.text.trim());
-      if (!mounted) return;
-      ref.invalidate(currentUserProvider);
-      Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = pesanKesalahan(e);
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      title: const Text(
-        'Ubah Nama',
-        style: TextStyle(fontWeight: FontWeight.w700),
-      ),
-      scrollable: true,
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextFormField(
-              controller: _name,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                hintText: 'Nama lengkap',
-                prefixIcon: Icon(
-                  Icons.person_outline_rounded,
-                  color: AppColors.primaryMain,
-                  size: 20,
-                ),
-              ),
-              validator: (val) {
-                final value = val?.trim() ?? '';
-                if (value.isEmpty) return 'Nama wajib diisi';
-                if (value.length > 80) return 'Nama maksimal 80 karakter';
-                return null;
-              },
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              _ErrorBanner(message: _error!),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text(
-            'Batal',
-            style: TextStyle(color: AppColors.textMuted),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: _saving ? null : _save,
-          child: _saving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Simpan'),
-        ),
-      ],
     );
   }
 }
@@ -873,17 +771,17 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
       _error = null;
     });
     try {
-      await ref.read(authRepositoryProvider).changePassword(
-        currentPassword: _current.text,
-        newPassword: _baru.text,
-      );
+      await ref.read(currentUserProvider.notifier).ubahSandiDenganSandiLama(
+            lama: _current.text,
+            baru: _baru.text,
+          );
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = pesanKesalahan(e);
+        _error = _pesanGantiSandi(e);
       });
     }
   }
@@ -1291,6 +1189,16 @@ class _MessageBox extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Pesan server soal kata sandi dipakai apa adanya (mis. "Kata sandi saat ini
+/// salah."); pesan lain tetap lewat [pesanKesalahan].
+String _pesanGantiSandi(Object error) {
+  if (error is AuthException) {
+    final pesan = error.message.trim();
+    if (pesan.toLowerCase().contains('sandi')) return pesan;
+  }
+  return pesanKesalahan(error);
 }
 
 void _snack(BuildContext context, String message) {
