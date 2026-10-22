@@ -70,7 +70,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           );
       if (!mounted) return;
       _snack(context, 'Profil diperbarui');
-      context.pop();
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/profile');
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
