@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/verification_provider.dart';
 
 /// Modal Bottom Sheet untuk memvalidasi transaksi via RPC Supabase
@@ -40,7 +39,6 @@ class VerificationBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _VerificationBottomSheetState extends ConsumerState<VerificationBottomSheet> {
-  final _weightController = TextEditingController();
   final _reasonController = TextEditingController();
   bool _isRejecting = false;
   bool _isLoading = false;
@@ -52,54 +50,33 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
   );
 
   @override
-  void initState() {
-    super.initState();
-    final initialWeight = (widget.transactionData['weight'] != null)
-        ? (widget.transactionData['weight'] as num).toDouble()
-        : 0.0;
-    _weightController.text = initialWeight.toStringAsFixed(1);
-  }
-
-  @override
   void dispose() {
-    _weightController.dispose();
     _reasonController.dispose();
     super.dispose();
   }
 
   Future<void> _handleApprove() async {
-    final verifiedWeight = double.tryParse(_weightController.text.replaceAll(',', '.'));
-    if (verifiedWeight == null || verifiedWeight <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Berat aktual timbangan harus lebih dari 0 kg'),
-          backgroundColor: AppColors.danger,
-        ),
-      );
-      return;
-    }
-
-    final admin = ref.read(currentUserProvider).valueOrNull;
-    if (admin == null) return;
-
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(verificationRepositoryProvider);
       final txId = widget.transactionData['id'] as String;
 
-      await repo.approveTransaction(
-        transactionId: txId,
-        adminId: admin.id,
-        verifiedWeightKg: verifiedWeight,
-      );
+      final status = await repo.approveTransaction(transactionId: txId);
 
       if (mounted) {
         Navigator.pop(context);
         widget.onVerificationComplete();
+        final approved = status == 'APPROVED';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Transaksi BERHASIL disetujui & diverifikasi!'),
-            backgroundColor: AppColors.primaryMain,
+          SnackBar(
+            content: Text(
+              approved
+                  ? 'Transaksi BERHASIL disetujui & diverifikasi!'
+                  : 'QR sudah kedaluwarsa. Status menjadi EXPIRED; minta '
+                      'mahasiswa mengajukan ulang.',
+            ),
+            backgroundColor:
+                approved ? AppColors.primaryMain : AppColors.danger,
           ),
         );
       }
@@ -128,27 +105,29 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
       return;
     }
 
-    final admin = ref.read(currentUserProvider).valueOrNull;
-    if (admin == null) return;
-
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(verificationRepositoryProvider);
       final txId = widget.transactionData['id'] as String;
 
-      await repo.rejectTransaction(
+      final status = await repo.rejectTransaction(
         transactionId: txId,
-        adminId: admin.id,
         reason: _reasonController.text.trim(),
       );
 
       if (mounted) {
         Navigator.pop(context);
         widget.onVerificationComplete();
+        final rejected = status == 'REJECTED';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Transaksi telah ditolak.'),
-            backgroundColor: AppColors.statusRejectedText,
+          SnackBar(
+            content: Text(
+              rejected
+                  ? 'Transaksi telah ditolak.'
+                  : 'QR sudah kedaluwarsa. Status menjadi EXPIRED.',
+            ),
+            backgroundColor:
+                rejected ? AppColors.statusRejectedText : AppColors.danger,
           ),
         );
       }
@@ -175,6 +154,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
     final studentNim = (profile?['nim'] as String?) ?? '-';
     final categoryName = (category?['name'] as String?) ?? (widget.transactionData['category_name'] as String?) ?? 'Sampah Daur Ulang';
     final pricePerKg = (category?['price_per_kg'] != null) ? (category!['price_per_kg'] as num).toDouble() : 0.0;
+    final submittedWeight = (widget.transactionData['weight'] as num?)?.toDouble() ?? 0.0;
     final txId = (widget.transactionData['id'] as String?) ?? '';
 
     return Padding(
@@ -266,19 +246,26 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
             const SizedBox(height: 16),
 
             if (!_isRejecting) ...[
-              // Input Penimbangan Aktual (kg)
-              const Text(
-                'Berat Timbangan Aktual (kg)',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _weightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  hintText: 'Contoh: 3.2',
-                  prefixIcon: Icon(Icons.scale_rounded, color: AppColors.primaryMain),
-                  suffixText: 'kg',
+              // Berat pengajuan ditampilkan apa adanya; admin tidak menimpanya.
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderLine),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Berat Pengajuan',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
+                    ),
+                    Text(
+                      '${submittedWeight.toStringAsFixed(2)} kg',
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primaryDark),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),

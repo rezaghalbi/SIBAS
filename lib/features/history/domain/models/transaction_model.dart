@@ -60,7 +60,7 @@ class TransactionModel {
           : null,
       status: (json['status'] as String?) ?? 'PENDING',
       rejectionReason: json['rejection_reason'] as String?,
-      adminId: json['admin_id'] as String?,
+      adminId: json['verified_by'] as String?,
       qrToken: json['qr_token'] as String?,
       txCode: json['tx_code'] as String?,
       createdAt: json['created_at'] != null
