@@ -46,7 +46,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Future<void> _refresh() async {
-    await ref.refresh(allStudentTransactionsProvider.future);
+    ref.invalidate(allStudentTransactionsProvider);
+    await ref.read(allStudentTransactionsProvider.future);
   }
 
   @override
