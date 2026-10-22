@@ -309,6 +309,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
       color: Colors.black,
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: SegmentedButton<_ScanMode>(
+        // Ikon centang bawaan menyita lebar sampai label "Penarikan" terpotong.
+        showSelectedIcon: false,
         segments: const [
           ButtonSegment<_ScanMode>(
             value: _ScanMode.setoran,
@@ -369,6 +371,18 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                   placeholderBuilder: (context, child) => const Center(
                     child: CircularProgressIndicator(color: AppColors.mintAccent),
                   ),
+                  // Bingkai hanya tampil saat pratinjau kamera hidup, jadi
+                  // panel izin kamera tidak tertutup garis bingkai.
+                  overlayBuilder: (context, constraints) => Center(
+                    child: Container(
+                      width: 260,
+                      height: 260,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.accent, width: 3),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                  ),
                   onDetect: (capture) {
                     final barcodes = capture.barcodes;
                     for (final barcode in barcodes) {
@@ -381,19 +395,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                   },
                 ),
 
-                // 2. Overlay Bingkai Pemindai
-                Center(
-                  child: Container(
-                    width: 260,
-                    height: 260,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.accent, width: 3),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                ),
-
-                // 3. Tombol Aksi Bawah (Manual Input & Upload Fallback)
+                // 2. Tombol Aksi Bawah (Manual Input & Upload Fallback)
                 Positioned(
                   bottom: 30,
                   left: 20,
