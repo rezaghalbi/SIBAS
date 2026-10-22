@@ -103,7 +103,7 @@ class AuthRepository {
         return null;
       }
 
-      return getUserProfile(user.id, emailFallback: user.email);
+      return await getUserProfile(user.id, emailFallback: user.email);
     } on AuthException catch (e) {
       // GoTrue membungkus kegagalan trigger `handle_new_user` (NIM duplikat)
       // sebagai unexpected_failure dengan pesan "Database error saving new user",
