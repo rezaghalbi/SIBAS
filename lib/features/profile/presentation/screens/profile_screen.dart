@@ -164,6 +164,33 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            sliver: SliverToBoxAdapter(
+              child: GlassPanel(
+                radius: 20,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Column(
+                    children: [
+                      _MenuTile(
+                        icon: Icons.info_outline_rounded,
+                        label: 'Pusat Informasi',
+                        onTap: () => context.push('/info'),
+                      ),
+                      const Divider(height: 1, indent: 56, color: AppColors.borderLine),
+                      _MenuTile(
+                        icon: Icons.account_balance_wallet_outlined,
+                        label: 'Riwayat Penarikan',
+                        onTap: () => context.push('/saldo'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
             sliver: SliverToBoxAdapter(
               child: SizedBox(
@@ -234,6 +261,48 @@ class _ProfileCard extends StatelessWidget {
             style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _MenuTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      leading: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: AppColors.mintSoftBackground,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 18, color: AppColors.primaryMain),
+      ),
+      title: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        size: 20,
+        color: AppColors.textMuted,
       ),
     );
   }

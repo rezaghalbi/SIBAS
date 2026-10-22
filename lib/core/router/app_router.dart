@@ -64,9 +64,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // 4. Admin mencoba akses rute khusus mahasiswa
       const ruteMahasiswa = ['/dashboard', '/setor', '/history', '/saldo', '/profile', '/info'];
+      // Detail transaksi boleh dibuka admin maupun mahasiswa.
       final isRuteMahasiswa = ruteMahasiswa.contains(location) ||
-          location.startsWith('/qr') ||
-          location.startsWith('/transaction');
+          location.startsWith('/qr');
       if (isRuteMahasiswa && user.isAdmin) {
         return '/admin/dashboard';
       }

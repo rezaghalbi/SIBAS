@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
@@ -169,6 +170,9 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(14),
+                          // Admin boleh membuka detail untuk melihat verifikator & alasan.
+                          onTap: () => context.push('/transaction/${item['id']}'),
+
                           leading: const CircleAvatar(
                             backgroundColor: AppColors.mintSoftBackground,
                             child: Icon(Icons.recycling_rounded,

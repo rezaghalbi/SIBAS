@@ -11,36 +11,22 @@ class VerificationRepository {
       '*, profiles:profiles!transactions_mahasiswa_id_fkey(full_name, nim), '
       'trash_types(name, price_per_kg)';
 
-  /// Statistik metrik dashboard admin.
+  /// Statistik metrik dashboard admin, dihitung di server lewat RPC
+  /// `admin_metrics` (klien tidak lagi menarik seluruh baris transaksi).
   /// Tanpa angka pengganti: kegagalan query jadi AsyncError di provider.
   Future<AdminMetricsModel> getAdminMetrics() async {
-    final res = await _client.from('transactions').select('weight, status');
-    final list = res as List<dynamic>;
+    final res = await _client.rpc('admin_metrics');
+    final map = res is Map ? Map<String, dynamic>.from(res) : <String, dynamic>{};
 
-    double totalKg = 0.0;
-    int pending = 0;
-    int approved = 0;
-    int rejected = 0;
-
-    for (final item in list) {
-      final status = (item['status'] as String?)?.toUpperCase() ?? 'PENDING';
-      final weight =
-          (item['weight'] != null) ? (item['weight'] as num).toDouble() : 0.0;
-      if (status == 'APPROVED') {
-        approved++;
-        totalKg += weight;
-      } else if (status == 'REJECTED') {
-        rejected++;
-      } else if (status == 'PENDING') {
-        pending++;
-      }
-    }
+    double asDouble(Object? value) =>
+        value is num ? value.toDouble() : 0.0;
+    int asInt(Object? value) => value is num ? value.toInt() : 0;
 
     return AdminMetricsModel(
-      totalWeightKg: totalKg,
-      pendingCount: pending,
-      approvedCount: approved,
-      rejectedCount: rejected,
+      totalWeightKg: asDouble(map['total_weight_kg']),
+      pendingCount: asInt(map['pending_count']),
+      approvedCount: asInt(map['approved_count']),
+      rejectedCount: asInt(map['rejected_count']),
     );
   }
 

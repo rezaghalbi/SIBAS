@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/network/supabase_client.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/models/user_model.dart';
@@ -22,9 +25,32 @@ final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, AsyncValu
 
 class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   final AuthRepository _repo;
+  StreamSubscription<AuthState>? _authSub;
 
   CurrentUserNotifier(this._repo) : super(const AsyncValue.loading()) {
     _initializeUser();
+
+    // Sesi bisa berakhir di luar aplikasi: token kedaluwarsa atau logout dari
+    // tab/perangkat lain. Tanpa langganan ini UI tetap menampilkan pengguna
+    // yang sudah tidak punya sesi.
+    _authSub = _repo.authStateChanges.listen((authState) {
+      if (authState.event == AuthChangeEvent.signedOut) {
+        state = const AsyncValue.data(null);
+        return;
+      }
+      final session = authState.session;
+      if (authState.event == AuthChangeEvent.signedIn &&
+          session != null &&
+          state.valueOrNull == null) {
+        unawaited(_loadProfile(session.user.id, session.user.email));
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _initializeUser() async {
@@ -33,9 +59,12 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
       state = const AsyncValue.data(null);
       return;
     }
+    await _loadProfile(session.user.id, session.user.email);
+  }
 
+  Future<void> _loadProfile(String userId, String? email) async {
     try {
-      final user = await _repo.getUserProfile(session.user.id, emailFallback: session.user.email);
+      final user = await _repo.getUserProfile(userId, emailFallback: email);
       state = AsyncValue.data(user);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

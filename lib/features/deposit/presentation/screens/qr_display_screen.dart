@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../providers/deposit_provider.dart';
 
@@ -95,21 +96,9 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
               child: Column(
                 children: [
                   // Card QR Utama
-                  Container(
-                    width: double.infinity,
+                  GlassPanel(
+                    radius: 24,
                     padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardSurface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.borderLine),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color.fromRGBO(9, 92, 59, 0.06),
-                          blurRadius: 20,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
                     child: Column(
                       children: [
                         // Countdown Timer Card
@@ -235,14 +224,9 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                   const SizedBox(height: 20),
 
                   // Detail Rincian Setoran
-                  Container(
-                    width: double.infinity,
+                  GlassPanel(
+                    radius: 18,
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardSurface,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: AppColors.borderLine),
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
