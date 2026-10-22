@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/constants/colors.dart';
 import 'core/constants/theme.dart';
+import 'core/network/error_reporter.dart';
 import 'core/network/supabase_client.dart';
 import 'core/widgets/session_idle_watcher.dart';
 import 'core/router/app_router.dart';
@@ -18,9 +20,15 @@ void main() async {
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
     debugPrint('FlutterError: ${details.exceptionAsString()}');
+    unawaited(laporkanKesalahan(
+      details.exception,
+      details.stack,
+      konteks: 'FlutterError',
+    ));
   };
   PlatformDispatcher.instance.onError = (error, stack) {
     debugPrint('Uncaught: $error');
+    unawaited(laporkanKesalahan(error, stack, konteks: 'platform'));
     return true;
   };
   ErrorWidget.builder = (details) => const Material(
