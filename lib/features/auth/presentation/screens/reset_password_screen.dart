@@ -7,7 +7,7 @@ import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../providers/auth_provider.dart';
 
-/// Layar atur sandi baru setelah pengguna membuka tautan reset dari email.
+/// Layar atur sandi baru setelah pengguna memverifikasi kode OTP dari email.
 ///
 /// Hanya tampil selama `passwordRecoveryProvider` bernilai true; router yang
 /// memaksa rute ini sehingga pengguna tidak bisa lanjut ke layar lain.
@@ -61,6 +61,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           ),
         );
       await notifier.logout();
+      notifier.batalPemulihanSandi();
       if (!mounted) return;
       context.go('/login');
     } catch (e) {
@@ -75,8 +76,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Future<void> _batalkan() async {
     if (_sibuk) return;
     setState(() => _sibuk = true);
-    ref.read(currentUserProvider.notifier).batalPemulihanSandi();
-    await ref.read(currentUserProvider.notifier).logout();
+    final notifier = ref.read(currentUserProvider.notifier);
+    await notifier.logout();
+    notifier.batalPemulihanSandi();
     if (!mounted) return;
     context.go('/login');
   }

@@ -267,11 +267,11 @@ detail admin lain.
 
 ## Reset Sandi & QR Penarikan
 
-- Lupa sandi mengirim tautan ke `${origin}/reset-password`
-  (`resetPasswordForEmail`); layar atur sandi baru dipaksa lewat
-  `passwordRecoveryProvider`. Tautan hanya bekerja bila **Site URL** dan
-  **Redirect URLs** di Dashboard Supabase sudah memuat domain aplikasi dan
-  SMTP sudah dikonfigurasi. Keduanya langkah dashboard, bukan kode repo.
+- Lupa sandi mengirim kode OTP 6 digit lewat `resetPasswordForEmail`; template
+  **Reset Password** di Supabase wajib memuat `{{ .Token }}`. Kode diverifikasi
+  dengan `verifyOTP(type: recovery)`, lalu layar atur sandi baru dipaksa lewat
+  `passwordRecoveryProvider`. Alur ini tidak bergantung Redirect URL, tetapi
+  tetap butuh SMTP yang sudah dikonfigurasi.
 - Penarikan yang masih PENDING menyimpan `qr_token`; mahasiswa menampilkan QR
   dari layar Tarik atau detail penarikan, admin memindainya di
   `/admin/scan` mode penarikan (`get_withdrawal_by_qr`). Token mentah tidak
@@ -375,9 +375,8 @@ gh run view <run-id> --log-failed
 - Deploy produksi Vercel hanya dari `push` ke `main`; PR hanya preview.
 - Uji yang ada baru unit test; belum ada widget/integration test. Uji kamera
   dan PWA di perangkat nyata (Android/iOS/Windows) belum dilakukan dari repo.
-- Site URL Supabase, Redirect URL `https://sibas.vercel.app/reset-password`,
-  dan SMTP belum diatur di dashboard; reset/verifikasi email belum andal
-  sampai langkah dashboard itu selesai.
+- Site URL dan SMTP sudah diatur di dashboard. Reset sandi memakai OTP sehingga
+  tidak bergantung Redirect URL; verifikasi pendaftaran tetap memakai tautan.
 - iOS belum ada (`ios/` tidak dibuat) karena mesin pengembangan tidak punya
   Flutter SDK; target rilis saat ini Android + web.
 - Bila `ANDROID_KEYSTORE_BASE64` kosong, APK CI memakai debug key dan tidak
