@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/glass_panel.dart';
+import '../../../trash_type/presentation/providers/trash_type_provider.dart';
 import '../providers/deposit_provider.dart';
 import '../../domain/models/waste_category_model.dart';
 
@@ -48,6 +49,33 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
     if (lower.contains('kaca') || lower.contains('beling')) return Icons.wine_bar_rounded;
     if (lower.contains('jelantah') || lower.contains('minyak')) return Icons.opacity_rounded;
     return Icons.recycling_rounded;
+  }
+
+  Widget _categoryThumb(WasteCategoryModel cat, {required bool isSelected}) {
+    final icon = Icon(
+      _getCategoryIcon(cat.name),
+      color: isSelected ? AppColors.primaryMain : AppColors.textMuted,
+      size: 26,
+    );
+    final path = cat.imagePath;
+    if (path == null || path.isEmpty) return icon;
+
+    return Consumer(
+      builder: (context, ref, _) {
+        final url = ref.watch(fotoJenisSampahUrlProvider(path));
+        if (url == null || url.isEmpty) return icon;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            url,
+            width: 32,
+            height: 32,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => icon,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _handleSubmit() async {
@@ -188,11 +216,7 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Icon(
-                                        _getCategoryIcon(cat.name),
-                                        color: isSelected ? AppColors.primaryMain : AppColors.textMuted,
-                                        size: 26,
-                                      ),
+                                      _categoryThumb(cat, isSelected: isSelected),
                                       if (isSelected)
                                         const Icon(
                                           Icons.check_circle_rounded,

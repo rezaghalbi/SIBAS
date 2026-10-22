@@ -5,6 +5,7 @@ class WasteCategoryModel {
   final String unit; // default 'kg'
   final double pricePerKg; // Tarif Rp per kg (bisa 0 jika non-komersial/fokus kg)
   final String? description;
+  final String? imagePath; // Path objek di bucket trash-type-images.
 
   const WasteCategoryModel({
     required this.id,
@@ -12,6 +13,7 @@ class WasteCategoryModel {
     this.unit = 'kg',
     required this.pricePerKg,
     this.description,
+    this.imagePath,
   });
 
   factory WasteCategoryModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class WasteCategoryModel {
           ? (json['price_per_kg'] as num).toDouble()
           : 0.0,
       description: json['description'] as String?,
+      imagePath: json['image_path'] as String?,
     );
   }
 
@@ -33,6 +36,7 @@ class WasteCategoryModel {
       'unit': unit,
       'price_per_kg': pricePerKg,
       'description': description,
+      if (imagePath != null) 'image_path': imagePath,
     };
   }
 }
