@@ -18,8 +18,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nimController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -27,10 +29,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _nimController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _handleRegister() async {
+    // Pesan lama dibersihkan supaya tidak menyesatkan percobaan berikutnya.
+    setState(() => _errorMessage = null);
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -55,12 +60,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Pendaftaran gagal: ${authErrorMessage(e)}'),
-            backgroundColor: AppColors.danger,
-          ),
-        );
+        // Kegagalan ditampilkan permanen di form, bukan SnackBar 4 detik.
+        setState(() => _errorMessage = authErrorMessage(e));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -261,7 +262,68 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             return null;
                           },
                         ),
+                        const SizedBox(height: 14),
+
+                        // Konfirmasi Kata Sandi — hanya divalidasi di klien,
+                        // nilainya tidak dikirim ke server.
+                        Text(
+                          'Ulangi Kata Sandi',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscurePassword,
+                          decoration: const InputDecoration(
+                            hintText: 'Ulangi kata sandi',
+                            prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.primaryMain, size: 20),
+                          ),
+                          validator: (val) {
+                            if (val == null || val.isEmpty) return 'Ulangi kata sandi';
+                            if (val != _passwordController.text) return 'Kata sandi tidak sama';
+                            return null;
+                          },
+                        ),
                         const SizedBox(height: 22),
+
+                        // Kegagalan registrasi ditampilkan menetap sampai percobaan berikutnya.
+                        if (_errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.statusRejectedBg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.danger.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.error_outline_rounded,
+                                  size: 18,
+                                  color: AppColors.danger,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(
+                                      fontSize: 12.5,
+                                      color: AppColors.danger,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
 
                         // Tombol Submit
                         ElevatedButton(

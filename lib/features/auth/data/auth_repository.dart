@@ -14,6 +14,8 @@ String authErrorMessage(Object error) {
       case 'user_already_exists':
       case 'email_exists':
         return 'Email sudah terdaftar. Silakan masuk.';
+      case 'nim_duplicate':
+        return 'NIM sudah terdaftar. Gunakan NIM lain atau hubungi admin.';
       case 'weak_password':
         return 'Kata sandi terlalu lemah (minimal 6 karakter).';
       case 'over_email_send_rate_limit':
@@ -22,10 +24,13 @@ String authErrorMessage(Object error) {
       case 'signup_disabled':
         return 'Pendaftaran akun sedang dinonaktifkan.';
       default:
-        return error.message;
+        return error.message.isNotEmpty
+            ? error.message
+            : 'Terjadi kesalahan. Periksa koneksi lalu coba lagi.';
     }
   }
-  return error.toString();
+  // Jangan pernah menampilkan toString() mentah ke pengguna.
+  return 'Terjadi kesalahan. Periksa koneksi lalu coba lagi.';
 }
 
 /// Benar bila penyebab gagal login adalah email yang belum diverifikasi.
@@ -79,25 +84,50 @@ class AuthRepository {
     required String fullName,
     String? nim,
   }) async {
-    final response = await _client.auth.signUp(
-      email: email.trim(),
-      password: password,
-      data: {
-        'full_name': fullName.trim(),
-        if (nim != null && nim.trim().isNotEmpty) 'nim': nim.trim(),
-      },
-    );
+    try {
+      final response = await _client.auth.signUp(
+        email: email.trim(),
+        password: password,
+        data: {
+          'full_name': fullName.trim(),
+          if (nim != null && nim.trim().isNotEmpty) 'nim': nim.trim(),
+        },
+      );
 
-    final user = response.user;
-    if (user == null) {
-      throw const AuthException('Gagal mendaftar: Data pengguna tidak ditemukan');
+      final user = response.user;
+      if (user == null) {
+        throw const AuthException('Gagal mendaftar: Data pengguna tidak ditemukan');
+      }
+
+      if (response.session == null) {
+        return null;
+      }
+
+      return getUserProfile(user.id, emailFallback: user.email);
+    } on AuthException catch (e) {
+      // GoTrue membungkus kegagalan trigger `handle_new_user` (NIM duplikat)
+      // sebagai unexpected_failure dengan pesan "Database error saving new user",
+      // bukan PostgrestException. Petakan agar pengguna tidak melihat pesan mentah.
+      final pesan = e.message.toLowerCase();
+      if (pesan.contains('duplicate key') ||
+          pesan.contains('database error saving new user')) {
+        throw const AuthException(
+          'NIM atau email sudah terdaftar. Gunakan data lain atau hubungi admin.',
+          code: 'nim_duplicate',
+        );
+      }
+      rethrow;
+    } on PostgrestException catch (e) {
+      // Trigger `handle_new_user` bisa gagal insert profiles karena NIM unik
+      // (unique_violation 23505); Supabase melemparkan PostgrestException.
+      if (e.code == '23505') {
+        throw AuthException(
+          'NIM sudah terdaftar. Gunakan NIM lain atau hubungi admin.',
+          code: 'nim_duplicate',
+        );
+      }
+      rethrow;
     }
-
-    if (response.session == null) {
-      return null;
-    }
-
-    return getUserProfile(user.id, emailFallback: user.email);
   }
 
   /// Kirim ulang email verifikasi untuk akun yang belum dikonfirmasi.
