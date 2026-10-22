@@ -346,7 +346,15 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(_isWithdrawal ? 'Pindai QR Penarikan' : 'Pindai QR Setoran'),
+        title: Text(
+          _isWithdrawal ? 'Pindai QR Penarikan' : 'Pindai QR Setoran',
+          // Tegaskan warna agar judul tidak ikut warna teks tema gelap/terang.
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         actions: [
