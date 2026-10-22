@@ -24,7 +24,14 @@ String authErrorMessage(Object error) {
         return 'Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.';
       case 'signup_disabled':
         return 'Pendaftaran akun sedang dinonaktifkan.';
+      case 'user_banned':
+      case 'banned':
+        return 'Akun ini sudah dinonaktifkan. Hubungi admin bila ini keliru.';
       default:
+        // Beberapa server hanya mengirim pesan teks tanpa kode.
+        if (error.message.toLowerCase().contains('banned')) {
+          return 'Akun ini sudah dinonaktifkan. Hubungi admin bila ini keliru.';
+        }
         return error.message.isNotEmpty
             ? error.message
             : 'Terjadi kesalahan. Periksa koneksi lalu coba lagi.';
@@ -240,5 +247,13 @@ class AuthRepository {
   /// Logout pengguna
   Future<void> signOut() {
     return guardRequest(() => _client.auth.signOut());
+  }
+
+  /// Menandai akun sendiri sebagai terhapus lewat RPC server.
+  ///
+  /// Server menolak bila saldo masih ada atau ada pengajuan PENDING. Pesan
+  /// penolakan sudah berbahasa Indonesia, jadi diteruskan apa adanya.
+  Future<void> hapusAkun() async {
+    await guardRequest(() => _client.rpc('hapus_akun_sendiri'));
   }
 }

@@ -6,6 +6,13 @@ import '../../../../core/network/supabase_client.dart';
 import '../../data/auth_repository.dart';
 import '../../domain/models/user_model.dart';
 
+/// Pesan saat akun sudah ditandai terhapus di server.
+const _pesanAkunTerhapus =
+    'Akun ini sudah ditandai terhapus. Hubungi admin bila ini keliru.';
+
+/// Kode error internal agar form login membedakan penolakan akun terhapus.
+const _kodeAkunTerhapus = 'akun_terhapus';
+
 /// Provider instance AuthRepository
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(supabase);
@@ -72,21 +79,52 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   Future<void> _loadProfile(String userId, String? email) async {
     try {
       final user = await _repo.getUserProfile(userId, emailFallback: email);
+      if (user.deletedAt != null) {
+        await _keluarAkunTerhapus();
+        // Pemanggil _loadProfile bersifat fire-and-forget, jadi pesan dibawa
+        // lewat state error (nilai null) agar tidak menjadi unhandled error.
+        state = AsyncValue.error(
+          const AuthException(_pesanAkunTerhapus, code: _kodeAkunTerhapus),
+          StackTrace.current,
+        );
+        return;
+      }
       state = AsyncValue.data(user);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
+  /// Cabut sesi akun terflag, kosongkan state (router kembali ke login), dan
+  /// naikkan epoch. Kegagalan signOut diabaikan; sesi lokal tetap dibersihkan.
+  Future<void> _keluarAkunTerhapus() async {
+    try {
+      await _repo.signOut();
+    } catch (_) {
+      // Diabaikan: yang penting pengguna tidak tetap masuk.
+    }
+    state = const AsyncValue.data(null);
+    if (mounted) _ref.read(sessionEpochProvider.notifier).state++;
+  }
+
   Future<void> login(String email, String password) async {
     state = const AsyncValue.loading();
     try {
       final user = await _repo.signIn(email: email, password: password);
+      if (user.deletedAt != null) {
+        await _keluarAkunTerhapus();
+        // Dilempar agar form login menampilkan pesan; state sudah data(null)
+        // sehingga router mengarah ke /login, bukan layar putih.
+        throw const AuthException(_pesanAkunTerhapus, code: _kodeAkunTerhapus);
+      }
       state = AsyncValue.data(user);
       // Naikkan epoch agar cache provider lain dibuang saat akun berganti.
       if (mounted) _ref.read(sessionEpochProvider.notifier).state++;
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      // Akun terhapus: state sudah data(null), jangan ditimpa error.
+      if (!(e is AuthException && e.code == _kodeAkunTerhapus)) {
+        state = AsyncValue.error(e, st);
+      }
       rethrow;
     }
   }
