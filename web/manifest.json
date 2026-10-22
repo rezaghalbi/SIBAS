@@ -1,7 +1,10 @@
 {
   "name": "SIBAS - Bank Sampah Poltekkes Jogja",
   "short_name": "SIBAS",
+  "id": "/",
+  "scope": "/",
   "start_url": ".",
+  "lang": "id",
   "display": "standalone",
   "background_color": "#F3F8F5",
   "theme_color": "#005746",

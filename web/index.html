@@ -73,6 +73,41 @@
     <div class="loading-text">Memuat SIBAS...</div>
   </div>
 
+  <script>
+    // Banner update Service Worker: hanya tampil bila sudah ada kontrol sebelumnya
+    // (artinya ini update, bukan pemuatan pertama). Tidak pernah memblokir app.
+    try {
+      const sw = navigator.serviceWorker;
+      if (sw) {
+        const punyaKontrolAwal = !!sw.controller;
+        let bannerTampil = false;
+        sw.addEventListener('controllerchange', function () {
+          if (!punyaKontrolAwal || bannerTampil) return;
+          bannerTampil = true;
+          const banner = document.createElement('div');
+          banner.id = 'sibas-update-banner';
+          banner.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;' +
+            'background:#005746;color:#fff;padding:12px;display:flex;align-items:center;' +
+            'justify-content:space-between;gap:12px;font-family:system-ui,sans-serif;font-size:14px;';
+          const teks = document.createElement('span');
+          teks.textContent = 'Versi baru SIBAS tersedia.';
+          const tombol = document.createElement('button');
+          tombol.textContent = 'Muat ulang';
+          tombol.style.cssText = 'background:#fff;color:#005746;border:0;border-radius:8px;' +
+            'padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;';
+          tombol.addEventListener('click', function () {
+            location.reload();
+          });
+          banner.appendChild(teks);
+          banner.appendChild(tombol);
+          document.body.appendChild(banner);
+        });
+      }
+    } catch (e) {
+      // diamkan: jangan ganggu pemuatan aplikasi
+    }
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 
