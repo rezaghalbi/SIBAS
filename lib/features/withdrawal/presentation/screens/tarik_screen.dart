@@ -91,8 +91,8 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
       return;
     }
 
-    _formKey.currentState?.reset();
     _amountController.clear();
+    setState(() => _error = null);
     messenger.showSnackBar(
       const SnackBar(
         content: Text('Pengajuan penarikan dikirim. Tunggu persetujuan admin.'),
@@ -171,7 +171,6 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
                           if (_error != null) setState(() => _error = null);
                         },
                         validator: _validateAmount,
-                        autovalidateMode: AutovalidateMode.onUserInteraction,
                         decoration: const InputDecoration(
                           labelText: 'Nominal Penarikan',
                           prefixText: 'Rp ',
