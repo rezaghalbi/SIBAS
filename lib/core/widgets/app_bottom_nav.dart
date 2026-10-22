@@ -46,7 +46,7 @@ class AppBottomNav extends StatelessWidget {
       minimum: const EdgeInsets.only(bottom: 2),
       child: GlassPanel(
         radius: 24,
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Material(
           color: Colors.transparent,
@@ -98,56 +98,85 @@ class _NavButton extends StatelessWidget {
       label: label,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        borderRadius: BorderRadius.circular(14),
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            SizedBox(
-              height: 26,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(icon, size: 22, color: color),
-                  if (badgeCount > 0)
-                    Positioned(
-                      top: -6,
-                      right: -12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        constraints: const BoxConstraints(minWidth: 16),
-                        decoration: BoxDecoration(
-                          color: AppColors.statusPendingBg,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.statusPendingText,
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          badgeCount > 99 ? '99+' : '$badgeCount',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.statusPendingText,
-                          ),
-                        ),
-                      ),
+            // Pill tipis di belakang ikon+label. Positioned.fill supaya
+            // layout item tidak bergeser saat state aktif berubah.
+            if (isActive)
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 6,
+                  ),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryMain.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 10.5,
-                letterSpacing: -0.2,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                color: color,
-              ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Lebar 40 dipusatkan agar badge tetap di dalam lebar item
+                // (item ±65 px di layar 360) dan tidak menabrak tepi.
+                SizedBox(
+                  width: 40,
+                  height: 26,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Center(child: Icon(icon, size: 22, color: color)),
+                      if (badgeCount > 0)
+                        Positioned(
+                          top: -4,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            constraints: const BoxConstraints(minWidth: 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.statusPendingBg,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.statusPendingText,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              badgeCount > 99 ? '99+' : '$badgeCount',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.statusPendingText,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    letterSpacing: -0.2,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    color: color,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
