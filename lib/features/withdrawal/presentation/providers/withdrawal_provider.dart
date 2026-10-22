@@ -97,6 +97,20 @@ class WithdrawalController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  /// Setujui lewat token QR hasil pindai (khusus admin).
+  Future<bool> approveByQr(String token) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.approveWithdrawalByQr(token);
+      state = const AsyncValue.data(null);
+      _refresh();
+      return true;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      return false;
+    }
+  }
+
   /// Saldo ikut berubah setelah pengajuan/verifikasi admin.
   void _refresh() {
     _ref.invalidate(availableBalanceProvider);

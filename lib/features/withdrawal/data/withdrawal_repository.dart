@@ -103,4 +103,28 @@ class WithdrawalRepository {
       return (res as Map?)?['status'] as String? ?? 'REJECTED';
     });
   }
+
+  /// Rincian penarikan dari token QR (khusus admin).
+  Future<Map<String, dynamic>> getWithdrawalByQr(String token) {
+    return guardRequest(() async {
+      final res = await _client.rpc(
+        'penarikan_by_qr',
+        params: {'p_token': token},
+      );
+      if (res is Map) return res.cast<String, dynamic>();
+      throw StateError('Respons penarikan_by_qr tidak dikenali.');
+    });
+  }
+
+  /// Setujui penarikan lewat token QR (khusus admin). Mengembalikan status akhir.
+  Future<String> approveWithdrawalByQr(String token) {
+    return guardRequest(() async {
+      final res = await _client.rpc(
+        'tarik_by_qr',
+        params: {'p_token': token},
+      );
+      if (res is Map) return res['status'] as String? ?? 'APPROVED';
+      throw StateError('Respons tarik_by_qr tidak dikenali.');
+    });
+  }
 }

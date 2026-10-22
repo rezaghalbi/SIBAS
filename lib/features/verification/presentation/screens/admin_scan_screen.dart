@@ -2,13 +2,28 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
 import '../../../../core/constants/colors.dart';
+import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/glass_panel.dart';
+import '../../../../core/widgets/status_badge.dart';
+import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
 
-/// Layar Pemindai QR Admin dengan integrasi kamera mobile_scanner, input kode QR manual, dan fallback unggah file galeri
+final _currency = NumberFormat.currency(
+  locale: 'id_ID',
+  symbol: 'Rp ',
+  decimalDigits: 0,
+);
+
+enum _ScanMode { setoran, penarikan }
+
+/// Layar Pemindai QR Admin dengan integrasi kamera mobile_scanner, input kode QR
+/// manual, dan fallback unggah file galeri. Mendukung dua mode: setoran dan
+/// penarikan (persetujuan lewat token QR).
 class AdminScanScreen extends ConsumerStatefulWidget {
   const AdminScanScreen({super.key});
 
@@ -22,8 +37,14 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   final _uuidInputController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
 
+  _ScanMode _mode = _ScanMode.setoran;
   bool _isProcessing = false;
   bool _torchEnabled = false;
+
+  /// Token yang sudah disetujui; kamera tidak memproses ulang QR yang sama.
+  String? _approvedToken;
+
+  bool get _isWithdrawal => _mode == _ScanMode.penarikan;
 
   @override
   void initState() {
@@ -36,6 +57,20 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     _scannerController?.dispose();
     _uuidInputController.dispose();
     super.dispose();
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.danger),
+    );
+  }
+
+  void _processRawValue(String rawValue, {bool notify = true}) {
+    if (_isWithdrawal) {
+      _processWithdrawalQr(rawValue, notify: notify);
+    } else {
+      _processTransactionId(rawValue);
+    }
   }
 
   Future<void> _processTransactionId(String txId) async {
@@ -83,6 +118,57 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     }
   }
 
+  /// Mode penarikan: token QR (UUID 36 karakter) → data pengajuan → setujui.
+  Future<void> _processWithdrawalQr(String rawValue, {bool notify = true}) async {
+    final token = rawValue.trim();
+    if (token.isEmpty || _isProcessing) return;
+
+    if (token == _approvedToken) {
+      // Kamera bisa terus melihat QR yang sama; jangan spam pesan.
+      if (notify) _showError('QR penarikan ini sudah disetujui.');
+      return;
+    }
+    if (token.length != 36) {
+      _showError(
+        'Token QR penarikan tidak valid. Pastikan QR berasal dari pengajuan '
+        'penarikan mahasiswa.',
+      );
+      return;
+    }
+
+    setState(() => _isProcessing = true);
+    try {
+      final repo = ref.read(withdrawalRepositoryProvider);
+      final data = await repo.getWithdrawalByQr(token);
+      if (!mounted) return;
+
+      final status = data['status']?.toString().trim().toUpperCase();
+      if (status != null && status.isNotEmpty && status != 'PENDING') {
+        _showError('Pengajuan ini tidak lagi menunggu persetujuan.');
+        return;
+      }
+
+      final approved = await _WithdrawalConfirmSheet.show(
+        context,
+        data: data,
+        token: token,
+      );
+      if (!mounted || approved != true) return;
+
+      _approvedToken = token;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Penarikan disetujui.'),
+          backgroundColor: AppColors.primaryMain,
+        ),
+      );
+    } catch (error) {
+      if (mounted) _showError(pesanKesalahan(error));
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
   /// Fallback Pemindaian QR menggunakan Unggah File Gambar (Aturan PRD)
   Future<void> _pickImageFallback() async {
     try {
@@ -92,8 +178,11 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
       // Gambar tidak didekode otomatis di perangkat ini; jangan mengarang kode.
       // Admin mengetik token QR yang tampil di layar mahasiswa.
       _showManualInputDialog(
-        catatan: 'Gambar tidak dapat dibaca otomatis. Masukkan kode QR yang '
-            'tertera pada layar mahasiswa.',
+        catatan: _isWithdrawal
+            ? 'Gambar tidak dapat dibaca otomatis. Masukkan token QR penarikan '
+                'yang tertera pada layar mahasiswa.'
+            : 'Gambar tidak dapat dibaca otomatis. Masukkan kode QR yang '
+                'tertera pada layar mahasiswa.',
       );
     } catch (e) {
       if (mounted) {
@@ -108,28 +197,37 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   }
 
   void _showManualInputDialog({String? catatan}) {
+    final isWithdrawal = _isWithdrawal;
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Input Kode QR', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: Text(
+          isWithdrawal ? 'Input Token QR Penarikan' : 'Input Kode QR',
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               catatan ??
-                  'Masukkan kode QR (bukan UUID transaksi) yang tampil pada '
-                      'layar mahasiswa:',
+                  (isWithdrawal
+                      ? 'Masukkan token QR penarikan (36 karakter) yang tampil '
+                          'pada layar mahasiswa:'
+                      : 'Masukkan kode QR (bukan UUID transaksi) yang tampil pada '
+                          'layar mahasiswa:'),
               style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _uuidInputController,
-              decoration: const InputDecoration(
-                hintText: 'Contoh: f7296dec17934e57a0dc79bb057da1ab',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: isWithdrawal
+                    ? 'Tempel token QR penarikan'
+                    : 'Contoh: f7296dec17934e57a0dc79bb057da1ab',
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
@@ -142,11 +240,46 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _processTransactionId(_uuidInputController.text);
+              _processRawValue(_uuidInputController.text);
             },
-            child: const Text('Cari Transaksi'),
+            child: Text(isWithdrawal ? 'Cari Penarikan' : 'Cari Transaksi'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _modeSelector() {
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      child: SegmentedButton<_ScanMode>(
+        segments: const [
+          ButtonSegment<_ScanMode>(
+            value: _ScanMode.setoran,
+            label: Text('Setoran'),
+          ),
+          ButtonSegment<_ScanMode>(
+            value: _ScanMode.penarikan,
+            label: Text('Penarikan'),
+          ),
+        ],
+        selected: {_mode},
+        showSelectedIcon: false,
+        onSelectionChanged: _isProcessing
+            ? null
+            : (selection) => setState(() => _mode = selection.first),
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            return states.contains(WidgetState.selected)
+                ? AppColors.primaryMain
+                : Colors.black.withValues(alpha: 0.6);
+          }),
+          foregroundColor: const WidgetStatePropertyAll<Color>(Colors.white),
+          side: WidgetStatePropertyAll(
+            BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+          ),
+        ),
       ),
     );
   }
@@ -156,7 +289,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Pindai QR Setoran'),
+        title: Text(_isWithdrawal ? 'Pindai QR Penarikan' : 'Pindai QR Setoran'),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         actions: [
@@ -171,147 +304,420 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
             ),
         ],
       ),
-      body: Stack(
+      body: Column(
         children: [
-          // 1. Kamera Scanner View — web memakai panel info (mobile_scanner tanpa dukungan web)
-          if (kIsWeb)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: GlassPanel(
-                  padding: const EdgeInsets.all(24),
+          _modeSelector(),
+          Expanded(
+            child: Stack(
+              children: [
+                // 1. Kamera Scanner View — web memakai panel info (mobile_scanner tanpa dukungan web)
+                if (kIsWeb)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: GlassPanel(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.qr_code_scanner_rounded,
+                              size: 64,
+                              color: AppColors.mintAccent,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Pemindaian kamera hanya di aplikasi Android',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _isWithdrawal
+                                  ? 'Gunakan tombol input token manual atau unggah '
+                                      'gambar QR di bawah untuk menyetujui penarikan.'
+                                  : 'Gunakan tombol input kode manual atau unggah gambar QR '
+                                      'di bawah untuk memverifikasi setoran.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                else ...[
+                  MobileScanner(
+                    controller: _scannerController!,
+                    onDetect: (capture) {
+                      final barcodes = capture.barcodes;
+                      for (final barcode in barcodes) {
+                        final rawValue = barcode.rawValue;
+                        if (rawValue != null && !_isProcessing) {
+                          _processRawValue(rawValue, notify: false);
+                          break;
+                        }
+                      }
+                    },
+                  ),
+
+                  // 2. Overlay Bingkai Pemindai
+                  Center(
+                    child: Container(
+                      width: 260,
+                      height: 260,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.accent, width: 3),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                  ),
+                ],
+
+                // 3. Tombol Aksi Bawah (Manual Input & Upload Fallback)
+                Positioned(
+                  bottom: 30,
+                  left: 20,
+                  right: 20,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.qr_code_scanner_rounded,
-                        size: 64,
-                        color: AppColors.mintAccent,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Pemindaian kamera hanya di aplikasi Android',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          kIsWeb
+                              ? (_isWithdrawal
+                                  ? 'Masukkan token QR penarikan manual atau unggah gambar QR'
+                                  : 'Masukkan kode QR manual atau unggah gambar QR mahasiswa')
+                              : (_isWithdrawal
+                                  ? 'Arahkan kamera ke QR penarikan di layar mahasiswa'
+                                  : 'Arahkan kamera ke QR mahasiswa di aplikasi SIBAS'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Gunakan tombol input kode manual atau unggah gambar QR '
-                        'di bawah untuk memverifikasi setoran.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 12,
-                        ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          // Tombol Unggah File Gambar (Fallback Kamera)
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _pickImageFallback,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.primaryDark,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              icon: const Icon(Icons.photo_library_outlined, size: 20),
+                              label: const Text('Unggah Gambar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+
+                          // Tombol input kode QR manual
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showManualInputDialog(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryMain,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              icon: const Icon(Icons.keyboard_outlined, size: 20),
+                              label: Text(
+                                _isWithdrawal ? 'Ketik Token QR' : 'Ketik Kode QR',
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
-            )
-          else ...[
-            MobileScanner(
-              controller: _scannerController!,
-              onDetect: (capture) {
-                final barcodes = capture.barcodes;
-                for (final barcode in barcodes) {
-                  final rawValue = barcode.rawValue;
-                  if (rawValue != null && !_isProcessing) {
-                    _processTransactionId(rawValue);
-                    break;
-                  }
-                }
-              },
-            ),
 
-            // 2. Overlay Bingkai Pemindai
+                if (_isProcessing)
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    child: const Center(
+                      child: CircularProgressIndicator(color: AppColors.mintAccent),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Konfirmasi admin sebelum menyetujui penarikan dari token QR.
+class _WithdrawalConfirmSheet extends ConsumerStatefulWidget {
+  final Map<String, dynamic> data;
+  final String token;
+
+  const _WithdrawalConfirmSheet({required this.data, required this.token});
+
+  static Future<bool?> show(
+    BuildContext context, {
+    required Map<String, dynamic> data,
+    required String token,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _WithdrawalConfirmSheet(data: data, token: token),
+    );
+  }
+
+  @override
+  ConsumerState<_WithdrawalConfirmSheet> createState() =>
+      _WithdrawalConfirmSheetState();
+}
+
+class _WithdrawalConfirmSheetState
+    extends ConsumerState<_WithdrawalConfirmSheet> {
+  bool _busy = false;
+  String? _error;
+
+  double get _amount {
+    final value = widget.data['amount'];
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String? get _status {
+    final text = widget.data['status']?.toString().trim();
+    return (text == null || text.isEmpty) ? null : text.toUpperCase();
+  }
+
+  Future<void> _approve() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+
+    final ok = await ref
+        .read(withdrawalControllerProvider.notifier)
+        .approveByQr(widget.token);
+    if (!mounted) return;
+
+    if (!ok) {
+      final failure = ref.read(withdrawalControllerProvider).error;
+      setState(() {
+        _busy = false;
+        _error = failure == null
+            ? 'Persetujuan gagal dikirim. Coba lagi.'
+            : pesanKesalahan(failure);
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mahasiswa = widget.data['mahasiswa'];
+    final student = mahasiswa is Map ? mahasiswa : null;
+    final String name = student?['full_name']?.toString().trim() ?? '';
+    final String nim = student?['nim']?.toString().trim() ?? '';
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        24,
+        16,
+        24,
+        MediaQuery.viewInsetsOf(context).bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Center(
               child: Container(
-                width: 260,
-                height: 260,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.accent, width: 3),
-                  borderRadius: BorderRadius.circular(24),
+                  color: AppColors.borderLine,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-          ],
-
-          // 3. Tombol Aksi Bawah (Manual Input & Upload Fallback)
-          Positioned(
-            bottom: 30,
-            left: 20,
-            right: 20,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: 12),
+            Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                const Expanded(
                   child: Text(
-                    kIsWeb
-                        ? 'Masukkan kode QR manual atau unggah gambar QR mahasiswa'
-                        : 'Arahkan kamera ke QR mahasiswa di aplikasi SIBAS',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    'Konfirmasi Penarikan',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    // Tombol Unggah File Gambar (Fallback Kamera)
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _pickImageFallback,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppColors.primaryDark,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                IconButton(
+                  tooltip: 'Tutup',
+                  onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.mintSoftBackground,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.mintAccent),
+              ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    backgroundColor: AppColors.primaryMain,
+                    foregroundColor: Colors.white,
+                    child: Icon(Icons.person_rounded, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name.isEmpty ? 'Mahasiswa' : name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                            color: AppColors.primaryDark,
+                          ),
                         ),
-                        icon: const Icon(Icons.photo_library_outlined, size: 20),
-                        label: const Text('Unggah Gambar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                      ),
+                        Text(
+                          'NIM ${nim.isEmpty ? '-' : nim}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-
-                    // Tombol input kode QR manual
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Nominal Penarikan',
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _currency.format(_amount),
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.5,
+              ),
+            ),
+            if (_status != null) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: StatusBadge(status: _status!),
+              ),
+              const SizedBox(height: 12),
+            ],
+            const Text(
+              'Saldo mahasiswa berkurang setelah penarikan disetujui.',
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.statusRejectedBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.danger.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      size: 18,
+                      color: AppColors.danger,
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _showManualInputDialog(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryMain,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.danger,
                         ),
-                        icon: const Icon(Icons.keyboard_outlined, size: 20),
-                        label: const Text('Ketik Kode QR', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          if (_isProcessing)
-            Container(
-              color: Colors.black.withValues(alpha: 0.6),
-              child: const Center(
-                child: CircularProgressIndicator(color: AppColors.mintAccent),
+              ),
+            ],
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _busy ? null : _approve,
+                icon: _busy
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.check_circle_outline_rounded, size: 18),
+                label: const Text('Setujui'),
               ),
             ),
-        ],
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 48,
+              child: OutlinedButton(
+                onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                child: const Text('Tutup'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
