@@ -124,22 +124,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Logo SIBAS dengan graceful fallback
+                        // Logo resmi SIBAS dari assets/images/sibas-logo.png
                         Center(
                           child: Container(
-                            width: 76,
-                            height: 76,
+                            width: 80,
+                            height: 80,
                             decoration: BoxDecoration(
-                              color: AppColors.mintSoftBackground,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.mintAccent, width: 2),
+                              borderRadius: BorderRadius.circular(22),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.14),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
-                            padding: const EdgeInsets.all(12),
-                            // Tanpa berkas logo: ikon wordmark bawaan.
-                            child: const Icon(
-                              Icons.eco_rounded,
-                              size: 42,
-                              color: AppColors.primaryMain,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(22),
+                              child: Image.asset(
+                                'assets/images/sibas-logo.png',
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
