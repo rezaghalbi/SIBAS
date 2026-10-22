@@ -55,15 +55,11 @@ class HeroHeader extends StatelessWidget {
                           ),
                         ),
                         child: Center(
-                          child: Image.asset(
-                            'assets/images/logo_sibas.png',
-                            width: 28,
-                            height: 28,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.eco_rounded,
-                              color: Colors.white,
-                              size: 24,
-                            ),
+                          // Tanpa berkas logo: wordmark ikon, bukan aset gambar.
+                          child: const Icon(
+                            Icons.eco_rounded,
+                            color: Colors.white,
+                            size: 24,
                           ),
                         ),
                       ),

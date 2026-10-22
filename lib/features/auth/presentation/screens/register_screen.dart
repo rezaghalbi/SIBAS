@@ -101,16 +101,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               border: Border.all(color: AppColors.mintAccent, width: 2),
                             ),
                             padding: const EdgeInsets.all(10),
-                            child: Image.asset(
-                              'assets/images/logo_sibas.png',
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.person_add_rounded,
-                                  size: 36,
-                                  color: AppColors.primaryMain,
-                                );
-                              },
+                            // Tanpa berkas logo: ikon wordmark bawaan.
+                            child: const Icon(
+                              Icons.person_add_rounded,
+                              size: 36,
+                              color: AppColors.primaryMain,
                             ),
                           ),
                         ),

@@ -135,16 +135,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               border: Border.all(color: AppColors.mintAccent, width: 2),
                             ),
                             padding: const EdgeInsets.all(12),
-                            child: Image.asset(
-                              'assets/images/logo_sibas.png',
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.eco_rounded,
-                                  size: 42,
-                                  color: AppColors.primaryMain,
-                                );
-                              },
+                            // Tanpa berkas logo: ikon wordmark bawaan.
+                            child: const Icon(
+                              Icons.eco_rounded,
+                              size: 42,
+                              color: AppColors.primaryMain,
                             ),
                           ),
                         ),
