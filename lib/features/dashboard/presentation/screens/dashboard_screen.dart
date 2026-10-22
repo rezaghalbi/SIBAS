@@ -6,6 +6,7 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/saldo_hero_card.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 
 /// Halaman Dashboard Utama Mahasiswa dengan tampilan visual presisi sesuai prototype
@@ -22,6 +23,11 @@ class DashboardScreen extends ConsumerWidget {
     final userNim = user?.nim != null ? 'NIM: ${user!.nim}' : 'Mahasiswa Poltekkes';
     final balance = user?.balance ?? 0.0;
     final totalWeight = user?.totalWeight ?? 0.0;
+
+    // Rupiah hanya ditampilkan bila ada jenis sampah dengan tarif > 0.
+    final categoriesState = ref.watch(wasteCategoriesProvider);
+    final hasActiveRate =
+        categoriesState.valueOrNull?.any((item) => item.pricePerKg > 0) ?? false;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -72,7 +78,7 @@ class DashboardScreen extends ConsumerWidget {
               bottomContent: SaldoHeroCard(
                 balance: balance,
                 totalWeightKg: totalWeight,
-                hasActiveRate: true,
+                hasActiveRate: hasActiveRate,
                 onSetorPressed: () => context.push('/setor'),
               ),
             ),
