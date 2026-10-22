@@ -1188,6 +1188,7 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
             decoration: InputDecoration(
               hintText: 'Ketik HAPUS',
               helperText: 'Ketik HAPUS dengan huruf besar untuk melanjutkan.',
+              helperMaxLines: 2,
               errorText: _ketik.text.isEmpty || _siap
                   ? null
                   : 'Teks belum sama dengan HAPUS',

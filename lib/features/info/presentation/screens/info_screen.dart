@@ -210,27 +210,35 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final shown = _display(value);
     final isUnset = shown == 'Belum diatur';
+    const labelStyle = TextStyle(fontSize: 13, color: AppColors.textMuted);
+    final valueStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: isUnset ? FontWeight.w500 : FontWeight.w700,
+      fontStyle: isUnset ? FontStyle.italic : FontStyle.normal,
+      color: isUnset ? AppColors.textMuted : AppColors.textPrimary,
+    );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 130,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-            ),
-          ),
+          // Label dan nilai dibaca sebagai satu kalimat oleh pembaca layar;
+          // teks visual tidak memunculkan duplikat.
           Expanded(
-            child: Text(
-              shown,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isUnset ? FontWeight.w500 : FontWeight.w700,
-                fontStyle: isUnset ? FontStyle.italic : FontStyle.normal,
-                color: isUnset ? AppColors.textMuted : AppColors.textPrimary,
+            child: Semantics(
+              container: true,
+              label: '$label: $shown',
+              excludeSemantics: true,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 130,
+                    child: Text(label, style: labelStyle),
+                  ),
+                  Expanded(child: Text(shown, style: valueStyle)),
+                ],
               ),
             ),
           ),
