@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -32,6 +33,14 @@ final sessionEpochProvider = StateProvider<int>((ref) => 0);
 final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, AsyncValue<UserModel?>>((ref) {
   final repo = ref.watch(authRepositoryProvider);
   return CurrentUserNotifier(repo, ref);
+});
+
+/// URL bertanda tangan foto profil. Didefinisikan setelah [currentUserProvider]
+/// agar tidak circular; notifier membuang cache-nya setiap foto berubah.
+final avatarUrlProvider = FutureProvider<String?>((ref) async {
+  // Ikut state pengguna supaya URL lama tidak bertahan setelah akun berganti.
+  ref.watch(currentUserProvider);
+  return ref.watch(authRepositoryProvider).fotoUrlProfil();
 });
 
 class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
@@ -134,6 +143,7 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     required String password,
     required String fullName,
     String? nim,
+    String? phone,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -142,6 +152,7 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         password: password,
         fullName: fullName,
         nim: nim,
+        phone: phone,
       );
       // user == null: pendaftaran berhasil, menunggu verifikasi email.
       state = AsyncValue.data(user);
@@ -155,6 +166,54 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   /// Kirim ulang email verifikasi untuk akun yang belum dikonfirmasi.
   Future<void> resendVerification(String email) async {
     await _repo.resendVerificationEmail(email);
+  }
+
+  /// Simpan perubahan profil lalu segarkan state dan URL foto.
+  Future<void> ubahProfil({
+    required String nama,
+    required String nim,
+    required String phone,
+  }) async {
+    await _repo.ubahProfil(nama: nama, nim: nim, phone: phone);
+    await _muatUlangProfil();
+  }
+
+  /// Unggah foto profil baru lalu segarkan state dan URL foto.
+  Future<void> ubahFotoProfil({
+    required Uint8List bytes,
+    required String mime,
+  }) async {
+    await _repo.unggahFotoProfil(bytes, mime: mime);
+    await _muatUlangProfil();
+  }
+
+  /// Hapus foto profil lalu segarkan state dan URL foto.
+  Future<void> hapusFotoProfil() async {
+    await _repo.hapusFotoProfil();
+    await _muatUlangProfil();
+  }
+
+  /// Ubah kata sandi dengan verifikasi sandi lama. State pengguna tidak berubah.
+  Future<void> ubahSandiDenganSandiLama({
+    required String lama,
+    required String baru,
+  }) async {
+    await _repo.ubahSandiDenganSandiLama(lama: lama, baru: baru);
+  }
+
+  /// Ambil ulang profil dari server agar UI memakai data terbaru.
+  Future<void> _muatUlangProfil() async {
+    final sesi = _repo.currentSession;
+    if (sesi == null) return;
+
+    final user = await _repo.getUserProfile(
+      sesi.user.id,
+      emailFallback: sesi.user.email,
+    );
+    if (!mounted) return;
+
+    state = AsyncValue.data(user);
+    _ref.invalidate(avatarUrlProvider);
   }
 
   Future<void> logout() async {

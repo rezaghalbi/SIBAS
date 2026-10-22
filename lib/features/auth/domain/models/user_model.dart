@@ -4,6 +4,13 @@ class UserModel {
   final String email;
   final String fullName;
   final String? nim;
+
+  /// Nomor WhatsApp, boleh berformat +62/spasi/strip.
+  final String? phone;
+
+  /// Path objek foto profil di bucket privat `avatars` (`<uid>/...`).
+  final String? avatarPath;
+
   final String role; // 'mahasiswa' atau 'admin'
   final double balance;
   final double totalWeight;
@@ -18,6 +25,8 @@ class UserModel {
     required this.email,
     required this.fullName,
     this.nim,
+    this.phone,
+    this.avatarPath,
     required this.role,
     this.balance = 0.0,
     this.totalWeight = 0.0,
@@ -34,6 +43,8 @@ class UserModel {
       email: (json['email'] as String?) ?? emailFallback ?? '',
       fullName: (json['full_name'] as String?) ?? 'Pengguna SIBAS',
       nim: json['nim'] as String?,
+      phone: json['phone'] as String?,
+      avatarPath: json['avatar_path'] as String?,
       role: (json['role'] as String?) ?? 'mahasiswa',
       balance: (json['balance'] != null) ? (json['balance'] as num).toDouble() : 0.0,
       totalWeight: (json['total_weight'] != null) ? (json['total_weight'] as num).toDouble() : 0.0,
@@ -53,6 +64,8 @@ class UserModel {
       'total_weight': totalWeight,
       'created_at': createdAt?.toIso8601String(),
       if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
+      if (phone != null) 'phone': phone,
+      if (avatarPath != null) 'avatar_path': avatarPath,
     };
   }
 }

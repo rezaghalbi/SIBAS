@@ -12,6 +12,7 @@ import '../../features/history/presentation/screens/admin_history_screen.dart';
 import '../../features/history/presentation/screens/history_screen.dart';
 import '../../features/history/presentation/screens/transaction_detail_screen.dart';
 import '../../features/info/presentation/screens/info_screen.dart';
+import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/saldo/presentation/screens/saldo_screen.dart';
 import '../../features/trash_type/presentation/screens/trash_type_management_screen.dart';
@@ -63,7 +64,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // 4. Admin mencoba akses rute khusus mahasiswa
-      const ruteMahasiswa = ['/dashboard', '/setor', '/history', '/saldo', '/profile', '/info'];
+      const ruteMahasiswa = [
+        '/dashboard',
+        '/setor',
+        '/history',
+        '/saldo',
+        '/profile',
+        '/profile/edit',
+        '/info',
+      ];
       // Detail transaksi boleh dibuka admin maupun mahasiswa.
       final isRuteMahasiswa = ruteMahasiswa.contains(location) ||
           location.startsWith('/qr');
@@ -112,6 +121,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/saldo',
         builder: (context, state) => const SaldoScreen(),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const EditProfileScreen(),
       ),
       GoRoute(
         path: '/info',

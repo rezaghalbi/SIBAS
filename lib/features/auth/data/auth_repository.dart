@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/network/api_guard.dart';
 import '../domain/models/user_model.dart';
@@ -103,6 +105,7 @@ class AuthRepository {
     required String password,
     required String fullName,
     String? nim,
+    String? phone,
   }) {
     return guardRequest(() async {
       try {
@@ -112,6 +115,7 @@ class AuthRepository {
           data: {
             'full_name': fullName.trim(),
             if (nim != null && nim.trim().isNotEmpty) 'nim': nim.trim(),
+            if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
           },
         );
 
@@ -205,6 +209,30 @@ class AuthRepository {
     });
   }
 
+  /// Ubah kata sandi dengan memverifikasi sandi lama lebih dulu.
+  Future<void> ubahSandiDenganSandiLama({
+    required String lama,
+    required String baru,
+  }) async {
+    final email = _client.auth.currentUser?.email;
+    if (email == null) {
+      throw const AuthException('Sesi tidak ditemukan. Masuk ulang.');
+    }
+
+    try {
+      await guardRequest(
+        () => _client.auth.signInWithPassword(email: email, password: lama),
+      );
+    } on AuthException {
+      // Server menolak kredensial; jangan teruskan pesan mentahnya.
+      throw const AuthException('Kata sandi saat ini salah.');
+    }
+
+    await guardRequest(
+      () => _client.auth.updateUser(UserAttributes(password: baru)),
+    );
+  }
+
   /// Mengirim permintaan ubah email. Supabase mengirim tautan konfirmasi ke
   /// email baru (dan email lama bila "secure email change" aktif).
   Future<void> changeEmail(String newEmail) async {
@@ -222,19 +250,104 @@ class AuthRepository {
     );
   }
 
-  /// Perbarui nama lengkap di tabel `profiles`.
-  Future<void> updateFullName(String fullName) async {
-    final uid = _client.auth.currentUser?.id;
-    if (uid == null) {
-      throw const AuthException('Sesi tidak ditemukan. Masuk ulang.');
-    }
+  /// Ubah nama, NIM, dan nomor WA lewat RPC server (validasi + trigger).
+  Future<void> ubahProfil({
+    required String nama,
+    required String nim,
+    required String phone,
+  }) async {
+    await guardRequest(
+      () => _client.rpc('ubah_profil_sendiri', params: {
+        'p_full_name': nama.trim(),
+        'p_nim': nim.trim(),
+        'p_phone': phone.trim(),
+      }),
+    );
+  }
 
-    await guardRequest(() async {
+  /// Path avatar_path tersimpan, atau null bila profil belum punya foto.
+  Future<String?> _avatarPathTersimpan(String uid) async {
+    final data = await _client
+        .from('profiles')
+        .select('avatar_path')
+        .eq('id', uid)
+        .maybeSingle();
+    return data?['avatar_path'] as String?;
+  }
+
+  /// Unggah foto profil ke bucket privat `avatars` lalu simpan path-nya.
+  Future<String?> unggahFotoProfil(Uint8List bytes, {required String mime}) {
+    return guardRequest(() async {
+      final user = _client.auth.currentUser;
+      if (user == null) {
+        throw const AuthException('Sesi tidak ditemukan. Masuk ulang.');
+      }
+      final uid = user.id;
+
+      final ext = switch (mime) {
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        _ => 'jpg',
+      };
+      final path = '$uid/foto-${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final lama = await _avatarPathTersimpan(uid);
+
+      await _client.storage.from('avatars').uploadBinary(
+            path,
+            bytes,
+            fileOptions: FileOptions(contentType: mime, upsert: false),
+          );
       await _client
           .from('profiles')
-          .update({'full_name': fullName.trim()})
-          .eq('id', uid);
+          .update({'avatar_path': path}).eq('id', uid);
+
+      // Objek lama tidak wajib terhapus; kegagalan hapus diabaikan.
+      if (lama != null && lama != path) {
+        try {
+          await _client.storage.from('avatars').remove([lama]);
+        } catch (_) {
+          // Diabaikan: path profil sudah menunjuk foto baru.
+        }
+      }
+      return path;
     });
+  }
+
+  /// Hapus foto profil: kosongkan avatar_path lalu buang objeknya.
+  Future<void> hapusFotoProfil() {
+    return guardRequest(() async {
+      final uid = _client.auth.currentUser?.id;
+      if (uid == null) {
+        throw const AuthException('Sesi tidak ditemukan. Masuk ulang.');
+      }
+
+      final lama = await _avatarPathTersimpan(uid);
+      await _client
+          .from('profiles')
+          .update({'avatar_path': null}).eq('id', uid);
+      if (lama != null) {
+        try {
+          await _client.storage.from('avatars').remove([lama]);
+        } catch (_) {
+          // Diabaikan: avatar_path sudah null, objek boleh tertinggal.
+        }
+      }
+    });
+  }
+
+  /// URL bertanda tangan foto profil (1 jam). Null bila belum ada foto atau
+  /// gagal; pemanggil tidak perlu menangani error.
+  Future<String?> fotoUrlProfil() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return null;
+
+    try {
+      final path = await _avatarPathTersimpan(uid);
+      if (path == null || path.isEmpty) return null;
+      return await _client.storage.from('avatars').createSignedUrl(path, 3600);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Logout dari semua perangkat.
