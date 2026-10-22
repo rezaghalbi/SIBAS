@@ -36,6 +36,21 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
 
   String? _status;
   int? _days;
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(
+      text: ref.read(adminFilterProvider).query,
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   bool _match(Map<String, dynamic> item) {
     if (_status != null &&
@@ -109,6 +124,8 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final txState = ref.watch(adminTransactionsProvider);
+    final filter = ref.watch(adminFilterProvider);
+    final searching = filter.query.trim().isNotEmpty;
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
     final currency =
         NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -142,6 +159,57 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.cardSurface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.borderLine),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (val) {
+                    ref.read(adminFilterProvider.notifier).update(
+                          (f) => f.copyWith(query: val),
+                        );
+                  },
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    hintText: 'Cari nama, NIM, atau kode transaksi...',
+                    hintMaxLines: 1,
+                    hintStyle: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textMuted,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: AppColors.primaryMain,
+                    ),
+                    suffixIcon: filter.query.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Hapus pencarian',
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              size: 18,
+                              color: AppColors.textMuted,
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                              ref.read(adminFilterProvider.notifier).update(
+                                    (f) => f.copyWith(query: ''),
+                                  );
+                            },
+                          ),
+                  ),
+                ),
+              ),
+            ),
             SizedBox(
               height: 54,
               child: ListView.separated(
@@ -202,10 +270,12 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                 data: (all) {
                   final list = all.where(_match).toList();
                   if (list.isEmpty) {
-                    return const Center(
+                    return Center(
                       child: Text(
-                        'Belum ada riwayat penyetoran pada filter ini.',
-                        style: TextStyle(color: AppColors.textMuted),
+                        searching
+                            ? 'Tidak ada riwayat yang cocok dengan pencarian.'
+                            : 'Belum ada riwayat penyetoran pada filter ini.',
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
                     );
                   }
