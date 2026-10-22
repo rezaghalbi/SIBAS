@@ -58,3 +58,32 @@ Mesin pengembangan **tidak memiliki** Flutter/Dart SDK. `flutter analyze`, `flut
 - Pola kerja: selesaikan satu unit kerja → commit lokal → tanya user → push → baca CI.
 - Jangan menggabungkan push dengan pekerjaan yang belum selesai.
 
+## 9. Aturan Pesan Commit
+
+Tanpa prefix gaya Conventional Commits (`feat:`, `fix:`, `chore:`, `ft`, `wip`, dll). Tulis kalimat teknis biasa yang menjelaskan apa yang berubah.
+
+Aturan:
+- Baris pertama: perintah imperatif, ≤ 72 karakter, bahasa Indonesia teknis. Contoh: `Tambah validasi NIM unik pada registrasi mahasiswa`.
+- Baris kedua kosong.
+- Isi (opsional, maks 4 baris): **apa** yang berubah dan **mengapa**, sebut nama file/fungsi/RPC bila relevan. Tanpa basa-basi, tanpa pemasaran, tanpa kalimat gaya AI.
+- Satu commit = satu perubahan logis. Jangan campur refactor dengan perubahan perilaku.
+- Dilarang: `update`, `fix bug`, `perbaikan`, `misc`, `changes`, `refactor`, `WIP`.
+- Sebutkan bukti verifikasi bila ada (nama workflow/run id), bukan klaim.
+
+Contoh baik:
+```
+Batasi registrasi hanya untuk role mahasiswa
+
+Role admin tidak lagi bisa dipilih dari klien. Role ditentukan di server
+melalui seed, dan signUp menolak nilai role selain 'mahasiswa'.
+```
+
+Contoh buruk:
+```
+fix: perbaiki bug login
+```
+```
+feat: improve UI glassmorphism ✨
+```
+
+
