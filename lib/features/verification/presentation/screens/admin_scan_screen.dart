@@ -64,7 +64,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Terjadi kesalahan: ${e.toString()}'),
+            content: Text('Transaksi tidak dapat diproses. Periksa koneksi lalu coba lagi.'),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -80,13 +80,17 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
       final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
       if (image == null) return;
 
-      // Pada perangkat nyata atau fallback desktop/web, buka prompt dialog konfirmasi UUID/analisis gambar
-      _showManualInputDialog(prefilled: 'tx_${image.name.hashCode.abs()}');
+      // Gambar tidak didekode otomatis di perangkat ini; jangan mengarang kode.
+      // Admin mengetik token QR yang tampil di layar mahasiswa.
+      _showManualInputDialog(
+        catatan: 'Gambar tidak dapat dibaca otomatis. Masukkan kode QR yang '
+            'tertera pada layar mahasiswa.',
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal membuka galeri: ${e.toString()}'),
+            content: Text('Gagal membuka galeri. Periksa izin penyimpanan lalu coba lagi.'),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -94,29 +98,28 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     }
   }
 
-  void _showManualInputDialog({String? prefilled}) {
-    if (prefilled != null) {
-      _uuidInputController.text = prefilled;
-    }
+  void _showManualInputDialog({String? catatan}) {
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Input Manual UUID', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        title: const Text('Input Kode QR', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Masukkan kode UUID transaksi yang tertera pada ponsel mahasiswa:',
-              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            Text(
+              catatan ??
+                  'Masukkan kode QR (bukan UUID transaksi) yang tampil pada '
+                      'layar mahasiswa:',
+              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _uuidInputController,
               decoration: const InputDecoration(
-                hintText: 'Contoh: 123e4567-e89b-12d3-a456-426614174000',
+                hintText: 'Contoh: f7296dec17934e57a0dc79bb057da1ab',
                 border: OutlineInputBorder(),
               ),
             ),
