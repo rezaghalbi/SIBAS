@@ -30,6 +30,8 @@ lib/
     history/
     withdrawal/              # penarikan saldo
     trash_type/              # master jenis sampah
+    students/                # daftar mahasiswa (admin, baca saja)
+    info/                    # pusat informasi + pengaturan aplikasi
 supabase/migrations/         # schema, RLS, RPC (satu migration per perubahan)
 ```
 
@@ -77,6 +79,17 @@ Isi migration:
   catatan per pengguna/anon per jam.
 - `20261028000000_flag_hapus_akun.sql` — kolom `profiles.deleted_at`, RPC
   `hapus_akun_sendiri()`, dan pengecualian trigger untuk anonimisasi akun.
+- `20261029000000_profil_lengkap.sql` — kolom `phone`/`avatar_path`, bucket
+  `avatars`, RPC `ubah_profil_sendiri`, validasi profil.
+- `20261030000000_audit_penarikan.sql` — audit status penarikan dan detail
+  penarikan untuk admin.
+- `20261031000000_foto_jenis_sampah.sql` — kolom foto jenis sampah di bucket
+  `trash-types`.
+- `20261032000000_qr_penarikan.sql` — `qr_token` penarikan dan RPC
+  `get_withdrawal_by_qr`.
+- `20261033000000_pengaturan_aplikasi.sql` — tabel `app_settings` (satu baris),
+  RPC `get_app_settings`/`update_app_settings`, dan `create_deposit` memakai
+  `qr_ttl_minutes` dari pengaturan (default 120 menit).
 
 ## Perintah
 
@@ -103,7 +116,7 @@ integration test.
 Folder `android/` sudah ada di repo, jadi langkah CI "Generate Android
 Scaffolding if Missing" tidak lagi membuat ulang scaffold. `applicationId`
 adalah `com.sibas.poltekkes.sibas`. `versionCode`/`versionName` membaca
-`version:` di `pubspec.yaml` (saat ini `1.0.0+1`); naikkan nilai itu setiap
+`version:` di `pubspec.yaml` (saat ini `1.0.1+2`); naikkan nilai itu setiap
 rilis.
 
 `android/app/build.gradle.kts` membaca `android/key.properties` (tidak
@@ -231,8 +244,38 @@ dan menghapus `banned_until` pada `auth.users` serta flag `deleted_at` pada
 Kontak admin resmi ditampilkan di Pusat Informasi
 (`lib/features/info/presentation/screens/info_screen.dart`): nomor
 `+62 813-8902-1668` dengan tombol salin (nilai yang disalin
-`081389021668`). Email, lokasi, dan jam layanan masih berupa konstanta
-`"Belum diatur"` sampai admin mengisinya.
+`081389021668`). Email, lokasi, dan jam layanan dibaca dari `app_settings`
+lewat `appSettingsProvider`; bila kosong/gagal dimuat tampil "Belum diatur".
+Admin mengisinya di **Pengaturan Aplikasi** (`/admin/settings`).
+
+## Data Mahasiswa & Pengaturan Aplikasi
+
+Admin punya dua layar operasional:
+
+- **Data Mahasiswa** (`/admin/students`) — daftar akun role `mahasiswa` dari
+  `profiles` (RLS `profiles_select` mengizinkan admin membaca semua profil),
+  pencarian lokal nama/NIM/email/WA lewat `saringMahasiswa`, dan detail akun.
+  Layar ini baca-saja; perubahan data akun tidak dilakukan dari aplikasi.
+- **Pengaturan Aplikasi** (`/admin/settings`) — `qr_ttl_minutes` (5–1440,
+  default 120) dan kontak admin (email, lokasi, jam layanan). Disimpan ke
+  `app_settings` lewat RPC `update_app_settings`; hanya admin. Perubahan TTL
+  berlaku untuk pengajuan setoran baru, QR yang sudah terbit tidak berubah.
+
+Keduanya dibuka dari kartu menu di layar **Kelola Jenis Sampah** dan
+menggunakan route top-level (tanpa bottom navigation), sama seperti layar
+detail admin lain.
+
+## Reset Sandi & QR Penarikan
+
+- Lupa sandi mengirim tautan ke `${origin}/reset-password`
+  (`resetPasswordForEmail`); layar atur sandi baru dipaksa lewat
+  `passwordRecoveryProvider`. Tautan hanya bekerja bila **Site URL** dan
+  **Redirect URLs** di Dashboard Supabase sudah memuat domain aplikasi dan
+  SMTP sudah dikonfigurasi. Keduanya langkah dashboard, bukan kode repo.
+- Penarikan yang masih PENDING menyimpan `qr_token`; mahasiswa menampilkan QR
+  dari layar Tarik atau detail penarikan, admin memindainya di
+  `/admin/scan` mode penarikan (`get_withdrawal_by_qr`). Token mentah tidak
+  ditampilkan di UI admin.
 
 ## Ekspor CSV
 
@@ -246,9 +289,10 @@ papan klip". Ekspor setoran mengikuti filter status/tanggal yang sedang tampil.
 
 ## Pemindai QR
 
-`/admin/scan` memakai `mobile_scanner` hanya di Android. Di web kamera tidak
-dipakai karena `mobile_scanner` tidak mendukung web; layar menampilkan panel
-info, input kode QR manual, dan unggah gambar QR dari galeri.
+`/admin/scan` memakai `mobile_scanner` 5.x di Android dan web (kamera
+peramban, izin diminta saat layar dibuka). Bila kamera gagal/izin ditolak,
+layar menampilkan panel info, input kode QR manual, dan unggah gambar QR dari
+galeri. Tombol senter hanya muncul di Android/iOS.
 
 ## Penanganan Error & Cache
 
@@ -267,6 +311,9 @@ info, input kode QR manual, dan unggah gambar QR dari galeri.
   tersedia.".
 - `test/api_guard_test.dart` menguji `guardRequest` dan `pesanKesalahan`
   (timeout, status offline, pemetaan pesan, penyamaran pesan teknis).
+- `test/pengaturan_app_test.dart` menguji validasi TTL/email/teks dan parser
+  `AppSettingsModel`; `test/student_filter_test.dart` menguji pencarian
+  mahasiswa dan fallback `StudentModel`.
 - Telemetri error klien memakai tabel `client_error_logs` dan RPC
   `log_client_error(p_pesan, p_detail, p_platform, p_versi)`. RLS aktif tanpa
   policy baca/tulis untuk klien; akses langsung `anon`/`authenticated` dicabut
@@ -278,13 +325,13 @@ info, input kode QR manual, dan unggah gambar QR dari galeri.
 
 Semua penulisan transaksi/saldo lewat RPC `security definer`, bukan langsung
 dari klien. `expire_stale_transactions()` hanya untuk `service_role` (cron).
-Tabel berikut memuat 13 RPC aplikasi yang benar-benar ada di migration;
+Tabel berikut memuat 15 RPC aplikasi yang benar-benar ada di migration;
 `handle_new_user()` dan `guard_profile_update()` adalah fungsi trigger, bukan
 RPC yang dipanggil klien.
 
 | RPC | Keterangan |
 | --- | --- |
-| `create_deposit(p_trash_type_id uuid, p_weight numeric)` | Buat setoran PENDING + QR 2 jam |
+| `create_deposit(p_trash_type_id uuid, p_weight numeric)` | Buat setoran PENDING + QR sesuai `qr_ttl_minutes` (default 120 menit) |
 | `get_transaction_by_qr(p_code text)` | Cari transaksi dari token/id QR (admin) |
 | `approve_transaction(p_transaction_id uuid)` | Setujui setoran, tambah saldo & berat |
 | `reject_transaction(p_transaction_id uuid, p_reason text)` | Tolak setoran + alasan |
@@ -297,10 +344,12 @@ RPC yang dipanggil klien.
 | `admin_metrics()` | Metrik dashboard admin: total berat APPROVED dan jumlah per status (JSON) |
 | `log_client_error(p_pesan text, p_detail text, p_platform text, p_versi text)` | Catat error klien, maksimal 20 per pengguna/anon per jam |
 | `hapus_akun_sendiri()` | Tandai akun terhapus, anonimkan identitas, cabut sesi, blokir login |
+| `get_app_settings()` | Baca `qr_ttl_minutes` dan kontak admin (satu baris `app_settings`) |
+| `update_app_settings(p_qr_ttl_minutes integer, p_contact_email text, p_contact_location text, p_contact_hours text)` | Ubah pengaturan global; hanya admin, TTL 5–1440 menit, email divalidasi |
 
 Tabel: `profiles`, `trash_types`, `transactions`, `transaction_audits`,
-`withdrawals`, `client_error_logs`. Schema hanya diubah lewat migration baru di
-`supabase/migrations/`.
+`withdrawals`, `client_error_logs`, `app_settings`. Schema hanya diubah lewat
+migration baru di `supabase/migrations/`.
 
 ## Verifikasi
 
@@ -321,14 +370,21 @@ gh run view <run-id> --log-failed
 
 ## Keterbatasan
 
-- Logo masih placeholder 1x1 px (`assets/images/logo_sibas.png`); ganti dengan
-  aset asli sebelum rilis.
 - Flutter dipin `3.47.7` di kedua workflow karena `lib/` memakai
   `withValues(alpha:)`. Jangan hapus pin tanpa menyesuaikan seluruh kode.
 - Deploy produksi Vercel hanya dari `push` ke `main`; PR hanya preview.
-- Uji yang ada baru unit test; belum ada widget/integration test. Job pg_cron
-  juga perlu pg_cron aktif di project Supabase.
+- Uji yang ada baru unit test; belum ada widget/integration test. Uji kamera
+  dan PWA di perangkat nyata (Android/iOS/Windows) belum dilakukan dari repo.
+- Site URL Supabase, Redirect URL `https://sibas.vercel.app/reset-password`,
+  dan SMTP belum diatur di dashboard; reset/verifikasi email belum andal
+  sampai langkah dashboard itu selesai.
+- iOS belum ada (`ios/` tidak dibuat) karena mesin pengembangan tidak punya
+  Flutter SDK; target rilis saat ini Android + web.
+- Bila `ANDROID_KEYSTORE_BASE64` kosong, APK CI memakai debug key dan tidak
+  bisa di-update di atas versi lama. Buat keystore rilis dan isi secrets
+  (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+  `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`) sebelum distribusi.
 - Tidak ada pemulihan akun dari aplikasi (harus lewat Dashboard Supabase) dan
   belum ada push notification.
-- Bila `ANDROID_KEYSTORE_BASE64` kosong, APK CI memakai debug key dan tidak
-  bisa di-update di atas versi lama.
+- Layar Data Mahasiswa bersifat baca-saja; koreksi data akun dilakukan lewat
+  Dashboard Supabase.

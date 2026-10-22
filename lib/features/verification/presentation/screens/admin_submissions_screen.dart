@@ -42,6 +42,21 @@ class _AdminSubmissionsScreenState
 
   _SubmissionTab _tab = _SubmissionTab.setoran;
   String? _busyId;
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(
+      text: ref.read(adminFilterProvider).query,
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,10 +128,64 @@ class _AdminSubmissionsScreenState
   List<Widget> _setoranSlivers() {
     final txState = ref.watch(adminTransactionsProvider);
     final filter = ref.watch(adminFilterProvider);
+    final searching = filter.query.trim().isNotEmpty;
 
     return [
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        sliver: SliverToBoxAdapter(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.cardSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.borderLine),
+            ),
+            child: TextField(
+              controller: _searchController,
+              textInputAction: TextInputAction.search,
+              onChanged: (val) {
+                ref.read(adminFilterProvider.notifier).update(
+                      (f) => f.copyWith(query: val),
+                    );
+              },
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                hintText: 'Cari nama, NIM, atau kode transaksi...',
+                hintMaxLines: 1,
+                hintStyle: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textMuted,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: AppColors.primaryMain,
+                ),
+                suffixIcon: filter.query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Hapus pencarian',
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: AppColors.textMuted,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          ref.read(adminFilterProvider.notifier).update(
+                                (f) => f.copyWith(query: ''),
+                              );
+                        },
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
         sliver: SliverToBoxAdapter(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -161,7 +230,9 @@ class _AdminSubmissionsScreenState
                 child: _emptyCard(
                   icon: Icons.inbox_rounded,
                   title: 'Belum ada setoran',
-                  message: 'Tidak ada setoran pada filter status ini.',
+                  message: searching
+                      ? 'Tidak ada setoran yang cocok dengan pencarian.'
+                      : 'Tidak ada setoran pada filter status ini.',
                 ),
               ),
             );

@@ -232,5 +232,6 @@ validator.
 ## Pertanyaan terbuka
 
 - Nomor WA wajib atau opsional saat registrasi?
-- Email resmi, lokasi unit, jam layanan admin (sekarang "Belum diatur").
+- Email resmi, lokasi unit, jam layanan admin — kini diisi admin lewat
+  Pengaturan Aplikasi (`app_settings`), bukan konstanta.
 - 5 tab bottom nav disetujui, atau Setor/Tarik digabung satu layar?

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/hero_header.dart';
+import '../providers/app_settings_provider.dart';
 
 /// Kontak resmi unit bank sampah. Isi hanya setelah admin menetapkan nilainya;
 /// jangan mengarang nomor telepon/email. String kosong otomatis tampil
@@ -12,19 +14,19 @@ const String _adminPhone = '+62 813-8902-1668';
 
 /// Nomor mentah untuk aksi salin (tanpa spasi dan tanda hubung).
 const String _adminPhoneRaw = '081389021668';
-const String _adminEmail = 'Belum diatur';
-const String _adminLocation = 'Belum diatur';
-const String _adminHours = 'Belum diatur';
 
 const String _responseNote =
     'Pengaduan ditanggapi maksimal 1×24 jam pada hari kerja';
 
 /// Pusat informasi statis: kontak admin, jam layanan, dan alur pengaduan.
-class InfoScreen extends StatelessWidget {
+class InfoScreen extends ConsumerWidget {
   const InfoScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Saat memuat atau gagal, nilai tampil "Belum diatur" — bukan data karangan.
+    final settings = ref.watch(appSettingsProvider).valueOrNull;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
@@ -69,27 +71,36 @@ class InfoScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                const _SectionCard(
+                _SectionCard(
                   title: 'Kontak Admin',
                   icon: Icons.support_agent_rounded,
                   children: [
-                    _InfoRow(
+                    const _InfoRow(
                       label: 'Telepon/WhatsApp',
                       value: _adminPhone,
                       copyValue: _adminPhoneRaw,
                     ),
-                    _InfoRow(label: 'Email', value: _adminEmail),
-                    _InfoRow(label: 'Lokasi Unit', value: _adminLocation),
+                    _InfoRow(
+                      label: 'Email',
+                      value: settings?.contactEmail ?? '',
+                    ),
+                    _InfoRow(
+                      label: 'Lokasi Unit',
+                      value: settings?.contactLocation ?? '',
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                const _SectionCard(
+                _SectionCard(
                   title: 'Jam Layanan',
                   icon: Icons.schedule_rounded,
                   children: [
-                    _InfoRow(label: 'Hari & Jam', value: _adminHours),
-                    SizedBox(height: 4),
-                    Text(
+                    _InfoRow(
+                      label: 'Hari & Jam',
+                      value: settings?.contactHours ?? '',
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
                       _responseNote,
                       style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                     ),
