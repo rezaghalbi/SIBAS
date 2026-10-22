@@ -2,10 +2,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../providers/trash_type_provider.dart';
@@ -66,6 +68,28 @@ class _TrashTypeManagementScreenState
               ),
             ),
           ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  _menuAdmin(
+                    icon: Icons.people_alt_rounded,
+                    title: 'Data Mahasiswa',
+                    subtitle: 'Akun, saldo, dan berat terkumpul',
+                    route: '/admin/students',
+                  ),
+                  const SizedBox(height: 12),
+                  _menuAdmin(
+                    icon: Icons.settings_rounded,
+                    title: 'Pengaturan Aplikasi',
+                    subtitle: 'Masa berlaku QR dan kontak admin',
+                    route: '/admin/settings',
+                  ),
+                ],
+              ),
+            ),
+          ),
           state.when(
             data: (list) {
               if (list.isEmpty) {
@@ -110,6 +134,72 @@ class _TrashTypeManagementScreenState
     if (price <= 0) return 'Non-rupiah (kg saja)';
     final unit = ((item['unit'] as String?) ?? '').trim();
     return '${_currency.format(price)} / ${unit.isEmpty ? 'kg' : unit}';
+  }
+
+  /// Pintasan ke layar admin lain. Dua panel kaca = batas blur layar ini.
+  Widget _menuAdmin({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String route,
+  }) {
+    return GlassPanel(
+      radius: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => context.push(route),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.mintSoftBackground,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, size: 20, color: AppColors.primaryMain),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: AppColors.textMuted,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _thumbCard(String? imagePath) {

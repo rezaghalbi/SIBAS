@@ -12,10 +12,12 @@ import '../../features/deposit/presentation/screens/setor_screen.dart';
 import '../../features/history/presentation/screens/admin_history_screen.dart';
 import '../../features/history/presentation/screens/history_screen.dart';
 import '../../features/history/presentation/screens/transaction_detail_screen.dart';
+import '../../features/info/presentation/screens/admin_settings_screen.dart';
 import '../../features/info/presentation/screens/info_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/saldo/presentation/screens/saldo_screen.dart';
+import '../../features/students/presentation/screens/admin_students_screen.dart';
 import '../../features/trash_type/presentation/screens/trash_type_management_screen.dart';
 import '../../features/verification/presentation/providers/verification_provider.dart';
 import '../../features/verification/presentation/screens/admin_dashboard_screen.dart';
@@ -202,6 +204,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = state.pathParameters['id'] ?? '';
           return WithdrawalDetailScreen(withdrawalId: id);
         },
+      ),
+      GoRoute(
+        path: '/admin/students',
+        builder: (context, state) => const AdminStudentsScreen(),
+      ),
+      GoRoute(
+        path: '/admin/settings',
+        builder: (context, state) => const AdminSettingsScreen(),
       ),
 
       // Admin — shell terpisah agar tiap peran punya riwayat tab sendiri.
