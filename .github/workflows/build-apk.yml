@@ -49,6 +49,44 @@ jobs:
             flutter create . --platforms=android --org com.sibas.poltekkes
           fi
 
+      # Sementara: ambil scaffolding android/ hasil `flutter create` agar bisa
+      # di-commit ke repo (mesin dev tidak punya SDK Flutter).
+      - name: Ekspor scaffolding Android
+        if: github.event_name == 'pull_request'
+        run: |
+          flutter create /tmp/scaffold --platforms=android \
+            --org com.sibas.poltekkes --project-name sibas > /dev/null
+          tar -czf /tmp/android-scaffold.tgz -C /tmp/scaffold android
+
+      - name: Upload scaffolding Android
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-scaffold
+          path: /tmp/android-scaffold.tgz
+          retention-days: 2
+
+      # Dipakai setelah android/ masuk repo: android/app/build.gradle.kts
+      # membaca android/key.properties bila ada.
+      - name: Siapkan signing Android
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 kosong; APK ditandatangani debug key dan tidak bisa di-update di atas versi lama."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
+          cat > android/key.properties <<EOF
+          storeFile=keystore.jks
+          storePassword=$ANDROID_STORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
       - name: Build Android APK (Release)
         run: |
           flutter build apk --release --no-tree-shake-icons \
