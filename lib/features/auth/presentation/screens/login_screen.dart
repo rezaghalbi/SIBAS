@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/glass_panel.dart';
 import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
 
@@ -114,15 +115,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  side: const BorderSide(color: AppColors.borderLine, width: 1),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(26.0),
-                  child: Form(
+              child: GlassPanel(
+                radius: 24,
+                padding: const EdgeInsets.all(26.0),
+                child: Form(
                     key: _formKey,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -401,7 +397,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                     ),
                   ),
-                ),
               ),
             ),
           ),

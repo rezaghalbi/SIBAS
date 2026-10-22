@@ -9,6 +9,8 @@ import '../../../../core/widgets/tx_list_item.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
+import '../../../notification/presentation/widgets/notification_sheet.dart';
+import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 
 /// Halaman Dashboard Utama Mahasiswa dengan tampilan kaca SIBAS.
 class DashboardScreen extends ConsumerWidget {
@@ -35,6 +37,15 @@ class DashboardScreen extends ConsumerWidget {
             .length ??
         0;
 
+    // Penarikan pending ikut menambah badge lonceng.
+    final pendingWithdrawalCount = ref
+            .watch(studentWithdrawalsProvider)
+            .valueOrNull
+            ?.where((item) => item.isPending)
+            .length ??
+        0;
+    final notificationCount = pendingCount + pendingWithdrawalCount;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
@@ -44,48 +55,106 @@ class DashboardScreen extends ConsumerWidget {
             child: HeroHeader(
               title: 'Halo, $userName',
               subtitle: userNim,
-              trailing: IconButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                      title: const Text('Keluar Aplikasi', style: TextStyle(fontWeight: FontWeight.w700)),
-                      content: const Text('Apakah Anda yakin ingin keluar dari akun SIBAS?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Batal', style: TextStyle(color: AppColors.textMuted)),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.danger,
-                            foregroundColor: Colors.white,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Notifikasi',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    onPressed: () => showNotificationSheet(context),
+                    icon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            ref.read(currentUserProvider.notifier).logout();
-                          },
-                          child: const Text('Keluar'),
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
+                        if (notificationCount > 0)
+                          Positioned(
+                            top: -4,
+                            right: -4,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              constraints: const BoxConstraints(minWidth: 16),
+                              decoration: BoxDecoration(
+                                color: AppColors.statusPendingBg,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.statusPendingText),
+                              ),
+                              child: Text(
+                                notificationCount > 9 ? '9+' : '$notificationCount',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.statusPendingText,
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
-                  );
-                },
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.logout_rounded, color: Colors.white, size: 20),
-                ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    tooltip: 'Keluar',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          title: const Text('Keluar Aplikasi', style: TextStyle(fontWeight: FontWeight.w700)),
+                          content: const Text('Apakah Anda yakin ingin keluar dari akun SIBAS?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('Batal', style: TextStyle(color: AppColors.textMuted)),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.danger,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                ref.read(currentUserProvider.notifier).logout();
+                              },
+                              child: const Text('Keluar'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.logout_rounded, color: Colors.white, size: 20),
+                    ),
+                  ),
+                ],
               ),
-              bottomContent: SaldoHeroCard(
-                balance: balance,
-                totalWeightKg: totalWeight,
-                hasActiveRate: hasActiveRate,
-                onSetorPressed: () => context.push('/setor'),
+              bottomContent: GestureDetector(
+                onTap: () => context.push('/saldo'),
+                child: SaldoHeroCard(
+                  balance: balance,
+                  totalWeightKg: totalWeight,
+                  hasActiveRate: hasActiveRate,
+                  onSetorPressed: () => context.push('/setor'),
+                ),
               ),
             ),
           ),

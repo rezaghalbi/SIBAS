@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -187,6 +188,41 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Text('Gagal memuat metrik: $e'),
+              ),
+            ),
+          ),
+
+          // Pintasan pengelolaan jenis sampah & tarif
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            sliver: SliverToBoxAdapter(
+              child: GlassPanel(
+                radius: 18,
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    onTap: () => context.push('/admin/trash-types'),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    leading: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.mintSoftBackground,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.category_rounded, size: 18, color: AppColors.primaryMain),
+                    ),
+                    title: const Text(
+                      'Kelola Jenis Sampah',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    ),
+                    subtitle: const Text(
+                      'Atur kategori dan tarif per kg',
+                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textMuted),
+                  ),
+                ),
               ),
             ),
           ),
