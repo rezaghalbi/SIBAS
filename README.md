@@ -75,6 +75,8 @@ Isi migration:
 - `20261027000000_log_klien.sql` — tabel `client_error_logs` dan RPC
   `log_client_error`; RLS aktif tanpa policy baca/tulis langsung, dibatasi 20
   catatan per pengguna/anon per jam.
+- `20261028000000_flag_hapus_akun.sql` — kolom `profiles.deleted_at`, RPC
+  `hapus_akun_sendiri()`, dan pengecualian trigger untuk anonimisasi akun.
 
 ## Perintah
 
@@ -190,6 +192,40 @@ kosong (`''`) — `confirmation_token`, `recovery_token`, `email_change`,
   Dashboard Supabase, bukan di repo. Admin project perlu memeriksa nilainya
   sebelum rilis.
 
+## Hapus Akun
+
+Halaman Profil punya menu "Hapus Akun". Pengguna wajib mengetik `HAPUS` untuk
+mengaktifkan tombol konfirmasi, lalu aplikasi memanggil RPC
+`hapus_akun_sendiri()` dan logout ke `/login` setelah berhasil.
+
+Akun tidak dihapus barisnya, hanya ditandai:
+
+- `profiles.deleted_at` diisi, `full_name` menjadi `Akun dihapus`, serta `nim`
+  dan `email` dikosongkan.
+- Semua baris `auth.sessions` pengguna dihapus dan
+  `auth.users.banned_until` di-set `infinity`, sehingga login berikutnya
+  diblokir.
+
+Riwayat setoran dan penarikan **tidak dihapus** karena FK
+`transactions.mahasiswa_id` dan `withdrawals.mahasiswa_id` memakai
+`ON DELETE CASCADE`; menghapus baris `auth.users` akan ikut menghapus riwayat
+audit.
+
+RPC menolak dengan pesan Indonesia bila `available_balance` masih lebih dari
+nol ("Saldo masih ada. Tarik saldo sampai nol sebelum menghapus akun.") atau
+masih ada transaksi/penarikan PENDING ("Masih ada pengajuan yang belum
+selesai. Tunggu validasi admin.").
+
+Pengecualian trigger `guard_profile_update` hanya aktif di dalam fungsi
+`hapus_akun_sendiri()`, yang memanggil
+`set_config('sibas.hapus_akun', 'on', true)`. Nilai itu berlaku lokal untuk
+transaksi fungsi tersebut, jadi klien tidak bisa memalsukannya lewat update
+biasa.
+
+Pemulihan tidak tersedia di aplikasi. Admin harus membuka Dashboard Supabase
+dan menghapus `banned_until` pada `auth.users` serta flag `deleted_at` pada
+`profiles` bila akun memang perlu dipulihkan.
+
 ## Pusat Informasi
 
 Kontak admin resmi ditampilkan di Pusat Informasi
@@ -242,7 +278,7 @@ info, input kode QR manual, dan unggah gambar QR dari galeri.
 
 Semua penulisan transaksi/saldo lewat RPC `security definer`, bukan langsung
 dari klien. `expire_stale_transactions()` hanya untuk `service_role` (cron).
-Tabel berikut memuat 12 RPC aplikasi yang benar-benar ada di migration;
+Tabel berikut memuat 13 RPC aplikasi yang benar-benar ada di migration;
 `handle_new_user()` dan `guard_profile_update()` adalah fungsi trigger, bukan
 RPC yang dipanggil klien.
 
@@ -260,6 +296,7 @@ RPC yang dipanggil klien.
 | `available_balance(p_user uuid)` | Saldo dikurangi penarikan PENDING |
 | `admin_metrics()` | Metrik dashboard admin: total berat APPROVED dan jumlah per status (JSON) |
 | `log_client_error(p_pesan text, p_detail text, p_platform text, p_versi text)` | Catat error klien, maksimal 20 per pengguna/anon per jam |
+| `hapus_akun_sendiri()` | Tandai akun terhapus, anonimkan identitas, cabut sesi, blokir login |
 
 Tabel: `profiles`, `trash_types`, `transactions`, `transaction_audits`,
 `withdrawals`, `client_error_logs`. Schema hanya diubah lewat migration baru di
@@ -291,6 +328,7 @@ gh run view <run-id> --log-failed
 - Deploy produksi Vercel hanya dari `push` ke `main`; PR hanya preview.
 - Uji yang ada baru unit test; belum ada widget/integration test. Job pg_cron
   juga perlu pg_cron aktif di project Supabase.
-- Belum ada hapus akun dari aplikasi dan belum ada push notification.
+- Tidak ada pemulihan akun dari aplikasi (harus lewat Dashboard Supabase) dan
+  belum ada push notification.
 - Bila `ANDROID_KEYSTORE_BASE64` kosong, APK CI memakai debug key dan tidak
   bisa di-update di atas versi lama.
