@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../providers/deposit_provider.dart';
@@ -77,7 +78,12 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal membuat setoran: ${e.toString()}'),
+            // RPC melempar pesan Indonesia (mis. tarif belum diatur); selain itu generik.
+            content: Text(
+              e is PostgrestException && e.message.isNotEmpty
+                  ? e.message
+                  : 'Gagal membuat setoran. Periksa koneksi lalu coba lagi.',
+            ),
             backgroundColor: AppColors.danger,
           ),
         );

@@ -68,8 +68,11 @@ class AuthRepository {
       return await getUserProfile(user.id, emailFallback: user.email);
     } on AuthException {
       rethrow;
-    } catch (e) {
-      throw AuthException('Gagal masuk: ${e.toString()}');
+    } catch (_) {
+      // Jangan bocorkan detail internal ke pengguna.
+      throw const AuthException(
+        'Gagal masuk. Periksa koneksi lalu coba lagi.',
+      );
     }
   }
 
