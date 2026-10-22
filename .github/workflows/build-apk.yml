@@ -11,6 +11,9 @@ jobs:
   build:
     name: Build Flutter APK & Deploy Web
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - name: Checkout Repository
