@@ -68,6 +68,21 @@ class ProfileScreen extends ConsumerWidget {
     _snack(context, 'Kata sandi diperbarui');
   }
 
+  Future<void> _openChangeEmail(
+    BuildContext context,
+    String currentEmail,
+  ) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _ChangeEmailDialog(initialEmail: currentEmail),
+    );
+    if (saved != true || !context.mounted) return;
+    _snack(
+      context,
+      'Tautan konfirmasi dikirim ke email baru. Periksa kotak masuk.',
+    );
+  }
+
   Future<void> _openSignOutEverywhere(BuildContext context) async {
     final done = await showDialog<bool>(
       context: context,
@@ -259,6 +274,18 @@ class ProfileScreen extends ConsumerWidget {
                         onTap: user == null
                             ? null
                             : () => _openChangePassword(context),
+                      ),
+                      const Divider(
+                        height: 1,
+                        indent: 56,
+                        color: AppColors.borderLine,
+                      ),
+                      _MenuTile(
+                        icon: Icons.email_outlined,
+                        label: 'Ubah Email',
+                        onTap: user == null
+                            ? null
+                            : () => _openChangeEmail(context, user.email),
                       ),
                       const Divider(
                         height: 1,
@@ -649,6 +676,132 @@ class _ChangeNameDialogState extends ConsumerState<_ChangeNameDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text('Simpan'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ChangeEmailDialog extends ConsumerStatefulWidget {
+  final String initialEmail;
+
+  const _ChangeEmailDialog({required this.initialEmail});
+
+  @override
+  ConsumerState<_ChangeEmailDialog> createState() => _ChangeEmailDialogState();
+}
+
+class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _email = TextEditingController(
+    text: widget.initialEmail,
+  );
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    super.dispose();
+  }
+
+  /// Wajib isi, ada `@` dan titik setelahnya, maksimal 120 karakter.
+  String? _validate(String? val) {
+    final value = val?.trim() ?? '';
+    if (value.isEmpty) return 'Email wajib diisi';
+    if (value.length > 120) return 'Email maksimal 120 karakter';
+    final at = value.indexOf('@');
+    if (at <= 0 || !value.substring(at + 1).contains('.')) {
+      return 'Format email tidak valid';
+    }
+    if (value.toLowerCase() == widget.initialEmail.trim().toLowerCase()) {
+      return 'Email baru sama dengan email saat ini';
+    }
+    return null;
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authRepositoryProvider).changeEmail(_email.text.trim());
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = pesanKesalahan(e);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      title: const Text(
+        'Ubah Email',
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
+      scrollable: true,
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextFormField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                hintText: 'Email baru',
+                prefixIcon: Icon(
+                  Icons.email_outlined,
+                  color: AppColors.primaryMain,
+                  size: 20,
+                ),
+              ),
+              validator: _validate,
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Email lama tetap aktif sampai tautan konfirmasi diklik.',
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.4,
+                color: AppColors.textMuted,
+              ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              _ErrorBanner(message: _error!),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.pop(context),
+          child: const Text(
+            'Batal',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: _saving ? null : _save,
+          child: _saving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Kirim Tautan'),
         ),
       ],
     );
