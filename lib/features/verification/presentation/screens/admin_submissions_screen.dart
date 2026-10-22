@@ -6,6 +6,7 @@ import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../history/presentation/providers/transaction_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 import '../providers/verification_provider.dart';
@@ -384,6 +385,8 @@ class _AdminSubmissionsScreenState
       ref.invalidate(adminMetricsProvider);
       ref.invalidate(adminTransactionsProvider);
       ref.invalidate(currentUserProvider);
+      // Detail transaksi yang mungkin masih terbuka ikut disegarkan.
+      ref.invalidate(transactionDetailByIdProvider);
 
       final approved = status == 'APPROVED';
       _toast(
@@ -422,6 +425,8 @@ class _AdminSubmissionsScreenState
       ref.invalidate(adminMetricsProvider);
       ref.invalidate(adminTransactionsProvider);
       ref.invalidate(currentUserProvider);
+      // Detail transaksi yang mungkin masih terbuka ikut disegarkan.
+      ref.invalidate(transactionDetailByIdProvider);
 
       final rejected = status == 'REJECTED';
       _toast(

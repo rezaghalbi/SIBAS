@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../history/presentation/providers/transaction_provider.dart';
 import '../providers/verification_provider.dart';
 
 /// Modal Bottom Sheet untuk memvalidasi transaksi via RPC Supabase
@@ -69,6 +70,8 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
         ref.invalidate(adminMetricsProvider);
         ref.invalidate(adminTransactionsProvider);
         ref.invalidate(currentUserProvider);
+        // Detail transaksi yang mungkin masih terbuka ikut disegarkan.
+        ref.invalidate(transactionDetailByIdProvider);
         Navigator.pop(context);
         widget.onVerificationComplete();
         final approved = status == 'APPROVED';
@@ -123,6 +126,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
       if (mounted) {
         ref.invalidate(adminMetricsProvider);
         ref.invalidate(adminTransactionsProvider);
+        ref.invalidate(transactionDetailByIdProvider);
         Navigator.pop(context);
         widget.onVerificationComplete();
         final rejected = status == 'REJECTED';

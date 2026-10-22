@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/network/api_guard.dart';
 import '../domain/models/transaction_model.dart';
 
 /// Repository untuk membaca transaksi riwayat & aktivitas pengguna
@@ -13,28 +14,32 @@ class TransactionRepository {
 
   /// Mengambil transaksi terbaru untuk mahasiswa tertentu.
   /// Error dibiarkan naik agar provider menjadi AsyncError (bukan data palsu).
-  Future<List<TransactionModel>> getStudentTransactions(String userId, {int limit = 10}) async {
-    final response = await _client
-        .from('transactions')
-        .select('*, trash_types(name)')
-        .eq('mahasiswa_id', userId)
-        .order('created_at', ascending: false)
-        .limit(limit);
+  Future<List<TransactionModel>> getStudentTransactions(String userId, {int limit = 10}) {
+    return guardRequest(() async {
+      final response = await _client
+          .from('transactions')
+          .select('*, trash_types(name)')
+          .eq('mahasiswa_id', userId)
+          .order('created_at', ascending: false)
+          .limit(limit);
 
-    return (response as List<dynamic>)
-        .map((item) => TransactionModel.fromJson(item as Map<String, dynamic>))
-        .toList();
+      return (response as List<dynamic>)
+          .map((item) => TransactionModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    });
   }
 
   /// Detail satu transaksi beserta profil mahasiswa dan jenis sampahnya.
-  Future<TransactionModel> getTransactionDetail(String id) async {
-    final row = await _client
-        .from('transactions')
-        .select(_selectWithRelations)
-        .eq('id', id)
-        .single();
+  Future<TransactionModel> getTransactionDetail(String id) {
+    return guardRequest(() async {
+      final row = await _client
+          .from('transactions')
+          .select(_selectWithRelations)
+          .eq('id', id)
+          .single();
 
-    return TransactionModel.fromJson(row);
+      return TransactionModel.fromJson(row);
+    });
   }
 
   /// Realtime stream transaksi mahasiswa

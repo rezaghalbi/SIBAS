@@ -1,12 +1,44 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'core/constants/colors.dart';
 import 'core/constants/theme.dart';
 import 'core/network/supabase_client.dart';
+import 'core/widgets/session_idle_watcher.dart';
 import 'core/router/app_router.dart';
+import 'core/widgets/offline_banner.dart';
+import 'features/auth/presentation/providers/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Jangan biarkan exception tak tertangkap menghasilkan layar putih.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    debugPrint('FlutterError: ${details.exceptionAsString()}');
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Uncaught: $error');
+    return true;
+  };
+  ErrorWidget.builder = (details) => const Material(
+        color: AppColors.background,
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'Terjadi kesalahan pada tampilan. Muat ulang halaman ini.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              ),
+            ),
+          ),
+        ),
+      );
 
   // DateFormat/NumberFormat locale 'id_ID' dipakai di banyak layar.
   await initializeDateFormatting('id_ID', null);
@@ -40,12 +72,26 @@ class SibasApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final user = ref.watch(currentUserProvider).valueOrNull;
 
     return MaterialApp.router(
       title: 'SIBAS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,
+      builder: (context, child) => Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(
+            // Sesi yang didiamkan 30 menit diakhiri, bukan dibiarkan terbuka.
+            child: SessionIdleWatcher(
+              aktif: user != null,
+              saatIdle: () => ref.read(currentUserProvider.notifier).logout(),
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

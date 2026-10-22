@@ -27,6 +27,9 @@ final transactionDetailByIdProvider =
     FutureProvider.family<Map<String, dynamic>?, String>((ref, id) async {
   if (id.isEmpty) return null;
 
+  // Detail tidak boleh bertahan lintas sesi.
+  ref.watch(sessionEpochProvider);
+
   return supabase
       .from('transactions')
       .select(
