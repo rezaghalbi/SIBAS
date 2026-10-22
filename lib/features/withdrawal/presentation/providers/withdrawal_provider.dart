@@ -31,6 +31,8 @@ final studentWithdrawalsProvider =
 final adminWithdrawalsProvider =
     FutureProvider.family<List<WithdrawalModel>, String?>((ref, status) async {
   final repo = ref.watch(withdrawalRepositoryProvider);
+  // Cache admin dibuang saat sesi berganti.
+  ref.watch(sessionEpochProvider);
   return repo.getAllWithdrawals(statusFilter: status);
 });
 

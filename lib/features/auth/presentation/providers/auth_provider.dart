@@ -17,17 +17,22 @@ final authStateStreamProvider = StreamProvider<dynamic>((ref) {
   return repo.authStateChanges;
 });
 
+/// Epoch sesi: naik setiap login/logout. Provider yang tidak bergantung pada
+/// [currentUserProvider] ikut membuang cache saat nilainya berubah.
+final sessionEpochProvider = StateProvider<int>((ref) => 0);
+
 /// Provider state UserModel pengguna saat ini
 final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, AsyncValue<UserModel?>>((ref) {
   final repo = ref.watch(authRepositoryProvider);
-  return CurrentUserNotifier(repo);
+  return CurrentUserNotifier(repo, ref);
 });
 
 class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   final AuthRepository _repo;
+  final Ref _ref;
   StreamSubscription<AuthState>? _authSub;
 
-  CurrentUserNotifier(this._repo) : super(const AsyncValue.loading()) {
+  CurrentUserNotifier(this._repo, this._ref) : super(const AsyncValue.loading()) {
     _initializeUser();
 
     // Sesi bisa berakhir di luar aplikasi: token kedaluwarsa atau logout dari
@@ -36,6 +41,8 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     _authSub = _repo.authStateChanges.listen((authState) {
       if (authState.event == AuthChangeEvent.signedOut) {
         state = const AsyncValue.data(null);
+        // Sesi berakhir di luar aplikasi: cache provider lain ikut dibuang.
+        if (mounted) _ref.read(sessionEpochProvider.notifier).state++;
         return;
       }
       final session = authState.session;
@@ -76,6 +83,8 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     try {
       final user = await _repo.signIn(email: email, password: password);
       state = AsyncValue.data(user);
+      // Naikkan epoch agar cache provider lain dibuang saat akun berganti.
+      if (mounted) _ref.read(sessionEpochProvider.notifier).state++;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
@@ -113,5 +122,7 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
   Future<void> logout() async {
     await _repo.signOut();
     state = const AsyncValue.data(null);
+    // Epoch naik: semua cache milik akun sebelumnya dibuang.
+    if (mounted) _ref.read(sessionEpochProvider.notifier).state++;
   }
 }
