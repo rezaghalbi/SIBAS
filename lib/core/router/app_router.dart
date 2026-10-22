@@ -5,6 +5,7 @@ import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/deposit/presentation/screens/qr_display_screen.dart';
 import '../../features/deposit/presentation/screens/setor_screen.dart';
@@ -38,15 +39,35 @@ final routerProvider = Provider<GoRouter>((ref) {
   });
   ref.onDispose(authNotifier.dispose);
 
+  // Sesi pemulihan sandi juga memicu redirect, jadi ikut jadi pemicu router.
+  final recoveryNotifier = ValueNotifier<bool>(
+    ref.read(passwordRecoveryProvider),
+  );
+  ref.listen<bool>(passwordRecoveryProvider, (_, next) {
+    recoveryNotifier.value = next;
+  });
+  ref.onDispose(recoveryNotifier.dispose);
+
   return GoRouter(
     initialLocation: '/login',
-    refreshListenable: authNotifier,
+    refreshListenable: Listenable.merge([authNotifier, recoveryNotifier]),
     redirect: (context, state) {
       final authState = authNotifier.value;
       if (authState.isLoading) return null;
 
       final user = authState.valueOrNull;
       final location = state.matchedLocation;
+
+      // Sesi pemulihan: paksa layar atur sandi baru sampai sandi disimpan.
+      if (recoveryNotifier.value) {
+        if (user == null) return '/login';
+        return location == '/reset-password' ? null : '/reset-password';
+      }
+      if (location == '/reset-password') {
+        if (user == null) return '/login';
+        return user.isAdmin ? '/admin/dashboard' : '/dashboard';
+      }
+
       final isLoggingIn = location == '/login';
       final isRegistering = location == '/register';
 
@@ -93,6 +114,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
+      ),
+      // Tanpa scaffold bottom nav: wajib berdiri sendiri selama pemulihan.
+      GoRoute(
+        path: '/reset-password',
+        builder: (context, state) => const ResetPasswordScreen(),
       ),
 
       // Mahasiswa — memakai bottom nav

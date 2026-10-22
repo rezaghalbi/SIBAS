@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -67,9 +68,19 @@ void main() async {
     anonKey: anonKey,
   );
 
+  // Tautan pemulihan sandi (PKCE) mendarat di path /reset-password tanpa hash.
+  // Disimpan sebelum router dibuat agar redirect pemulihan tidak bergantung
+  // pada event auth yang hanya signedIn.
+  final mulaiPemulihan = kIsWeb &&
+      Uri.base.path.endsWith('/reset-password') &&
+      !Uri.base.fragment.startsWith('/');
+
   runApp(
-    const ProviderScope(
-      child: SibasApp(),
+    ProviderScope(
+      overrides: [
+        awalPemulihanSandiProvider.overrideWithValue(mulaiPemulihan),
+      ],
+      child: const SibasApp(),
     ),
   );
 }
