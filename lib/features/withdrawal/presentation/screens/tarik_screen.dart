@@ -11,6 +11,7 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../domain/models/withdrawal_model.dart';
 import '../providers/withdrawal_provider.dart';
+import '../widgets/withdraw_qr_sheet.dart';
 
 final _currency = NumberFormat.currency(
   locale: 'id_ID',
@@ -98,6 +99,11 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
         content: Text('Pengajuan penarikan dikirim. Tunggu persetujuan admin.'),
       ),
     );
+
+    // QR langsung ditampilkan agar mahasiswa bisa menunjukkan ke admin.
+    final qrToken = created.qrToken;
+    if (qrToken == null || qrToken.isEmpty || !mounted) return;
+    await showWithdrawQrSheet(context, token: qrToken, amount: created.amount);
   }
 
   @override
@@ -500,6 +506,32 @@ class _WithdrawalTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 StatusBadge(status: withdrawal.status),
+                if (withdrawal.isPending &&
+                    (withdrawal.qrToken?.isNotEmpty ?? false)) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => showWithdrawQrSheet(
+                        context,
+                        token: withdrawal.qrToken!,
+                        amount: withdrawal.amount,
+                        status: withdrawal.status,
+                      ),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(0, 40),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        foregroundColor: AppColors.primaryMain,
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      icon: const Icon(Icons.qr_code_rounded, size: 18),
+                      label: const Text('Tampilkan QR'),
+                    ),
+                  ),
+                ],
                 if (reason != null && reason.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(

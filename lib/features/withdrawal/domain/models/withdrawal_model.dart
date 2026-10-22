@@ -12,6 +12,9 @@ class WithdrawalModel {
   final String? studentName;
   final String? studentNim;
 
+  /// Token QR penarikan, dipakai admin saat memindai.
+  final String? qrToken;
+
   const WithdrawalModel({
     required this.id,
     required this.mahasiswaId,
@@ -22,6 +25,7 @@ class WithdrawalModel {
     required this.createdAt,
     this.studentName,
     this.studentNim,
+    this.qrToken,
   });
 
   bool get isPending => status.toUpperCase() == 'PENDING';
@@ -47,6 +51,7 @@ class WithdrawalModel {
           : DateTime.now(),
       studentName: profileMap?['full_name'] as String?,
       studentNim: profileMap?['nim'] as String?,
+      qrToken: json['qr_token'] as String?,
     );
   }
 }

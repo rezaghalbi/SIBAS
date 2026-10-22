@@ -10,6 +10,7 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/withdrawal_provider.dart';
+import '../widgets/withdraw_qr_sheet.dart';
 
 final _currency = NumberFormat.currency(
   locale: 'id_ID',
@@ -175,6 +176,7 @@ class _DetailBody extends StatelessWidget {
     final mahasiswa = _map(row['mahasiswa']);
     final verifikator = _map(row['verifikator']);
     final rejectionReason = _text(row['rejection_reason']);
+    final qrToken = _text(row['qr_token']);
 
     final studentName = _text(mahasiswa?['full_name']) ?? '-';
     final studentNim = _text(mahasiswa?['nim']);
@@ -242,6 +244,22 @@ class _DetailBody extends StatelessWidget {
             ],
           ),
         ),
+        if (!isAdmin && isPending && qrToken != null) ...[
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => showWithdrawQrSheet(
+                context,
+                token: qrToken,
+                amount: _num(row['amount']) ?? 0,
+                status: status,
+              ),
+              icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+              label: const Text('Tampilkan QR Penarikan'),
+            ),
+          ),
+        ],
         if (rejectionReason != null) ...[
           const SizedBox(height: 16),
           _NoteBox(
