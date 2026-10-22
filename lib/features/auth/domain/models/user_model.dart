@@ -9,6 +9,10 @@ class UserModel {
   final double totalWeight;
   final DateTime? createdAt;
 
+  /// Waktu akun ditandai terhapus (soft delete). Non-null berarti akun tidak
+  /// boleh dipakai lagi.
+  final DateTime? deletedAt;
+
   const UserModel({
     required this.id,
     required this.email,
@@ -18,6 +22,7 @@ class UserModel {
     this.balance = 0.0,
     this.totalWeight = 0.0,
     this.createdAt,
+    this.deletedAt,
   });
 
   bool get isAdmin => role.toLowerCase() == 'admin';
@@ -33,6 +38,7 @@ class UserModel {
       balance: (json['balance'] != null) ? (json['balance'] as num).toDouble() : 0.0,
       totalWeight: (json['total_weight'] != null) ? (json['total_weight'] as num).toDouble() : 0.0,
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
+      deletedAt: json['deleted_at'] != null ? DateTime.tryParse(json['deleted_at'] as String) : null,
     );
   }
 
@@ -46,6 +52,7 @@ class UserModel {
       'balance': balance,
       'total_weight': totalWeight,
       'created_at': createdAt?.toIso8601String(),
+      if (deletedAt != null) 'deleted_at': deletedAt!.toIso8601String(),
     };
   }
 }

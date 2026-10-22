@@ -93,6 +93,21 @@ class ProfileScreen extends ConsumerWidget {
     context.go('/login');
   }
 
+  Future<void> _openDeleteAccount(BuildContext context, WidgetRef ref) async {
+    final deleted = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _DeleteAccountDialog(),
+    );
+    if (deleted != true || !context.mounted) return;
+    try {
+      await ref.read(currentUserProvider.notifier).logout();
+    } catch (_) {
+      // Diabaikan: pengguna tetap diarahkan ke halaman masuk.
+    }
+    if (!context.mounted) return;
+    context.go('/login');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(currentUserProvider);
@@ -299,6 +314,19 @@ class ProfileScreen extends ConsumerWidget {
                         onTap: user == null
                             ? null
                             : () => _openSignOutEverywhere(context),
+                      ),
+                      const Divider(
+                        height: 1,
+                        indent: 56,
+                        color: AppColors.borderLine,
+                      ),
+                      _MenuTile(
+                        icon: Icons.no_accounts_rounded,
+                        label: 'Hapus Akun',
+                        color: AppColors.statusRejected,
+                        onTap: user == null
+                            ? null
+                            : () => _openDeleteAccount(context, ref),
                       ),
                     ],
                   ),
@@ -1047,6 +1075,158 @@ class _SignOutEverywhereDialogState
                   ),
                 )
               : const Text('Keluar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _DeleteAccountDialog extends ConsumerStatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  ConsumerState<_DeleteAccountDialog> createState() =>
+      _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
+  static const _kunciHapus = 'HAPUS';
+
+  final _ketik = TextEditingController();
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _ketik.dispose();
+    super.dispose();
+  }
+
+  bool get _siap => _ketik.text == _kunciHapus;
+
+  Future<void> _confirm() async {
+    if (_busy || !_siap) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authRepositoryProvider).hapusAkun();
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _error = pesanKesalahan(e);
+      });
+    }
+  }
+
+  Widget _poin(String teks) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 6, right: 8),
+            child: Icon(
+              Icons.circle,
+              size: 5,
+              color: AppColors.statusRejected,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              teks,
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.45,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      title: const Text(
+        'Hapus akun ini?',
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
+      scrollable: true,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _poin(
+            'Akun ditandai terhapus dan tidak bisa dipakai untuk masuk lagi.',
+          ),
+          _poin('Nama, NIM, dan email dianonimkan.'),
+          _poin(
+            'Riwayat setoran dan penarikan tetap tersimpan untuk keperluan audit.',
+          ),
+          _poin(
+            'Saldo harus nol dan tidak boleh ada pengajuan yang menunggu '
+            'validasi.',
+          ),
+          _poin('Tindakan ini tidak bisa dibatalkan dari aplikasi.'),
+          const SizedBox(height: 4),
+          TextField(
+            controller: _ketik,
+            enabled: !_busy,
+            autocorrect: false,
+            enableSuggestions: false,
+            textCapitalization: TextCapitalization.characters,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: 'Ketik HAPUS',
+              helperText: 'Ketik HAPUS dengan huruf besar untuk melanjutkan.',
+              errorText: _ketik.text.isEmpty || _siap
+                  ? null
+                  : 'Teks belum sama dengan HAPUS',
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            _ErrorBanner(message: _error!),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.pop(context),
+          child: const Text(
+            'Batal',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: (_busy || !_siap) ? null : _confirm,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.statusRejected,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: AppColors.statusRejected.withValues(
+              alpha: 0.35,
+            ),
+            disabledForegroundColor: Colors.white.withValues(alpha: 0.75),
+          ),
+          child: _busy
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Hapus Akun'),
         ),
       ],
     );
