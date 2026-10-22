@@ -29,16 +29,9 @@ final authStateStreamProvider = StreamProvider<dynamic>((ref) {
 /// [currentUserProvider] ikut membuang cache saat nilainya berubah.
 final sessionEpochProvider = StateProvider<int>((ref) => 0);
 
-/// True saat sesi berasal dari tautan pemulihan sandi (lupa sandi).
-///
-/// Alur PKCE tidak memancarkan event `passwordRecovery` (hanya `signedIn`),
-/// jadi alamat `/reset-password` dibaca di [main] sebelum sesi diproses dan
-/// dioper sebagai override provider ini.
-final awalPemulihanSandiProvider = Provider<bool>((ref) => false);
-
-final passwordRecoveryProvider = StateProvider<bool>(
-  (ref) => ref.watch(awalPemulihanSandiProvider),
-);
+/// True setelah kode OTP reset sandi terverifikasi. Router memaksa layar
+/// atur sandi baru selama nilainya true.
+final passwordRecoveryProvider = StateProvider<bool>((ref) => false);
 
 /// Provider state UserModel pengguna saat ini
 final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, AsyncValue<UserModel?>>((ref) {
@@ -219,14 +212,23 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     await _repo.ubahSandiDenganSandiLama(lama: lama, baru: baru);
   }
 
-  /// Kirim tautan reset sandi (lupa sandi) ke email.
-  Future<void> kirimTautanResetSandi(String email) =>
-      _repo.kirimTautanResetSandi(email);
+  /// Kirim kode OTP reset sandi (lupa sandi) ke email.
+  Future<void> kirimKodeResetSandi(String email) =>
+      _repo.kirimKodeResetSandi(email);
 
-  /// Simpan sandi baru dari sesi pemulihan lalu keluar dari mode pemulihan.
+  /// Verifikasi kode OTP lalu aktifkan mode atur sandi baru.
+  Future<void> verifikasiKodeResetSandi({
+    required String email,
+    required String kode,
+  }) async {
+    await _repo.verifikasiKodeResetSandi(email: email, kode: kode);
+    if (mounted) _ref.read(passwordRecoveryProvider.notifier).state = true;
+  }
+
+  /// Simpan sandi baru dari sesi pemulihan. Mode pemulihan ditutup setelah
+  /// pengguna keluar, supaya router tidak melempar ke dashboard lebih dulu.
   Future<void> simpanSandiBaru(String baru) async {
     await _repo.simpanSandiBaru(baru);
-    if (mounted) _ref.read(passwordRecoveryProvider.notifier).state = false;
     // Sandi sudah tersimpan; gagal memuat profil tidak boleh tampil sebagai
     // kegagalan atur sandi.
     try {

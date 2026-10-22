@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/network/api_guard.dart';
 import '../domain/models/user_model.dart';
@@ -22,6 +21,11 @@ String authErrorMessage(Object error) {
         return 'NIM sudah terdaftar. Gunakan NIM lain atau hubungi admin.';
       case 'weak_password':
         return 'Kata sandi terlalu lemah (minimal 6 karakter).';
+      case 'otp_expired':
+      case 'token_expired':
+      case 'invalid_token':
+      case 'invalid_otp':
+        return 'Kode salah atau sudah kedaluwarsa. Minta kode baru.';
       case 'over_email_send_rate_limit':
       case 'over_request_rate_limit':
         return 'Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.';
@@ -43,6 +47,11 @@ String authErrorMessage(Object error) {
   // Jangan pernah menampilkan toString() mentah ke pengguna.
   return 'Terjadi kesalahan. Periksa koneksi lalu coba lagi.';
 }
+
+/// Pesan untuk alur OTP reset sandi: error auth memakai pemetaan khusus,
+/// sedangkan gangguan jaringan tetap memakai pesan umum.
+String pesanResetSandi(Object error) =>
+    error is AuthException ? authErrorMessage(error) : pesanKesalahan(error);
 
 /// Benar bila penyebab gagal login adalah email yang belum diverifikasi.
 bool isEmailNotConfirmed(Object error) =>
@@ -234,16 +243,26 @@ class AuthRepository {
     );
   }
 
-  /// Kirim tautan atur ulang sandi ke email pengguna.
+  /// Kirim kode OTP atur ulang sandi ke email pengguna.
   ///
-  /// Alur PKCE hanya mengirim `?code`, jadi tujuan redirect harus layar reset:
-  /// `/reset-password` (tanpa hash agar tidak bentrok dengan rute GoRouter).
-  Future<void> kirimTautanResetSandi(String email) {
-    final redirect = kIsWeb ? '${Uri.base.origin}/reset-password' : null;
+  /// Template "Reset Password" di Supabase harus memuat `{{ .Token }}` supaya
+  /// email berisi kode 6 digit, bukan tautan.
+  Future<void> kirimKodeResetSandi(String email) {
     return guardRequest(
-      () => _client.auth.resetPasswordForEmail(
-        email.trim(),
-        redirectTo: redirect,
+      () => _client.auth.resetPasswordForEmail(email.trim()),
+    );
+  }
+
+  /// Tukar kode OTP dengan sesi pemulihan yang sah.
+  Future<void> verifikasiKodeResetSandi({
+    required String email,
+    required String kode,
+  }) async {
+    await guardRequest(
+      () => _client.auth.verifyOTP(
+        email: email.trim(),
+        token: kode.trim(),
+        type: OtpType.recovery,
       ),
     );
   }

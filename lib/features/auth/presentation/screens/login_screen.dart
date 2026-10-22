@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
@@ -61,24 +61,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleForgotPassword() async {
-    final terkirim = await showDialog<String>(
+    final terverifikasi = await showDialog<String>(
       context: context,
       builder: (_) => _ForgotPasswordDialog(
         emailAwal: _emailController.text.trim(),
       ),
     );
-    if (!mounted || terkirim == null) return;
+    if (!mounted || terverifikasi == null) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(
-            'Tautan atur ulang sandi dikirim ke $terkirim. Periksa kotak masuk.',
-          ),
+        const SnackBar(
+          content: Text('Kode terverifikasi. Atur kata sandi baru.'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.primaryDark,
         ),
       );
+    context.go('/reset-password');
   }
 
   Future<void> _handleResend() async {
@@ -423,8 +422,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-/// Dialog kirim tautan reset sandi. Galat ditahan di dialog supaya email bisa
-/// diperbaiki tanpa membuka ulang.
+/// Dialog lupa sandi dua tahap: kirim kode OTP, lalu verifikasi kodenya.
+/// Galat ditahan di dialog supaya email bisa diperbaiki tanpa membuka ulang.
 class _ForgotPasswordDialog extends ConsumerStatefulWidget {
   final String emailAwal;
 
@@ -435,17 +434,23 @@ class _ForgotPasswordDialog extends ConsumerStatefulWidget {
       _ForgotPasswordDialogState();
 }
 
+enum _TahapResetSandi { email, kode }
+
 class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _email = TextEditingController(
     text: widget.emailAwal,
   );
+  final _kode = TextEditingController();
+  _TahapResetSandi _tahap = _TahapResetSandi.email;
+  String? _emailTerkirim;
   bool _sibuk = false;
   String? _galat;
 
   @override
   void dispose() {
     _email.dispose();
+    _kode.dispose();
     super.dispose();
   }
 
@@ -459,35 +464,71 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
     return null;
   }
 
+  String? _validasiKode(String? val) {
+    final value = val?.trim() ?? '';
+    if (value.length != 6) return 'Kode terdiri dari 6 digit';
+    return null;
+  }
+
   Future<void> _kirim() async {
     if (_sibuk) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final email = _email.text.trim();
+    FocusScope.of(context).unfocus();
     setState(() {
       _sibuk = true;
       _galat = null;
     });
+    final notifier = ref.read(currentUserProvider.notifier);
     try {
-      final notifier = ref.read(currentUserProvider.notifier);
-      await notifier.kirimTautanResetSandi(email);
+      if (_tahap == _TahapResetSandi.email) {
+        final email = _email.text.trim();
+        await notifier.kirimKodeResetSandi(email);
+        if (!mounted) return;
+        setState(() {
+          _emailTerkirim = email;
+          _tahap = _TahapResetSandi.kode;
+          _sibuk = false;
+        });
+        return;
+      }
+
+      final email = _emailTerkirim;
+      if (email == null) {
+        setState(() => _sibuk = false);
+        return;
+      }
+      await notifier.verifikasiKodeResetSandi(
+        email: email,
+        kode: _kode.text,
+      );
       if (!mounted) return;
       Navigator.pop(context, email);
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _sibuk = false;
-        _galat = pesanKesalahan(e);
+        _galat = pesanResetSandi(e);
       });
     }
   }
 
+  void _gantiEmail() {
+    setState(() {
+      _tahap = _TahapResetSandi.email;
+      _kode.clear();
+      _galat = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tahapKode = _tahap == _TahapResetSandi.kode;
+    final emailTampil = _emailTerkirim ?? _email.text.trim();
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      title: const Text(
-        'Lupa Kata Sandi',
-        style: TextStyle(fontWeight: FontWeight.w700),
+      title: Text(
+        tahapKode ? 'Masukkan Kode' : 'Lupa Kata Sandi',
+        style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       scrollable: true,
       content: Form(
@@ -496,31 +537,54 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Masukkan email akun. Kami kirim tautan untuk mengatur ulang '
-              'kata sandi.',
-              style: TextStyle(
+            Text(
+              tahapKode
+                  ? 'Kode 6 digit dikirim ke $emailTampil. '
+                      'Periksa kotak masuk dan folder spam.'
+                  : 'Masukkan email akun. Kami kirim kode 6 digit untuk '
+                      'mengatur ulang kata sandi.',
+              style: const TextStyle(
                 fontSize: 12,
                 height: 1.4,
                 color: AppColors.textMuted,
               ),
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              autocorrect: false,
-              autofocus: widget.emailAwal.isEmpty,
-              decoration: const InputDecoration(
-                hintText: 'nama@poltekkes-jogja.ac.id',
-                prefixIcon: Icon(
-                  Icons.mail_outline_rounded,
-                  color: AppColors.primaryMain,
-                  size: 20,
+            if (!tahapKode)
+              TextFormField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                autofocus: widget.emailAwal.isEmpty,
+                decoration: const InputDecoration(
+                  hintText: 'nama@poltekkes-jogja.ac.id',
+                  prefixIcon: Icon(
+                    Icons.mail_outline_rounded,
+                    color: AppColors.primaryMain,
+                    size: 20,
+                  ),
                 ),
+                validator: _validasiEmail,
+              )
+            else
+              TextFormField(
+                controller: _kode,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                maxLength: 6,
+                autofocus: true,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 22,
+                  letterSpacing: 8,
+                  fontWeight: FontWeight.w700,
+                ),
+                decoration: const InputDecoration(
+                  hintText: '000000',
+                  counterText: '',
+                ),
+                validator: _validasiKode,
               ),
-              validator: _validasiEmail,
-            ),
             if (_galat != null) ...[
               const SizedBox(height: 12),
               Container(
@@ -560,13 +624,22 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _sibuk ? null : () => Navigator.pop(context),
-          child: const Text(
-            'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+        if (tahapKode)
+          TextButton(
+            onPressed: _sibuk ? null : _gantiEmail,
+            child: const Text(
+              'Ganti Email',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
+          )
+        else
+          TextButton(
+            onPressed: _sibuk ? null : () => Navigator.pop(context),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
           ),
-        ),
         ElevatedButton(
           onPressed: _sibuk ? null : _kirim,
           child: _sibuk
@@ -575,7 +648,7 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Kirim Tautan'),
+              : Text(tahapKode ? 'Verifikasi' : 'Kirim Kode'),
         ),
       ],
     );

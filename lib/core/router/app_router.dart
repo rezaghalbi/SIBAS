@@ -61,8 +61,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
 
       // Sesi pemulihan: paksa layar atur sandi baru sampai sandi disimpan.
+      // Profil belum tentu termuat, tetapi sesi OTP sudah sah.
       if (recoveryNotifier.value) {
-        if (user == null) return '/login';
         return location == '/reset-password' ? null : '/reset-password';
       }
       if (location == '/reset-password') {
