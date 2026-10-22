@@ -21,7 +21,7 @@ class TransactionDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final detailState = ref.watch(transactionDetailByIdProvider(transactionId));
+    final detailState = ref.watch(transactionDetailRpcProvider(transactionId));
     final row = detailState.valueOrNull;
 
     return Scaffold(
@@ -46,7 +46,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                 ),
                 error: (_, __) => _ErrorBox(
                   onRetry: () => ref.invalidate(
-                    transactionDetailByIdProvider(transactionId),
+                    transactionDetailRpcProvider(transactionId),
                   ),
                 ),
                 data: (data) => data == null
@@ -141,9 +141,7 @@ class _DetailCard extends StatelessWidget {
     );
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 
-    final trash = row['trash_types'];
-    final categoryName =
-        trash is Map ? (_text(trash['name']) ?? 'Sampah Daur Ulang') : 'Sampah Daur Ulang';
+    final categoryName = _text(row['trash_name']) ?? 'Sampah Daur Ulang';
 
     final weight = _num(row['weight']) ?? 0;
     final ratePerKg = _num(row['price_per_kg_snapshot']);
@@ -153,9 +151,13 @@ class _DetailCard extends StatelessWidget {
 
     final createdAt = _date(row['created_at']);
     final verifiedAt = _date(row['verified_at']);
-    final verifier = row['verifier'];
+    final verifier = row['verifikator'];
     final verifierName = verifier is Map ? _text(verifier['full_name']) : null;
+    final mahasiswa = row['mahasiswa'];
+    final studentName = mahasiswa is Map ? _text(mahasiswa['full_name']) : null;
+    final studentNim = mahasiswa is Map ? _text(mahasiswa['nim']) : null;
     final rejectionReason = _text(row['rejection_reason']);
+    final audits = row['audits'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,6 +186,16 @@ class _DetailCard extends StatelessWidget {
                 label: 'Kode Transaksi',
                 value: _text(row['tx_code']) ?? '-',
                 monospace: true,
+              ),
+              _DetailRow(
+                label: 'Pengaju',
+                value: studentName ?? 'Tidak diketahui',
+                muted: studentName == null,
+              ),
+              _DetailRow(
+                label: 'NIM',
+                value: studentNim ?? '-',
+                muted: studentNim == null,
               ),
               _DetailRow(label: 'Jenis Sampah', value: categoryName),
               _DetailRow(label: 'Berat', value: '${weight.toStringAsFixed(1)} kg'),
@@ -217,18 +229,22 @@ class _DetailCard extends StatelessWidget {
               _DetailRow(
                 label: 'Waktu Verifikasi',
                 value: verifiedAt == null
-                    ? 'Belum diverifikasi'
+                    ? 'Belum diproses'
                     : dateFormat.format(verifiedAt),
                 muted: verifiedAt == null,
               ),
               _DetailRow(
-                label: 'Diverifikasi Oleh',
-                value: verifierName ?? '-',
+                label: 'Diproses Oleh',
+                value: verifierName ?? 'Belum diproses',
                 muted: verifierName == null,
               ),
             ],
           ),
         ),
+        if (audits is List) ...[
+          const SizedBox(height: 16),
+          _AuditTimeline(audits: audits),
+        ],
         if (rejectionReason != null) ...[
           const SizedBox(height: 16),
           _NoteBox(
@@ -309,6 +325,164 @@ class _DetailRow extends StatelessWidget {
                 color: highlight
                     ? AppColors.primaryMain
                     : (muted ? AppColors.textMuted : AppColors.textPrimary),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Riwayat perubahan status transaksi (audit) dalam urutan kronologis.
+class _AuditTimeline extends StatelessWidget {
+  final List<dynamic> audits;
+
+  const _AuditTimeline({required this.audits});
+
+  static String _statusLabel(dynamic status) {
+    switch (status?.toString().toUpperCase()) {
+      case 'APPROVED':
+        return 'Disetujui';
+      case 'REJECTED':
+        return 'Ditolak';
+      case 'EXPIRED':
+        return 'Kedaluwarsa';
+      case 'PENDING':
+      default:
+        return 'Menunggu';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
+
+    final entries = audits.whereType<Map>().toList()
+      ..sort((a, b) {
+        final left = _date(a['created_at']);
+        final right = _date(b['created_at']);
+        if (left == null || right == null) return 0;
+        return left.compareTo(right);
+      });
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Riwayat Proses',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const Divider(height: 20, color: AppColors.borderLine),
+          if (entries.isEmpty)
+            const Text(
+              'Belum ada riwayat proses.',
+              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            )
+          else
+            for (var i = 0; i < entries.length; i++)
+              _AuditRow(
+                entry: entries[i],
+                isLast: i == entries.length - 1,
+                dateFormat: dateFormat,
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuditRow extends StatelessWidget {
+  final Map entry;
+  final bool isLast;
+  final DateFormat dateFormat;
+
+  const _AuditRow({
+    required this.entry,
+    required this.isLast,
+    required this.dateFormat,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final toStatus = entry['to_status']?.toString();
+    final color = TransactionStatusHelper.getStatusColor(toStatus);
+    final note = _text(entry['note']);
+    final actor = _text(entry['actor_name']);
+    final at = _date(entry['created_at']);
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Column(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                margin: const EdgeInsets.only(top: 4),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 2),
+                    color: AppColors.borderLine,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _AuditTimeline._statusLabel(toStatus),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                    ),
+                  ),
+                  if (note != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      note,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 2),
+                  Text(
+                    [
+                      if (actor != null) actor else 'Sistem',
+                      if (at != null) dateFormat.format(at),
+                    ].join(' • '),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

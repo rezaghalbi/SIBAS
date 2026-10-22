@@ -18,24 +18,11 @@ final recentTransactionsProvider = FutureProvider<List<TransactionModel>>((ref) 
   return repo.getStudentTransactions(user.id, limit: 5);
 });
 
-/// Detail satu transaksi sebagai baris mentah (Map) untuk layar detail.
-///
-/// `TransactionModel` membuang `verified_at` dan nama verifikator, padahal
-/// layar detail butuh keduanya. Jadi query diambil langsung dengan join
-/// `profiles` lewat FK `transactions_verified_by_fkey`. Null bila tidak ada.
-final transactionDetailByIdProvider =
+/// Detail transaksi dari RPC server: nama pengaju, admin penyetuju, dan audit.
+final transactionDetailRpcProvider =
     FutureProvider.family<Map<String, dynamic>?, String>((ref, id) async {
   if (id.isEmpty) return null;
-
-  // Detail tidak boleh bertahan lintas sesi.
   ref.watch(sessionEpochProvider);
-
-  return supabase
-      .from('transactions')
-      .select(
-        '*, verifier:profiles!transactions_verified_by_fkey(full_name), '
-        'trash_types(name, price_per_kg)',
-      )
-      .eq('id', id)
-      .maybeSingle();
+  final data = await supabase.rpc('detail_transaksi', params: {'p_id': id});
+  return data as Map<String, dynamic>?;
 });
