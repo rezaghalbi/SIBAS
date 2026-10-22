@@ -171,6 +171,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       itemCount: filtered.length,
                       itemBuilder: (context, index) {
                         final tx = filtered[index];
+                        // QR bisa dibuka ulang selama masih PENDING; kedaluwarsa
+                        // ditandai watermark oleh QrDisplayScreen.
+                        final canShowQr =
+                            tx.isPending && (tx.qrToken?.isNotEmpty ?? false);
                         return TxListItem(
                           categoryName: tx.categoryName,
                           weightKg: tx.weight,
@@ -178,6 +182,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           status: tx.status,
                           createdAt: tx.createdAt,
                           onTap: () => context.push('/transaction/${tx.id}'),
+                          canShowQr: canShowQr,
+                          onShowQr: canShowQr
+                              ? () => context.push('/qr/${tx.id}')
+                              : null,
                         );
                       },
                     ),

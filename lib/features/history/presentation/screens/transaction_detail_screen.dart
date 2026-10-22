@@ -51,7 +51,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                 ),
                 data: (data) => data == null
                     ? const _NotFoundBox()
-                    : _DetailCard(row: data),
+                    : _DetailCard(row: data, transactionId: transactionId),
               ),
             ),
           ),
@@ -129,8 +129,9 @@ class _SummaryPanel extends StatelessWidget {
 
 class _DetailCard extends StatelessWidget {
   final Map<String, dynamic> row;
+  final String transactionId;
 
-  const _DetailCard({required this.row});
+  const _DetailCard({required this.row, required this.transactionId});
 
   @override
   Widget build(BuildContext context) {
@@ -158,10 +159,35 @@ class _DetailCard extends StatelessWidget {
     final studentNim = mahasiswa is Map ? _text(mahasiswa['nim']) : null;
     final rejectionReason = _text(row['rejection_reason']);
     final audits = row['audits'];
+    // QR hanya relevan selama menunggu verifikasi; kedaluwarsa tetap boleh
+    // dibuka karena QrDisplayScreen memberi watermark.
+    final qrToken = _text(row['qr_token']);
+    final canShowQr = status.toUpperCase() == 'PENDING' && qrToken != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (canShowQr) ...[
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => context.push('/qr/$transactionId'),
+              icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+              label: const Text('Tampilkan QR Setoran'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryMain,
+                minimumSize: const Size(0, 44),
+                side: BorderSide(
+                  color: AppColors.primaryMain.withValues(alpha: 0.45),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(20),
