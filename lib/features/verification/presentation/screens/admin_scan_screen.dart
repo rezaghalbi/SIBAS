@@ -6,7 +6,7 @@ import '../../../../core/constants/colors.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
 
-/// Layar Pemindai QR Admin dengan integrasi kamera mobile_scanner, manual input UUID, dan fallback unggah file galeri
+/// Layar Pemindai QR Admin dengan integrasi kamera mobile_scanner, input kode QR manual, dan fallback unggah file galeri
 class AdminScanScreen extends ConsumerStatefulWidget {
   const AdminScanScreen({super.key});
 
@@ -229,7 +229,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                     ),
                     const SizedBox(width: 12),
 
-                    // Tombol Input Manual UUID
+                    // Tombol input kode QR manual
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () => _showManualInputDialog(),
@@ -241,7 +241,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         icon: const Icon(Icons.keyboard_outlined, size: 20),
-                        label: const Text('Ketik UUID', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                        label: const Text('Ketik Kode QR', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                       ),
                     ),
                   ],
