@@ -72,6 +72,9 @@ Isi migration:
 - `20261026000000_kunci_kolom_profil.sql` — trigger `profiles_guard_update`
   (fungsi `guard_profile_update`) menolak perubahan kolom sensitif `profiles`
   dari klien biasa.
+- `20261027000000_log_klien.sql` — tabel `client_error_logs` dan RPC
+  `log_client_error`; RLS aktif tanpa policy baca/tulis langsung, dibatasi 20
+  catatan per pengguna/anon per jam.
 
 ## Perintah
 
@@ -92,6 +95,50 @@ flutter build apk --release --no-tree-shake-icons \
 `test/` berisi uji unit (`api_guard_test.dart`, `auth_error_message_test.dart`,
 `status_helper_test.dart`, `withdrawal_model_test.dart`); belum ada widget atau
 integration test.
+
+## Android
+
+Folder `android/` sudah ada di repo, jadi langkah CI "Generate Android
+Scaffolding if Missing" tidak lagi membuat ulang scaffold. `applicationId`
+adalah `com.sibas.poltekkes.sibas`. `versionCode`/`versionName` membaca
+`version:` di `pubspec.yaml` (saat ini `1.0.0+1`); naikkan nilai itu setiap
+rilis.
+
+`android/app/build.gradle.kts` membaca `android/key.properties` (tidak
+di-commit, ada di `android/.gitignore`). Bila file itu tidak ada, APK release
+ditandatangani debug key sehingga tidak bisa di-update di atas versi lama.
+Untuk signing rilis:
+
+```bash
+keytool -genkeypair -v -keystore sibas-release.jks \
+  -alias sibas -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Letakkan `sibas-release.jks` di `android/app/keystore.jks`, lalu isi
+`android/key.properties`:
+
+```properties
+storeFile=keystore.jks
+storePassword=<store-password>
+keyAlias=sibas
+keyPassword=<key-password>
+```
+
+Konversi keystore ke base64 (macOS `base64 -i android/app/keystore.jks | pbcopy`;
+Linux `base64 -w 0 android/app/keystore.jks`), lalu isi empat secret repo
+GitHub Actions:
+
+| Secret | Isi |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | Hasil base64 `keystore.jks` |
+| `ANDROID_STORE_PASSWORD` | Sandi keystore |
+| `ANDROID_KEY_ALIAS` | Alias key (contoh: `sibas`) |
+| `ANDROID_KEY_PASSWORD` | Sandi key |
+
+Workflow mendekode base64 ke `android/app/keystore.jks` dan membuat
+`android/key.properties` dari secret tersebut. Bila
+`ANDROID_KEYSTORE_BASE64` kosong, workflow hanya memberi warning dan APK
+memakai debug key.
 
 ## Akun Uji
 
@@ -128,6 +175,8 @@ kosong (`''`) — `confirmation_token`, `recovery_token`, `email_change`,
   (`changePassword`, dengan verifikasi sandi lama), dan memilih "Keluar dari
   semua perangkat" (`signOutEverywhere` memakai `SignOutScope.global`) dari
   halaman Profil.
+- "Ubah Email" di halaman Profil mengirim tautan konfirmasi ke alamat baru
+  lewat `changeEmail`. Email lama tetap aktif sampai tautan tersebut diklik.
 - Sesi yang tidak ada interaksi selama 30 menit otomatis diakhiri.
   `SessionIdleWatcher` (`lib/core/widgets/session_idle_watcher.dart`) dipasang
   di `lib/main.dart`, hanya aktif saat pengguna masuk, dan timer direset oleh
@@ -141,11 +190,36 @@ kosong (`''`) — `confirmation_token`, `recovery_token`, `email_change`,
   Dashboard Supabase, bukan di repo. Admin project perlu memeriksa nilainya
   sebelum rilis.
 
+## Pusat Informasi
+
+Kontak admin resmi ditampilkan di Pusat Informasi
+(`lib/features/info/presentation/screens/info_screen.dart`): nomor
+`+62 813-8902-1668` dengan tombol salin (nilai yang disalin
+`081389021668`). Email, lokasi, dan jam layanan masih berupa konstanta
+`"Belum diatur"` sampai admin mengisinya.
+
+## Ekspor CSV
+
+Riwayat admin punya menu unduh "Rekap setoran" dan "Rekap penarikan". Builder
+ada di `lib/features/verification/data/csv_export.dart`; setoran mengekspor 10
+kolom (kode, tanggal, mahasiswa, NIM, jenis sampah, berat, harga/kg, total,
+status, alasan ditolak) dan penarikan 7 kolom (ID 8 karakter awal, tanggal,
+mahasiswa, NIM, jumlah, status, alasan ditolak). Di web file `.csv` terunduh;
+di Android isi CSV disalin ke papan klip dan UI memberi pesan "CSV disalin ke
+papan klip". Ekspor setoran mengikuti filter status/tanggal yang sedang tampil.
+
+## Pemindai QR
+
+`/admin/scan` memakai `mobile_scanner` hanya di Android. Di web kamera tidak
+dipakai karena `mobile_scanner` tidak mendukung web; layar menampilkan panel
+info, input kode QR manual, dan unggah gambar QR dari galeri.
+
 ## Penanganan Error & Cache
 
 - `FlutterError.onError`, `PlatformDispatcher.instance.onError`, dan
   `ErrorWidget.builder` dipasang di `lib/main.dart`. Exception tak tertangkap
-  dicatat ke konsol dan widget gagal menampilkan pesan, bukan layar putih.
+  dicatat ke konsol, dikirim best-effort lewat `laporkanKesalahan`, dan widget
+  gagal menampilkan pesan, bukan layar putih.
 - `sessionEpochProvider` naik pada login, logout, dan event `signedOut` dari
   `onAuthStateChange` (termasuk token kedaluwarsa atau logout di perangkat
   lain). Provider data yang bergantung padanya (riwayat, penarikan,
@@ -157,14 +231,18 @@ kosong (`''`) — `confirmation_token`, `recovery_token`, `email_change`,
   tersedia.".
 - `test/api_guard_test.dart` menguji `guardRequest` dan `pesanKesalahan`
   (timeout, status offline, pemetaan pesan, penyamaran pesan teknis).
-- Tidak ada telemetry atau error reporting terpusat. Error hanya tercatat di
-  konsol (lihat Keterbatasan).
+- Telemetri error klien memakai tabel `client_error_logs` dan RPC
+  `log_client_error(p_pesan, p_detail, p_platform, p_versi)`. RLS aktif tanpa
+  policy baca/tulis untuk klien; akses langsung `anon`/`authenticated` dicabut
+  dan hanya RPC `security definer` yang boleh menulis. RPC membatasi maksimal
+  20 catatan per pengguna (atau anon) per jam. Pelaporan bersifat best-effort
+  dan tidak mencatat `JaringanException`/`SesiBerakhirException`.
 
 ## RPC
 
 Semua penulisan transaksi/saldo lewat RPC `security definer`, bukan langsung
 dari klien. `expire_stale_transactions()` hanya untuk `service_role` (cron).
-Tabel berikut memuat 11 RPC aplikasi yang benar-benar ada di migration;
+Tabel berikut memuat 12 RPC aplikasi yang benar-benar ada di migration;
 `handle_new_user()` dan `guard_profile_update()` adalah fungsi trigger, bukan
 RPC yang dipanggil klien.
 
@@ -181,9 +259,10 @@ RPC yang dipanggil klien.
 | `is_admin()` | Cek role pemanggil |
 | `available_balance(p_user uuid)` | Saldo dikurangi penarikan PENDING |
 | `admin_metrics()` | Metrik dashboard admin: total berat APPROVED dan jumlah per status (JSON) |
+| `log_client_error(p_pesan text, p_detail text, p_platform text, p_versi text)` | Catat error klien, maksimal 20 per pengguna/anon per jam |
 
 Tabel: `profiles`, `trash_types`, `transactions`, `transaction_audits`,
-`withdrawals`. Schema hanya diubah lewat migration baru di
+`withdrawals`, `client_error_logs`. Schema hanya diubah lewat migration baru di
 `supabase/migrations/`.
 
 ## Verifikasi
@@ -212,5 +291,6 @@ gh run view <run-id> --log-failed
 - Deploy produksi Vercel hanya dari `push` ke `main`; PR hanya preview.
 - Uji yang ada baru unit test; belum ada widget/integration test. Job pg_cron
   juga perlu pg_cron aktif di project Supabase.
-- Tidak ada telemetry/error reporting terpusat; error hanya tercatat di konsol.
-- Belum ada ubah email dan hapus akun dari aplikasi.
+- Belum ada hapus akun dari aplikasi dan belum ada push notification.
+- Bila `ANDROID_KEYSTORE_BASE64` kosong, APK CI memakai debug key dan tidak
+  bisa di-update di atas versi lama.
