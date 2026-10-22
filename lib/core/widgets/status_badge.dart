@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 
 /// Chip status dengan visual presisi sesuai prototype .antigravity/design_system.md
-/// - Menunggu Validasi: Text #B45309, BG #FEF3C7
+/// - Menunggu Verifikasi: Text #B45309, BG #FEF3C7
 /// - Disetujui / Diterima: Text #15803D, BG #DCFCE7
 /// - Ditolak / Kedaluwarsa: Text #B91C1C, BG #FEE2E2
 class StatusBadge extends StatelessWidget {
@@ -51,7 +51,7 @@ class StatusBadge extends StatelessWidget {
       default:
         textColor = AppColors.statusPendingText;
         bgColor = AppColors.statusPendingBg;
-        label = customLabel ?? 'Menunggu Validasi';
+        label = customLabel ?? 'Menunggu Verifikasi';
         break;
     }
 

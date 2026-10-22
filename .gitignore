@@ -40,3 +40,8 @@ undecorated_symbol_map.json
 
 # Continue extension local state
 .continue/
+
+# Env lokal (jangan commit)
+.env
+.env.*
+!.env.example

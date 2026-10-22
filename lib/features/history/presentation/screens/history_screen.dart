@@ -28,7 +28,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   final List<String> _filters = [
     'Semua',
-    'Menunggu Validasi',
+    'Menunggu Verifikasi',
     'Disetujui',
     'Ditolak',
     'Kedaluwarsa',
@@ -37,7 +37,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   bool _matchesFilter(TransactionModel tx) {
     if (_selectedFilter == 'Semua') return true;
     final status = tx.status.toUpperCase();
-    if (_selectedFilter == 'Menunggu Validasi') return status == 'PENDING';
+    if (_selectedFilter == 'Menunggu Verifikasi') return status == 'PENDING';
     if (_selectedFilter == 'Disetujui') return status == 'APPROVED';
     if (_selectedFilter == 'Ditolak') return status == 'REJECTED';
     if (_selectedFilter == 'Kedaluwarsa') return status == 'EXPIRED';

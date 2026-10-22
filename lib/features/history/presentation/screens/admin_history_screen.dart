@@ -8,7 +8,7 @@ import '../../../verification/presentation/providers/verification_provider.dart'
 import '../../../verification/presentation/widgets/verification_bottom_sheet.dart';
 
 /// Riwayat seluruh penyetoran (semua status) untuk Admin,
-/// dengan filter status & rentang tanggal sesuai prd.md.
+/// dengan filter status & filter tanggal cepat sesuai prd.md.
 class AdminHistoryScreen extends ConsumerStatefulWidget {
   const AdminHistoryScreen({super.key});
 
@@ -25,32 +25,34 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
     'EXPIRED',
   ];
 
+  /// null = Semua, 1 = hari ini, 7 = 7 hari terakhir
+  static const _dayFilters = <int?>[null, 1, 7];
+
   String? _status;
-  DateTimeRange? _range;
+  int? _days;
 
   bool _match(Map<String, dynamic> item) {
     if (_status != null &&
         (item['status'] as String?)?.toUpperCase() != _status) {
       return false;
     }
-    if (_range != null) {
-      final created = DateTime.tryParse((item['created_at'] as String?) ?? '');
+    if (_days != null) {
+      final created =
+          DateTime.tryParse((item['created_at'] as String?) ?? '')?.toLocal();
       if (created == null) return false;
-      final end = _range!.end.add(const Duration(days: 1));
-      if (created.isBefore(_range!.start) || !created.isBefore(end)) return false;
+      final now = DateTime.now();
+      final start = _days == 1
+          ? DateTime(now.year, now.month, now.day)
+          : now.subtract(const Duration(days: 7));
+      if (created.isBefore(start)) return false;
     }
     return true;
   }
 
-  Future<void> _pickRange() async {
-    final now = DateTime.now();
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(now.year - 2),
-      lastDate: now,
-      initialDateRange: _range,
-    );
-    if (picked != null) setState(() => _range = picked);
+  static String _dayLabel(int? days) {
+    if (days == null) return 'Semua tanggal';
+    if (days == 1) return 'Hari ini';
+    return '7 hari';
   }
 
   @override
@@ -75,36 +77,26 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                itemCount: _statuses.length + 1,
+                itemCount: _dayFilters.length + _statuses.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
-                  if (index == _statuses.length) {
-                    final label = _range == null
-                        ? 'Rentang Tanggal'
-                        : '${DateFormat('dd/MM/yy').format(_range!.start)} - '
-                            '${DateFormat('dd/MM/yy').format(_range!.end)}';
-                    return ActionChip(
-                      avatar: const Icon(Icons.date_range_rounded, size: 16),
-                      label: Text(label),
-                      backgroundColor: AppColors.cardSurface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: const BorderSide(color: AppColors.borderLine),
-                      ),
-                      onPressed: _range == null
-                          ? _pickRange
-                          : () => setState(() => _range = null),
-                    );
+                  final isDayChip = index < _dayFilters.length;
+                  String label;
+                  bool isSelected;
+                  if (isDayChip) {
+                    final days = _dayFilters[index];
+                    label = _dayLabel(days);
+                    isSelected = _days == days;
+                  } else {
+                    final status = _statuses[index - _dayFilters.length];
+                    label = status == null
+                        ? 'Semua status'
+                        : TransactionStatusHelper.toDisplayLabel(status);
+                    isSelected = _status == status;
                   }
 
-                  final status = _statuses[index];
-                  final isSelected = _status == status;
                   return ChoiceChip(
-                    label: Text(
-                      status == null
-                          ? 'Semua'
-                          : TransactionStatusHelper.toDisplayLabel(status),
-                    ),
+                    label: Text(label),
                     selected: isSelected,
                     selectedColor: AppColors.primaryMain,
                     backgroundColor: AppColors.cardSurface,
@@ -122,7 +114,14 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                       ),
                     ),
                     onSelected: (selected) {
-                      if (selected) setState(() => _status = status);
+                      if (!selected) return;
+                      setState(() {
+                        if (isDayChip) {
+                          _days = _dayFilters[index];
+                        } else {
+                          _status = _statuses[index - _dayFilters.length];
+                        }
+                      });
                     },
                   );
                 },
