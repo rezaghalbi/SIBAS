@@ -53,11 +53,10 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
-  Future<void> register({
+  Future<UserModel?> register({
     required String email,
     required String password,
     required String fullName,
-    required String role,
     String? nim,
   }) async {
     state = const AsyncValue.loading();
@@ -66,14 +65,20 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         email: email,
         password: password,
         fullName: fullName,
-        role: role,
         nim: nim,
       );
+      // user == null: pendaftaran berhasil, menunggu verifikasi email.
       state = AsyncValue.data(user);
+      return user;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
     }
+  }
+
+  /// Kirim ulang email verifikasi untuk akun yang belum dikonfirmasi.
+  Future<void> resendVerification(String email) async {
+    await _repo.resendVerificationEmail(email);
   }
 
   Future<void> logout() async {

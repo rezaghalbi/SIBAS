@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
+import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -18,6 +19,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isResending = false;
+  String? _verificationNotice;
 
   @override
   void initState() {
@@ -52,15 +55,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       }
     } catch (e) {
       if (mounted) {
+        final needsVerification = isEmailNotConfirmed(e);
+        setState(() {
+          _verificationNotice = needsVerification ? authErrorMessage(e) : null;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal login: ${e.toString()}'),
+            content: Text(authErrorMessage(e)),
             backgroundColor: AppColors.danger,
           ),
         );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleResend() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Isi email terlebih dahulu untuk mengirim ulang verifikasi'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isResending = true);
+    try {
+      await ref.read(currentUserProvider.notifier).resendVerification(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Email verifikasi dikirim ulang ke $email'),
+            backgroundColor: AppColors.primaryMain,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authErrorMessage(e)),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isResending = false);
     }
   }
 
@@ -161,6 +205,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                           ),
                         ),
                         const SizedBox(height: 22),
+
+                        // Pemberitahuan email belum diverifikasi
+                        if (_verificationNotice != null) ...[
+                          Container(
+                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.statusRejectedBg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.danger.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.mark_email_unread_outlined,
+                                      size: 18,
+                                      color: AppColors.danger,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _verificationNotice!,
+                                        style: const TextStyle(
+                                          fontSize: 12.5,
+                                          color: AppColors.danger,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: _isResending ? null : _handleResend,
+                                    child: Text(
+                                      _isResending
+                                          ? 'Mengirim...'
+                                          : 'Kirim ulang email verifikasi',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
 
                         // Email Field
                         Text(
