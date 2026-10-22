@@ -198,6 +198,23 @@ class AuthRepository {
     });
   }
 
+  /// Mengirim permintaan ubah email. Supabase mengirim tautan konfirmasi ke
+  /// email baru (dan email lama bila "secure email change" aktif).
+  Future<void> changeEmail(String newEmail) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw const AuthException('Sesi tidak ditemukan. Masuk ulang.');
+    }
+    final email = newEmail.trim();
+    if (email.toLowerCase() == (user.email ?? '').toLowerCase()) {
+      throw const AuthException('Email baru sama dengan email saat ini.');
+    }
+
+    await guardRequest(
+      () => _client.auth.updateUser(UserAttributes(email: email)),
+    );
+  }
+
   /// Perbarui nama lengkap di tabel `profiles`.
   Future<void> updateFullName(String fullName) async {
     final uid = _client.auth.currentUser?.id;

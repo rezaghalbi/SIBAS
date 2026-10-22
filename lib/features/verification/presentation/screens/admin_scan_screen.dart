@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/glass_panel.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
 
@@ -15,7 +17,8 @@ class AdminScanScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
-  final MobileScannerController _scannerController = MobileScannerController();
+  // mobile_scanner tidak mendukung web: controller hanya dibuat di non-web.
+  MobileScannerController? _scannerController;
   final _uuidInputController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -23,8 +26,14 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   bool _torchEnabled = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) _scannerController = MobileScannerController();
+  }
+
+  @override
   void dispose() {
-    _scannerController.dispose();
+    _scannerController?.dispose();
     _uuidInputController.dispose();
     super.dispose();
   }
@@ -151,43 +160,86 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: Icon(_torchEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded),
-            onPressed: () {
-              _scannerController.toggleTorch();
-              setState(() => _torchEnabled = !_torchEnabled);
-            },
-          ),
+          // Senter hanya relevan bila kamera tersedia (bukan web).
+          if (!kIsWeb)
+            IconButton(
+              icon: Icon(_torchEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded),
+              onPressed: () {
+                _scannerController?.toggleTorch();
+                setState(() => _torchEnabled = !_torchEnabled);
+              },
+            ),
         ],
       ),
       body: Stack(
         children: [
-          // 1. Kamera Scanner View
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: (capture) {
-              final barcodes = capture.barcodes;
-              for (final barcode in barcodes) {
-                final rawValue = barcode.rawValue;
-                if (rawValue != null && !_isProcessing) {
-                  _processTransactionId(rawValue);
-                  break;
+          // 1. Kamera Scanner View — web memakai panel info (mobile_scanner tanpa dukungan web)
+          if (kIsWeb)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: GlassPanel(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.qr_code_scanner_rounded,
+                        size: 64,
+                        color: AppColors.mintAccent,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Pemindaian kamera hanya di aplikasi Android',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Gunakan tombol input kode manual atau unggah gambar QR '
+                        'di bawah untuk memverifikasi setoran.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else ...[
+            MobileScanner(
+              controller: _scannerController!,
+              onDetect: (capture) {
+                final barcodes = capture.barcodes;
+                for (final barcode in barcodes) {
+                  final rawValue = barcode.rawValue;
+                  if (rawValue != null && !_isProcessing) {
+                    _processTransactionId(rawValue);
+                    break;
+                  }
                 }
-              }
-            },
-          ),
+              },
+            ),
 
-          // 2. Overlay Bingkai Pemindai
-          Center(
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.accent, width: 3),
-                borderRadius: BorderRadius.circular(24),
+            // 2. Overlay Bingkai Pemindai
+            Center(
+              child: Container(
+                width: 260,
+                height: 260,
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.accent, width: 3),
+                  borderRadius: BorderRadius.circular(24),
+                ),
               ),
             ),
-          ),
+          ],
 
           // 3. Tombol Aksi Bawah (Manual Input & Upload Fallback)
           Positioned(
@@ -203,10 +255,12 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                     color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
-                    'Arahkan kamera ke QR mahasiswa di aplikasi SIBAS',
+                  child: Text(
+                    kIsWeb
+                        ? 'Masukkan kode QR manual atau unggah gambar QR mahasiswa'
+                        : 'Arahkan kamera ke QR mahasiswa di aplikasi SIBAS',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
                 const SizedBox(height: 14),

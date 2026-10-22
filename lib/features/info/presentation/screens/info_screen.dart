@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
@@ -7,7 +8,10 @@ import '../../../../core/widgets/hero_header.dart';
 /// Kontak resmi unit bank sampah. Isi hanya setelah admin menetapkan nilainya;
 /// jangan mengarang nomor telepon/email. String kosong otomatis tampil
 /// sebagai "Belum diatur".
-const String _adminPhone = 'Belum diatur';
+const String _adminPhone = '+62 813-8902-1668';
+
+/// Nomor mentah untuk aksi salin (tanpa spasi dan tanda hubung).
+const String _adminPhoneRaw = '081389021668';
 const String _adminEmail = 'Belum diatur';
 const String _adminLocation = 'Belum diatur';
 const String _adminHours = 'Belum diatur';
@@ -29,6 +33,15 @@ class InfoScreen extends StatelessWidget {
             child: HeroHeader(
               title: 'Pusat Informasi',
               subtitle: 'Kontak admin & pengaduan',
+              mark: ClipRRect(
+                borderRadius: BorderRadius.circular(9),
+                child: Image.asset(
+                  'assets/images/sibas-logo.png',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.cover,
+                ),
+              ),
               trailing: IconButton(
                 onPressed: () {
                   if (context.canPop()) {
@@ -60,7 +73,11 @@ class InfoScreen extends StatelessWidget {
                   title: 'Kontak Admin',
                   icon: Icons.support_agent_rounded,
                   children: [
-                    _InfoRow(label: 'Telepon/WhatsApp', value: _adminPhone),
+                    _InfoRow(
+                      label: 'Telepon/WhatsApp',
+                      value: _adminPhone,
+                      copyValue: _adminPhoneRaw,
+                    ),
                     _InfoRow(label: 'Email', value: _adminEmail),
                     _InfoRow(label: 'Lokasi Unit', value: _adminLocation),
                   ],
@@ -173,7 +190,21 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow({required this.label, required this.value});
+  /// Bila diisi, baris menampilkan tombol salin di kanan nilai.
+  final String? copyValue;
+
+  const _InfoRow({required this.label, required this.value, this.copyValue});
+
+  Future<void> _copy(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: copyValue!));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Nomor admin disalin'),
+        backgroundColor: AppColors.primaryMain,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -203,6 +234,19 @@ class _InfoRow extends StatelessWidget {
               ),
             ),
           ),
+          if (copyValue != null)
+            IconButton(
+              onPressed: () => _copy(context),
+              icon: const Icon(
+                Icons.copy_rounded,
+                size: 16,
+                color: AppColors.primaryMain,
+              ),
+              tooltip: 'Salin nomor admin',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            ),
         ],
       ),
     );

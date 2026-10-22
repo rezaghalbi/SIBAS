@@ -7,6 +7,9 @@ class HeroHeader extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
   final Widget? bottomContent;
+
+  /// Tanda/logo di kiri judul. Bila null dipakai badge ikon bawaan.
+  final Widget? mark;
   final double bottomBorderRadius;
 
   const HeroHeader({
@@ -15,6 +18,7 @@ class HeroHeader extends StatelessWidget {
     this.subtitle,
     this.trailing,
     this.bottomContent,
+    this.mark,
     this.bottomBorderRadius = 32.0,
   });
 
@@ -42,27 +46,8 @@ class HeroHeader extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      // Mini SIBAS Icon Badge
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            width: 1,
-                          ),
-                        ),
-                        child: Center(
-                          // Tanpa berkas logo: wordmark ikon, bukan aset gambar.
-                          child: const Icon(
-                            Icons.eco_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      ),
+                      // Mark kustom (mis. logo) atau badge ikon bawaan.
+                      mark ?? const _DefaultMark(),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,6 +86,30 @@ class HeroHeader extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Badge ikon bawaan saat pemanggil tidak memberi `mark`.
+class _DefaultMark extends StatelessWidget {
+  const _DefaultMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      child: const Center(
+        child: Icon(Icons.eco_rounded, color: Colors.white, size: 24),
       ),
     );
   }
