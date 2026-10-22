@@ -17,10 +17,15 @@ void main() {
         TransactionStatusHelper.fromString('EXPIRED'),
         TransactionStatus.expired,
       );
+      // Huruf kecil tetap dikenali.
+      expect(
+        TransactionStatusHelper.fromString('approved'),
+        TransactionStatus.approved,
+      );
     });
 
     test('PENDING, null, dan nilai tak dikenal jatuh ke pending', () {
-      for (final value in ['PENDING', 'approved', null, 'aneh', '']) {
+      for (final value in ['PENDING', null, 'aneh', '']) {
         expect(
           TransactionStatusHelper.fromString(value),
           TransactionStatus.pending,
