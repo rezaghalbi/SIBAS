@@ -50,3 +50,11 @@ Mesin pengembangan **tidak memiliki** Flutter/Dart SDK. `flutter analyze`, `flut
 - `service_role` key **tidak boleh** masuk repo maupun kode aplikasi. Hanya `anon` key.
 - Konfigurasi sensitif lewat `--dart-define` (CI: GitHub Secrets) atau `.env` yang di-gitignore.
 - Jangan pernah menulis token/secret ke file yang di-commit atau ke output percakapan.
+
+## 8. Git: Push Butuh Persetujuan User
+- `git add` / `git commit` boleh dilakukan lokal tanpa bertanya.
+- `git push` **wajib menunggu persetujuan user** (`permission.shell: "git push*": "ask"` di `opencode.json`).
+- `git push --force` / `-f` dilarang.
+- Pola kerja: selesaikan satu unit kerja → commit lokal → tanya user → push → baca CI.
+- Jangan menggabungkan push dengan pekerjaan yang belum selesai.
+
