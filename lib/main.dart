@@ -67,9 +67,19 @@ void main() async {
     anonKey: anonKey,
   );
 
+  // Tautan pemulihan sandi (PKCE) mendarat di path /reset-password tanpa hash.
+  // Disimpan sebelum router dibuat agar redirect pemulihan tidak bergantung
+  // pada event auth yang hanya signedIn.
+  final mulaiPemulihan = kIsWeb &&
+      Uri.base.path.endsWith('/reset-password') &&
+      !Uri.base.fragment.startsWith('/');
+
   runApp(
-    const ProviderScope(
-      child: SibasApp(),
+    ProviderScope(
+      overrides: [
+        awalPemulihanSandiProvider.overrideWithValue(mulaiPemulihan),
+      ],
+      child: const SibasApp(),
     ),
   );
 }

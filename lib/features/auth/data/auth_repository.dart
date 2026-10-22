@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/network/api_guard.dart';
 import '../domain/models/user_model.dart';
@@ -234,9 +235,16 @@ class AuthRepository {
   }
 
   /// Kirim tautan atur ulang sandi ke email pengguna.
+  ///
+  /// Alur PKCE hanya mengirim `?code`, jadi tujuan redirect harus layar reset:
+  /// `/reset-password` (tanpa hash agar tidak bentrok dengan rute GoRouter).
   Future<void> kirimTautanResetSandi(String email) {
+    final redirect = kIsWeb ? '${Uri.base.origin}/reset-password' : null;
     return guardRequest(
-      () => _client.auth.resetPasswordForEmail(email.trim()),
+      () => _client.auth.resetPasswordForEmail(
+        email.trim(),
+        redirectTo: redirect,
+      ),
     );
   }
 

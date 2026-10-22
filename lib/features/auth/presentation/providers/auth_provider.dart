@@ -30,7 +30,15 @@ final authStateStreamProvider = StreamProvider<dynamic>((ref) {
 final sessionEpochProvider = StateProvider<int>((ref) => 0);
 
 /// True saat sesi berasal dari tautan pemulihan sandi (lupa sandi).
-final passwordRecoveryProvider = StateProvider<bool>((ref) => false);
+///
+/// Alur PKCE tidak memancarkan event `passwordRecovery` (hanya `signedIn`),
+/// jadi alamat `/reset-password` dibaca di [main] sebelum sesi diproses dan
+/// dioper sebagai override provider ini.
+final awalPemulihanSandiProvider = Provider<bool>((ref) => false);
+
+final passwordRecoveryProvider = StateProvider<bool>(
+  (ref) => ref.watch(awalPemulihanSandiProvider),
+);
 
 /// Provider state UserModel pengguna saat ini
 final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, AsyncValue<UserModel?>>((ref) {
