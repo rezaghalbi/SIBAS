@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<title>Bank Sampah — Poltekkes Kemenkes Yogyakarta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ─── Reset & Base ──────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary:    #0e7a4f;   /* hijau utama */
+  --primary-dk: #095c3b;
+  --primary-lt: #2fa56f;
+  --mint:       #dff3e8;   /* hijau muda / aksen */
+  --mint-2:     #eef8f2;
+  --bg:         #f3f8f5;
+  --card:       #ffffff;
+  --txt:        #12201a;
+  --txt2:       #5f6f67;
+  --border:     rgba(15,60,40,0.10);
+  --wait:       #b45309;  --wait-bg: #fef3c7;
+  --ok:         #15803d;  --ok-bg:   #dcfce7;
+  --bad:        #b91c1c;  --bad-bg:  #fee2e2;
+  --font:       'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --radius:     18px;
+  --shadow:     0 4px 24px rgba(9,92,59,0.12);
+  --tr:         0.22s cubic-bezier(.4,0,.2,1);
+}
+html, body {
+  height: 100%; min-height: 100%;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--txt);
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: var(--font); }
+
+/* ─── Layout Shell ─────────────────────────── */
+#app { display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+.phone {
+  width: 100%; max-width: 430px;
+  height: 100vh; height: 100dvh;
+  background: var(--card);
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  box-shadow: var(--shadow);
+}
+@media (min-width: 500px) {
+  #app { align-items: center; padding: 24px 0; background: #d6e4dc; }
+  .phone { height: min(860px, calc(100vh - 48px)); border-radius: 40px; }
+}
+
+/* ─── Screens ──────────────────────────────── */
+.screen { display: none; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; background: var(--bg); }
+.screen.active { display: flex; }
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ─── Status Bar (hanya tampil pada bingkai desktop) ─── */
+.status-bar { display: none; justify-content: space-between; align-items: center; padding: 10px 0 6px; }
+.status-bar span { color: rgba(255,255,255,0.75); font-size: 11px; font-weight: 500; }
+@media (min-width: 500px) { .status-bar { display: flex; } }
+
+/* ─── Identitas teks (pengganti logo) ──────── */
+.brand-t { font-weight: 800; letter-spacing: .14em; font-size: 15px; color: #fff; line-height: 1.1; }
+.brand-s { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 3px; font-weight: 500; }
+
+/* ─── Header hijau (semua halaman dalam) ───── */
+.hero {
+  background: linear-gradient(160deg, var(--primary-dk) 0%, var(--primary) 60%, var(--primary-lt) 135%);
+  padding: 0 20px 22px; flex-shrink: 0;
+  padding-top: env(safe-area-inset-top);
+}
+.hero.sm { padding-bottom: 8px; }
+.hero-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 16px; }
+.top-bar { padding: 8px 0 12px; display: flex; align-items: center; gap: 12px; }
+.top-bar .back {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.16); border: none; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; font-size: 18px;
+}
+.top-bar-info h3 { color: #fff; font-size: 16px; font-weight: 700; }
+.top-bar-info p  { color: rgba(255,255,255,0.75); font-size: 11px; margin-top: 1px; }
+.icon-btn {
+  position: relative; width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,0.16); border: none; color: #fff;
+  font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.icon-btn.txt { width: auto; border-radius: 20px; padding: 0 14px; font-size: 12px; font-weight: 700; }
+.dot-badge {
+  position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 4px;
+  background: #ef4444; color: #fff; border-radius: 9px; font-style: normal;
+  font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--primary);
+}
+.dot-badge[hidden] { display: none; }
+
+/* ─── LOGIN ────────────────────────────────── */
+#screen-login { background: var(--primary-dk); }
+.login-bg {
+  background: linear-gradient(160deg, var(--primary-dk) 0%, var(--primary) 70%, var(--primary-lt) 140%);
+  padding: 56px 28px 40px; padding-top: calc(56px + env(safe-area-inset-top));
+  text-align: center; position: relative; flex-shrink: 0;
+}
+.login-bg::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 80% 15%, rgba(255,255,255,0.14) 0%, transparent 55%),
+              radial-gradient(circle at 15% 90%, rgba(223,243,232,0.18) 0%, transparent 50%);
+}
+.login-bg .line { width: 44px; height: 4px; border-radius: 4px; background: var(--mint); margin: 0 auto 18px; position: relative; }
+.login-bg h1 { color: #fff; font-size: 30px; font-weight: 800; letter-spacing: .14em; position: relative; }
+.login-bg p  { color: rgba(255,255,255,0.85); font-size: 14px; margin-top: 6px; font-weight: 500; position: relative; }
+.login-bg .tag { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 14px; position: relative; }
+.login-form {
+  background: var(--bg); border-radius: 28px 28px 0 0; margin-top: -4px;
+  padding: 24px 24px 28px; flex: 1; overflow-y: auto;
+}
+.role-tabs { display: flex; background: var(--mint); border-radius: 14px; padding: 4px; margin-bottom: 20px; }
+.role-tab {
+  flex: 1; border: none; background: none; padding: 10px; border-radius: 11px;
+  font-size: 13px; font-weight: 700; color: var(--primary-dk); cursor: pointer; transition: all var(--tr);
+}
+.role-tab.active { background: #fff; box-shadow: 0 2px 8px rgba(9,92,59,0.15); color: var(--primary); }
+.form-label { font-size: 11px; font-weight: 700; color: var(--txt2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; display: block; }
+.form-input {
+  width: 100%; padding: 13px 16px; background: #fff; border: 1.5px solid var(--border);
+  border-radius: 12px; font-family: var(--font); font-size: 16px; color: var(--txt);
+  outline: none; transition: border-color var(--tr); margin-bottom: 16px;
+}
+.form-input:focus { border-color: var(--primary); }
+.form-input.err { border-color: var(--bad); }
+textarea.form-input { resize: none; min-height: 72px; font-size: 14px; margin-bottom: 8px; }
+.btn-main {
+  width: 100%; padding: 15px; background: var(--primary); color: #fff; border: none; border-radius: 14px;
+  font-size: 15px; font-weight: 700; cursor: pointer; transition: transform var(--tr), box-shadow var(--tr);
+  box-shadow: 0 4px 16px rgba(14,122,79,0.3);
+}
+.btn-main:hover  { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(14,122,79,0.4); }
+.btn-main:active { transform: translateY(0); }
+.btn-ghost {
+  width: 100%; padding: 14px; background: #fff; color: var(--primary); border: 1.5px solid var(--primary);
+  border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px;
+}
+.login-footer { text-align: center; margin-top: 18px; font-size: 12px; color: var(--txt2); }
+.demo-box {
+  margin-top: 16px; background: var(--mint-2); border: 1px dashed rgba(14,122,79,0.35);
+  border-radius: 14px; padding: 12px 14px; font-size: 11.5px; color: var(--primary-dk); line-height: 1.6;
+}
+
+/* ─── HOME ─────────────────────────────────── */
+.greet { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; cursor: pointer; }
+.home-avatar {
+  width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.2);
+  border: 1.5px solid rgba(255,255,255,0.35); display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.home-user h3 { color: #fff; font-size: 16px; font-weight: 700; }
+.home-user p  { color: rgba(255,255,255,0.75); font-size: 11px; margin-top: 1px; }
+.saldo-hero-card {
+  background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 20px; padding: 18px 20px; position: relative; overflow: hidden;
+}
+.saldo-hero-card::before {
+  content: ''; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px;
+  border-radius: 50%; background: rgba(255,255,255,0.08);
+}
+.saldo-hero-card .label  { color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.saldo-hero-card .amount { color: #fff; font-size: 32px; font-weight: 800; margin-bottom: 12px; letter-spacing: -.01em; }
+.eco-badge {
+  display: inline-flex; align-items: center; gap: 5px; background: var(--mint); color: var(--primary-dk);
+  padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 700;
+}
+.stat-card {
+  margin: 16px 16px 0; background: #fff; border: 1px solid var(--border); border-radius: 20px;
+  padding: 16px 18px; display: flex; align-items: center; gap: 14px;
+}
+.stat-ic { width: 48px; height: 48px; border-radius: 15px; background: var(--mint); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.stat-l { font-size: 12px; color: var(--txt2); font-weight: 600; }
+.stat-v { font-size: 24px; font-weight: 800; color: var(--primary-dk); line-height: 1.2; }
+.stat-n { font-size: 11px; color: var(--txt2); margin-top: 2px; }
+.pending-chip {
+  margin: 12px 16px 0; background: var(--wait-bg); color: var(--wait); border-radius: 14px;
+  padding: 11px 14px; font-size: 12px; font-weight: 600; cursor: pointer; display: block; width: calc(100% - 32px);
+  border: none; text-align: left;
+}
+.btn-cta {
+  display: block; width: calc(100% - 32px); margin: 16px 16px 0; padding: 17px;
+  background: var(--primary); color: #fff; border: none; border-radius: 16px;
+  font-size: 16px; font-weight: 800; letter-spacing: .04em; cursor: pointer;
+  box-shadow: 0 6px 18px rgba(14,122,79,0.35); transition: transform var(--tr), box-shadow var(--tr);
+}
+.btn-cta:hover  { transform: translateY(-1px); }
+.btn-cta:active { transform: scale(0.98); }
+.sec-row { display: flex; justify-content: space-between; align-items: center; padding: 22px 20px 10px; }
+.section-hd { font-size: 11px; font-weight: 700; color: var(--txt2); text-transform: uppercase; letter-spacing: .06em; }
+.link-btn { background: none; border: none; color: var(--primary); font-size: 12px; font-weight: 700; cursor: pointer; }
+.recent-card { margin: 0 16px 16px; background: #fff; border-radius: 20px; border: 1px solid var(--border); padding: 4px 16px; }
+.empty { text-align: center; color: var(--txt2); font-size: 13px; padding: 28px 16px; line-height: 1.6; }
+
+/* ─── Baris transaksi & status ─────────────── */
+.tx-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.tx-item:last-child { border-bottom: none; }
+.tx-ic { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; background: var(--mint-2); }
+.tx-meta { flex: 1; min-width: 0; }
+.tx-meta h4 { font-size: 14px; font-weight: 700; color: var(--txt); }
+.tx-meta p  { font-size: 12px; color: var(--txt2); margin-top: 2px; }
+.tx-meta .reason { color: var(--bad); font-size: 11px; margin-top: 4px; line-height: 1.5; }
+.tx-right { text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.tx-amt { font-size: 13px; font-weight: 800; }
+.tx-amt.in   { color: var(--ok); }
+.tx-amt.out  { color: #c2410c; }
+.tx-amt.wait { color: var(--txt); }
+.tx-amt.bad  { color: var(--txt2); text-decoration: line-through; font-weight: 600; }
+.badge { display: inline-block; padding: 4px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+.badge.menunggu { background: var(--wait-bg); color: var(--wait); }
+.badge.diterima { background: var(--ok-bg);   color: var(--ok); }
+.badge.ditolak  { background: var(--bad-bg);  color: var(--bad); }
+
+/* ─── SETOR ────────────────────────────────── */
+.info-strip {
+  margin: 16px 16px 0; background: var(--mint-2); border: 1px solid rgba(14,122,79,0.2);
+  border-radius: 14px; padding: 12px 14px; font-size: 12px; color: var(--primary-dk); line-height: 1.6;
+}
+.field-err { color: var(--bad); font-size: 12px; font-weight: 600; margin: 8px 20px 0; }
+.field-err:empty { display: none; }
+.field-err.in-panel { margin: -10px 0 12px; }
+.sampah-list { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.sampah-card {
+  background: #fff; border: 1.5px solid var(--border); border-radius: 16px; padding: 13px 16px;
+  display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color var(--tr), background var(--tr);
+}
+.sampah-card:hover { border-color: rgba(14,122,79,0.4); }
+.sampah-card.sel { border-color: var(--primary); background: var(--mint-2); }
+.sampah-ic { width: 44px; height: 44px; border-radius: 12px; background: var(--mint); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.sampah-info { flex: 1; }
+.sampah-info h4 { font-size: 14px; font-weight: 700; color: var(--txt); }
+.sampah-info p  { font-size: 12px; color: var(--txt2); margin-top: 1px; }
+.sampah-price { font-size: 12px; font-weight: 800; color: var(--primary); white-space: nowrap; }
+.weigh-panel { margin: 16px; background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 18px; }
+.weigh-title { font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 12px; }
+.input-wrap { position: relative; }
+.input-wrap .form-input { padding-right: 64px; font-size: 18px; font-weight: 700; }
+.input-wrap .unit { position: absolute; right: 16px; top: 13px; font-size: 14px; font-weight: 700; color: var(--txt2); }
+.calc-row { display: flex; justify-content: space-between; align-items: center; background: var(--bg); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; font-size: 13px; color: var(--txt2); }
+.calc-row strong { color: var(--primary-dk); font-size: 15px; }
+.calc-note { font-size: 11.5px; color: var(--txt2); line-height: 1.6; margin-bottom: 14px; }
+.btn-setor {
+  width: 100%; padding: 15px; background: var(--primary); color: #fff; border: none; border-radius: 14px;
+  font-size: 15px; font-weight: 800; letter-spacing: .04em; cursor: pointer; transition: opacity var(--tr), transform var(--tr);
+}
+.btn-setor:hover { opacity: 0.92; transform: translateY(-1px); }
+
+/* ─── SALDO / RIWAYAT ──────────────────────── */
+.saldo-big-card { background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; padding: 18px 20px; position: relative; overflow: hidden; margin-bottom: 4px; }
+.saldo-big-card::before { content: ''; position: absolute; bottom: -20px; right: -20px; width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+.saldo-big-card .slbl { color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.saldo-big-card .samt { color: #fff; font-size: 32px; font-weight: 800; }
+.saldo-big-card .supt { color: rgba(255,255,255,0.7); font-size: 11px; margin-top: 6px; line-height: 1.5; }
+.btn-tarik {
+  display: block; margin: 14px 16px 0; padding: 14px; width: calc(100% - 32px);
+  background: #fff; color: var(--primary); border: 1.5px solid var(--primary); border-radius: 14px;
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: background var(--tr);
+}
+.btn-tarik:hover { background: var(--mint-2); }
+.chips { display: flex; gap: 8px; padding: 16px 16px 4px; overflow-x: auto; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex-shrink: 0; border: 1.5px solid var(--border); background: #fff; color: var(--txt2); padding: 7px 13px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.tx-section { margin: 4px 16px 16px; background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 2px 16px; }
+
+/* ─── PROFIL ───────────────────────────────── */
+.profile-av-lg { width: 72px; height: 72px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff; margin: 0 auto 12px; }
+.hero h2 { color: #fff; font-size: 18px; font-weight: 700; text-align: center; }
+.hero .sub { color: rgba(255,255,255,0.8); font-size: 12px; text-align: center; margin-top: 3px; }
+.profile-section { margin: 16px 16px 0; background: #fff; border-radius: 20px; border: 1px solid var(--border); overflow: hidden; }
+.ps-hd { padding: 14px 18px 10px; font-size: 11px; font-weight: 700; color: var(--txt2); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); }
+.info-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--border); }
+.info-row:last-child { border-bottom: none; }
+.info-row .lbl { font-size: 12px; color: var(--txt2); font-weight: 500; }
+.info-row .val { font-size: 13px; color: var(--txt); font-weight: 600; text-align: right; max-width: 60%; word-break: break-word; }
+.eco-row { margin: 12px 16px 12px; background: var(--mint-2); border-radius: 16px; border: 1px solid rgba(14,122,79,0.2); padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+.eco-row .eco-ic { font-size: 24px; }
+.eco-row h4 { font-size: 13px; font-weight: 700; color: var(--primary-dk); }
+.eco-row p  { font-size: 11px; color: #3f7a5c; margin-top: 1px; }
+.btn-logout { display: block; width: calc(100% - 32px); margin: 4px 16px 20px; padding: 14px; background: #fff; color: var(--bad); border: 1.5px solid rgba(185,28,28,0.35); border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+/* ─── INFO ─────────────────────────────────── */
+.info-body { padding: 16px; }
+.info-card { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 18px; display: flex; gap: 14px; align-items: flex-start; margin-bottom: 12px; }
+.info-card-ic { width: 46px; height: 46px; border-radius: 14px; background: var(--mint); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.info-card h4 { font-size: 14px; font-weight: 700; color: var(--txt); margin-bottom: 4px; }
+.info-card p  { font-size: 12px; color: var(--txt2); margin-bottom: 4px; }
+.info-card a  { font-size: 13px; color: var(--primary); font-weight: 600; word-break: break-all; }
+.notice-box { background: #fef9ec; border-left: 3px solid #b8860b; border-radius: 0 14px 14px 0; padding: 14px 16px; margin-bottom: 16px; }
+.notice-box p { font-size: 12px; color: #92400e; line-height: 1.65; }
+.app-footer { text-align: center; padding: 8px 0 20px; }
+.app-footer .brand-t { color: var(--primary-dk); font-size: 13px; }
+.app-footer p { font-size: 11px; color: var(--txt2); margin-top: 3px; }
+
+/* ─── ADMIN ────────────────────────────────── */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 16px 0; }
+.stat-box { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 14px 16px; }
+.stat-box b { display: block; font-size: 24px; font-weight: 800; line-height: 1.2; }
+.stat-box span { font-size: 11.5px; color: var(--txt2); font-weight: 600; }
+.stat-box.wait b { color: var(--wait); } .stat-box.ok b { color: var(--ok); }
+.stat-box.bad b { color: var(--bad); }   .stat-box.tot b { color: var(--primary-dk); }
+.adm-list { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.adm-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; cursor: pointer; transition: border-color var(--tr), transform var(--tr); }
+.adm-card:hover { border-color: rgba(14,122,79,0.4); }
+.adm-card:active { transform: scale(0.985); }
+.adm-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.adm-top h4 { font-size: 14px; font-weight: 700; }
+.adm-top p  { font-size: 11.5px; color: var(--txt2); margin-top: 1px; }
+.adm-mid { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; font-weight: 600; }
+.adm-mid .est { color: var(--primary-dk); font-weight: 800; }
+.adm-time { font-size: 11px; color: var(--txt2); margin-top: 6px; }
+.adm-reason { font-size: 11.5px; color: var(--bad); margin-top: 6px; line-height: 1.5; }
+.seg { display: flex; margin: 16px 16px 4px; background: var(--mint); border-radius: 14px; padding: 4px; }
+.seg button { flex: 1; border: none; background: none; padding: 10px 6px; border-radius: 11px; font-size: 12.5px; font-weight: 700; color: var(--primary-dk); cursor: pointer; }
+.seg button.active { background: #fff; color: var(--primary); box-shadow: 0 2px 8px rgba(9,92,59,0.15); }
+.reset-link { display: block; margin: 22px auto 24px; background: none; border: none; color: var(--txt2); font-size: 11.5px; text-decoration: underline; cursor: pointer; }
+
+/* ─── Bottom sheet ─────────────────────────── */
+.sheet-overlay { position: absolute; inset: 0; background: rgba(8,30,20,0.5); display: none; align-items: flex-end; z-index: 50; }
+.sheet-overlay.active { display: flex; }
+.sheet { background: #fff; width: 100%; max-height: 90%; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 20px 20px 24px; padding-bottom: calc(24px + env(safe-area-inset-bottom)); animation: up .25s ease; }
+@keyframes up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.sheet-hd h3 { font-size: 17px; font-weight: 800; color: var(--primary-dk); }
+.sheet .x { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--bg); font-size: 20px; color: var(--txt2); cursor: pointer; }
+.kv { margin-bottom: 14px; }
+.kv > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.kv > div:last-child { border-bottom: none; }
+.kv span { color: var(--txt2); }
+.kv b { text-align: right; font-weight: 700; word-break: break-word; }
+.btn-row { display: flex; gap: 10px; margin-top: 8px; }
+.btn-terima, .btn-tolak { flex: 1; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 800; letter-spacing: .04em; cursor: pointer; }
+.btn-terima { background: var(--primary); color: #fff; border: none; box-shadow: 0 4px 14px rgba(14,122,79,0.3); }
+.btn-tolak  { background: #fff; color: var(--bad); border: 1.5px solid var(--bad); }
+.reason-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.reason-chips button { border: 1px solid var(--border); background: var(--bg); border-radius: 14px; padding: 6px 10px; font-size: 11px; color: var(--txt2); cursor: pointer; }
+.ok-ic { width: 64px; height: 64px; border-radius: 50%; background: var(--ok-bg); color: var(--ok); font-size: 32px; display: flex; align-items: center; justify-content: center; margin: 4px auto 14px; }
+.center { text-align: center; }
+.center h3 { font-size: 18px; font-weight: 800; color: var(--primary-dk); margin-bottom: 6px; }
+.center p { font-size: 13px; color: var(--txt2); line-height: 1.6; }
+.sum-box { background: var(--bg); border-radius: 14px; padding: 12px 14px; margin: 16px 0 6px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: left; }
+.notif-item { padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.55; }
+.notif-item:last-child { border-bottom: none; }
+.notif-item time { display: block; font-size: 11px; color: var(--txt2); margin-top: 3px; }
+.notif-item.new { background: var(--mint-2); margin: 0 -8px; padding: 12px 8px; border-radius: 10px; }
+
+/* ─── NAV BAR ──────────────────────────────── */
+.nav-bar { flex-shrink: 0; border-top: 1px solid var(--border); background: #fff; display: flex; padding: 6px 0 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+.nav-item { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; background: none; border: none; cursor: pointer; padding: 6px 0; color: var(--txt2); transition: color var(--tr); }
+.nav-item .nav-ic { font-size: 21px; line-height: 1; filter: grayscale(.7); opacity: .8; }
+.nav-item span { font-size: 10px; font-weight: 600; }
+.nav-item.active { color: var(--primary); }
+.nav-item.active .nav-ic { filter: none; opacity: 1; }
+.nav-badge { position: absolute; top: 1px; left: calc(50% + 6px); min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: #ef4444; color: #fff; font-style: normal; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.nav-badge[hidden] { display: none; }
+
+/* ─── Toast ────────────────────────────────── */
+.toast {
+  position: absolute; bottom: 92px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--primary-dk); color: #fff; padding: 12px 20px; border-radius: 16px;
+  font-size: 13px; font-weight: 600; text-align: center; line-height: 1.5;
+  opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; z-index: 100; width: max-content; max-width: 88%;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.badge.expired { background: #e5e7eb; color: #4b5563; }
+.qr-card { margin: 16px; background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; text-align: center; }
+.qr-box { display: inline-flex; padding: 12px; background: #fff; border: 2px solid var(--mint); border-radius: 16px; margin: 12px 0 6px; min-width: 224px; min-height: 224px; align-items: center; justify-content: center; position: relative; }
+.qr-box.off canvas, .qr-box.off img { opacity: .12; }
+.qr-box .qr-off { position: absolute; font-weight: 800; color: var(--bad); font-size: 15px; transform: rotate(-12deg); text-align: center; padding: 0 10px; }
+.qr-note { font-size: 12px; color: var(--txt2); margin: 8px 0 14px; line-height: 1.5; }
+.qr-until { font-size: 13px; font-weight: 700; color: var(--primary-dk); }
+#scan-video { display: none; width: 100%; border-radius: 16px; background: #000; margin-bottom: 12px; max-height: 280px; object-fit: cover; }
+.scan-wrap { padding: 16px; }
+.scan-wrap .btn-main, .scan-wrap .btn-ghost { margin-top: 10px; }
+.scan-or { text-align: center; font-size: 12px; color: var(--txt2); margin: 14px 0 8px; }
+.scan-msg { margin-top: 12px; padding: 12px 14px; border-radius: 12px; font-size: 13px; font-weight: 600; line-height: 1.5; }
+.scan-msg.bad { background: var(--bad-bg); color: var(--bad); }
+.scan-msg.ok { background: var(--ok-bg); color: var(--ok); }
+.scan-msg[hidden] { display: none; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+</head>
+<body>
+<div id="app">
+<div class="phone" id="phone">
+
+<div class="toast" id="toast"></div>
+<div class="sheet-overlay" id="sheet" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet-body"></div></div>
+
+<!-- ════════ LOGIN (Mahasiswa & Admin) ════════ -->
+<div class="screen active" id="screen-login" style="background:var(--primary-dk);">
+  <div class="status-bar" style="padding:10px 20px 0;"></div>
+  <div class="login-bg">
+    <div class="line"></div>
+    <h1>BANK SAMPAH</h1>
+    <p>Poltekkes Kemenkes Yogyakarta</p>
+    <div class="tag">Setor sampah, kumpulkan saldo, jaga lingkungan kampus</div>
+  </div>
+  <div class="login-form">
+    <div class="role-tabs">
+      <button class="role-tab active" id="tab-mahasiswa" onclick="setLoginRole('mahasiswa')">Mahasiswa</button>
+      <button class="role-tab" id="tab-admin" onclick="setLoginRole('admin')">Admin</button>
+    </div>
+    <label class="form-label" id="lbl-user">NIM / Username</label>
+    <input class="form-input" type="text" id="nim-input" placeholder="Masukkan NIM Anda" autocomplete="off" />
+    <label class="form-label">Kata Sandi</label>
+    <input class="form-input" type="password" id="pw-input" placeholder="Masukkan kata sandi" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="btn-main" onclick="doLogin()">Masuk →</button>
+    <p class="login-footer">Lupa kata sandi? Hubungi admin instansi</p>
+    <div class="demo-box">
+      <strong>Akun demo</strong><br>
+      Mahasiswa: P71332325040 / password123<br>
+      Admin: admin / admin123
+    </div>
+  </div>
+</div>
+
+<!-- ════════ HOME MAHASISWA ════════ -->
+<div class="screen" id="screen-home">
+  <div class="hero">
+    <div class="status-bar"></div>
+    <div class="hero-top">
+      <div class="brand"><div class="brand-t">BANK SAMPAH</div><div class="brand-s">Poltekkes Kemenkes Yogyakarta</div></div>
+      <button class="icon-btn" onclick="openNotif()" aria-label="Notifikasi">🔔<i class="dot-badge" id="notif-badge" hidden>0</i></button>
+    </div>
+    <div class="greet" onclick="go('profile')">
+      <div class="home-avatar" id="home-av"></div>
+      <div class="home-user"><h3 id="home-name"></h3><p id="home-prodi"></p></div>
+    </div>
+    <div class="saldo-hero-card">
+      <div class="label">Saldo Saya</div>
+      <div class="amount" id="home-saldo"></div>
+      <span class="eco-badge">🌿 Eco Saver</span>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="stat-card">
+      <div class="stat-ic">♻️</div>
+      <div>
+        <div class="stat-l">Total Sampah</div>
+        <div class="stat-v" id="home-total"></div>
+        <div class="stat-n">Hanya dihitung dari setoran yang sudah diterima admin</div>
+      </div>
+    </div>
+    <div id="home-pending"></div>
+    <button class="btn-cta" onclick="go('setor')">+ SETOR SAMPAH</button>
+    <div class="sec-row"><span class="section-hd">Aktivitas Terbaru</span><button class="link-btn" onclick="go('saldo')">Lihat semua</button></div>
+    <div class="recent-card" id="home-activity"></div>
+  </div>
+  <nav class="nav-bar" data-nav="student" data-active="home"></nav>
+</div>
+
+<!-- ════════ SETOR SAMPAH ════════ -->
+<div class="screen" id="screen-setor">
+  <div class="hero sm">
+    <div class="status-bar"></div>
+    <div class="top-bar">
+      <button class="back" onclick="go('home')" aria-label="Kembali">←</button>
+      <div class="top-bar-info"><h3>Setor Sampah</h3><p>Pilih jenis sampah & ajukan</p></div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="info-strip">ℹ️ Berat final ditimbang petugas. Saldo baru bertambah setelah setoran <strong>diterima</strong> admin.</div>
+    <div class="sec-row" style="padding-bottom:10px;"><span class="section-hd">1. Pilih Jenis Sampah</span></div>
+    <div class="sampah-list" id="sampah-list"></div>
+    <div class="field-err" id="err-jenis"></div>
+    <div class="weigh-panel">
+      <div class="weigh-title">2. Ajukan Setoran</div>
+      <div class="calc-row" style="margin-bottom:12px;"><span>Jenis dipilih</span><strong id="jenis-disp">—</strong></div>
+      <div class="calc-row"><span>Harga</span><strong id="harga-disp">—</strong></div>
+      <div class="calc-note">Berat final ditentukan petugas saat penimbangan. Setelah pengajuan, sistem membuat QR Code yang berlaku 2 jam.</div>
+      <button class="btn-setor" onclick="submitSetoran()">AJUKAN SETORAN</button>
+    </div>
+  </div>
+  <nav class="nav-bar" data-nav="student" data-active="setor"></nav>
+</div>
+
+<!-- ════════ SALDO & RIWAYAT ════════ -->
+<div class="screen" id="screen-saldo">
+  <div class="hero sm">
+    <div class="status-bar"></div>
+    <div class="top-bar">
+      <button class="back" onclick="go('home')" aria-label="Kembali">←</button>
+      <div class="top-bar-info"><h3>Saldo Sampah</h3><p>Riwayat transaksi Anda</p></div>
+    </div>
+    <div class="saldo-big-card" style="margin-bottom:12px;">
+      <div class="slbl">Saldo Aktif</div>
+      <div class="samt" id="saldo-display"></div>
+      <div class="supt" id="saldo-upd"></div>
+    </div>
+  </div>
+  <button class="btn-tarik" onclick="openTarik()">⬇ Tarik Saldo</button>
+  <div class="scroll">
+    <div class="chips" id="saldo-chips"></div>
+    <div class="tx-section" id="saldo-list"></div>
+  </div>
+  <nav class="nav-bar" data-nav="student" data-active="saldo"></nav>
+</div>
+
+<!-- ════════ PROFIL ════════ -->
+<div class="screen" id="screen-profile">
+  <div class="hero">
+    <div class="status-bar"></div>
+    <div class="top-bar">
+      <button class="back" onclick="go('home')" aria-label="Kembali">←</button>
+      <div class="top-bar-info"><h3>Profil Saya</h3><p>Data diri mahasiswa</p></div>
+    </div>
+    <div class="profile-av-lg" id="pf-av"></div>
+    <h2 id="pf-name"></h2>
+    <p class="sub" id="pf-sub"></p>
+  </div>
+  <div class="scroll">
+    <div class="profile-section">
+      <div class="ps-hd">Data Akademik</div>
+      <div class="info-row"><span class="lbl">Nama Lengkap</span><span class="val" id="pf-nama"></span></div>
+      <div class="info-row"><span class="lbl">NIM</span><span class="val" id="pf-nim"></span></div>
+      <div class="info-row"><span class="lbl">Jurusan</span><span class="val" id="pf-jur"></span></div>
+      <div class="info-row"><span class="lbl">Semester</span><span class="val" id="pf-sem"></span></div>
+    </div>
+    <div class="profile-section" style="margin-top:12px;">
+      <div class="ps-hd">Data Diri</div>
+      <div class="info-row"><span class="lbl">Tempat, Tgl Lahir</span><span class="val" id="pf-ttl"></span></div>
+      <div class="info-row"><span class="lbl">Jenis Kelamin</span><span class="val" id="pf-jk"></span></div>
+      <div class="info-row"><span class="lbl">No. HP</span><span class="val" id="pf-hp"></span></div>
+      <div class="info-row"><span class="lbl">Email</span><span class="val" id="pf-email"></span></div>
+      <div class="info-row"><span class="lbl">Alamat</span><span class="val" id="pf-alamat"></span></div>
+    </div>
+    <div class="eco-row">
+      <div class="eco-ic">🏆</div>
+      <div><h4>Status: Eco Saver</h4><p id="pf-eco"></p></div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Keluar dari Akun</button>
+  </div>
+  <nav class="nav-bar" data-nav="student" data-active="profile"></nav>
+</div>
+
+<!-- ════════ INFO ════════ -->
+<div class="screen" id="screen-info">
+  <div class="hero sm">
+    <div class="status-bar"></div>
+    <div class="top-bar">
+      <button class="back" onclick="go('home')" aria-label="Kembali">←</button>
+      <div class="top-bar-info"><h3>Pusat Informasi</h3><p>Bantuan & pengaduan</p></div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="info-body">
+      <div class="info-card">
+        <div class="info-card-ic">📞</div>
+        <div>
+          <h4>Telepon Admin</h4>
+          <p>Kendala penimbangan atau input data</p>
+          <a href="tel:02744880047">0274-880-047</a>
+          <p style="margin-top:4px; font-size:11px;">Senin–Jumat, 07.30–16.00 WIB</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-ic">💬</div>
+        <div>
+          <h4>WhatsApp Pengaduan</h4>
+          <p>Respon lebih cepat via WhatsApp</p>
+          <a href="https://wa.me/6281234567890">wa.me/6281234567890</a>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-ic">🔗</div>
+        <div>
+          <h4>Form Pengaduan Online</h4>
+          <p>Laporkan human error atau bug sistem</p>
+          <a href="#">bit.ly/pengaduan-banksampah-pky</a>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-ic">✉️</div>
+        <div>
+          <h4>Email Resmi</h4>
+          <p>Untuk laporan tertulis dan dokumentasi</p>
+          <a href="mailto:banksampah@poltekkes-yk.ac.id">banksampah@poltekkes-yk.ac.id</a>
+        </div>
+      </div>
+      <div class="notice-box">
+        <p>⚠️ <strong>Penting:</strong> Jika terjadi kesalahan input berat saat penimbangan, segera hubungi admin dalam 1×24 jam. Data yang sudah dikonfirmasi tidak dapat diubah secara mandiri.</p>
+      </div>
+      <div class="app-footer">
+        <div class="brand-t">BANK SAMPAH</div>
+        <p>Poltekkes Kemenkes Yogyakarta</p>
+        <p>Versi 2.0.0 · 2026</p>
+      </div>
+    </div>
+  </div>
+  <nav class="nav-bar" data-nav="student" data-active="info"></nav>
+</div>
+
+<!-- ════════ ADMIN: DASHBOARD ════════ -->
+<div class="screen" id="screen-admin-dash">
+  <div class="hero">
+    <div class="status-bar"></div>
+    <div class="hero-top" style="padding-bottom:10px;">
+      <div class="brand"><div class="brand-t">BANK SAMPAH</div><div class="brand-s">Poltekkes Kemenkes Yogyakarta</div></div>
+      <button class="icon-btn txt" onclick="logout()">Keluar</button>
+    </div>
+    <div class="home-user"><h3>Dashboard Admin</h3><p>Halo, Admin Bank Sampah</p></div>
+  </div>
+  <div class="scroll">
+    <div class="stat-grid" id="adm-stats"></div>
+    <div class="sec-row"><span class="section-hd">Pengajuan Setoran Terbaru</span><button class="link-btn" onclick="go('admin-pengajuan')">Lihat semua</button></div>
+    <div id="adm-wd-chip"></div>
+    <div class="adm-list" id="adm-recent" style="margin-top:10px;"></div>
+    <button class="reset-link" onclick="resetDemo()">Reset data demo</button>
+  </div>
+  <nav class="nav-bar" data-nav="admin" data-active="admin-dash"></nav>
+</div>
+
+<!-- ════════ MAHASISWA: QR SETORAN ════════ -->
+<div class="screen" id="screen-qr">
+  <div class="hero sm">
+    <div class="status-bar"></div>
+    <div class="top-bar">
+      <button class="back" onclick="go('home')" aria-label="Kembali">←</button>
+      <div class="top-bar-info"><h3>Setoran Sampah</h3><p>QR Code transaksi Anda</p></div>
+    </div>
+  </div>
+  <div class="scroll"><div class="qr-card" id="qr-body"></div></div>
+</div>
+
+<!-- ════════ ADMIN: SCAN QR ════════ -->
+<div class="screen" id="screen-admin-scan">
+  <div class="hero sm">
+    <div class="status-bar"></div>
+    <div class="top-bar">
+      <button class="back" onclick="go('admin-dash')" aria-label="Kembali">←</button>
+      <div class="top-bar-info"><h3>Scan QR Setoran</h3><p>Pindai QR Code mahasiswa</p></div>
+    </div>
+  </div>
+  <div class="scroll"><div class="scan-wrap">
+    <video id="scan-video" playsinline muted></video>
+    <button class="btn-main" onclick="startScan()">📷 SCAN QR SETORAN</button>
+    <div class="scan-or">atau masukkan kode transaksi</div>
+    <input class="form-input" id="scan-input" placeholder="Contoh: BS-2026-0002" autocomplete="off" onkeydown="if(event.key==='Enter')prosesKode(this.value)" />
+    <button class="btn-ghost" onclick="prosesKode($('scan-input').value)">Periksa Kode</button>
+    <div class="scan-msg" id="scan-msg" hidden></div>
+    <div class="section-hd" style="margin:20px 0 8px;">Simulasi scan (demo)</div>
+    <div class="adm-list" id="scan-demo" style="padding:0;"></div>
+  </div></div>
+  <nav class="nav-bar" data-nav="admin" data-active="admin-scan"></nav>
+</div>
+
+<!-- ════════ ADMIN: PENGAJUAN ════════ -->
+<div class="screen" id="screen-admin-pengajuan">
+  <div class="hero sm">
+    <div class="status-bar"></div>
+    <div class="top-bar">
+      <button class="back" onclick="go('admin-dash')" aria-label="Kembali">←</button>
+      <div class="top-bar-info"><h3>Pengajuan Setoran</h3><p>Menunggu validasi admin</p></div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="seg" id="peng-seg"></div>
+    <div class="adm-list" id="peng-list" style="padding-top:12px; padding-bottom:16px;"></div>
+  </div>
+  <nav class="nav-bar" data-nav="admin" data-active="admin-pengajuan"></nav>
+</div>
+
+<!-- ════════ ADMIN: RIWAYAT ════════ -->
+<div class="screen" id="screen-admin-riwayat">
+  <div class="hero sm">
+    <div class="status-bar"></div>
+    <div class="top-bar">
+      <button class="back" onclick="go('admin-dash')" aria-label="Kembali">←</button>
+      <div class="top-bar-info"><h3>Riwayat Transaksi</h3><p>Setoran & penarikan yang sudah diproses</p></div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="chips" id="adm-chips"></div>
+    <div class="adm-list" id="adm-hist" style="padding-top:8px; padding-bottom:16px;"></div>
+  </div>
+  <nav class="nav-bar" data-nav="admin" data-active="admin-riwayat"></nav>
+</div>
+
+</div><!-- .phone -->
+</div><!-- #app -->
+
+<script>
+/* ═══════════════════════════════════════════════
+   DATA MASTER
+═══════════════════════════════════════════════ */
+const STORE_KEY = 'banksampah_pky_v3';
+const QR_TTL = 2 * 3600 * 1000;   // masa berlaku QR: 2 jam
+const JENIS = {
+  plastik: { label: 'Plastik',         desc: 'Botol, kantong, wadah plastik', rate: 2000, unit: 'Kg',    ic: '🧴' },
+  kertas:  { label: 'Kertas',          desc: 'Kardus, koran, buku bekas',     rate: 1500, unit: 'Kg',    ic: '📄' },
+  kaleng:  { label: 'Kaleng',          desc: 'Kaleng minuman, sarden',        rate: 3500, unit: 'Kg',    ic: '🥫' },
+  kaca:    { label: 'Kaca',            desc: 'Botol kaca, pecahan kaca',      rate: 1000, unit: 'Kg',    ic: '🍶' },
+  minyak:  { label: 'Minyak Jelantah', desc: 'Minyak goreng bekas pakai',     rate: 4000, unit: 'Liter', ic: '🫙' }
+};
+const STATUS = { menunggu: 'Menunggu Validasi', diterima: 'Diterima', ditolak: 'Ditolak', expired: 'Expired' };
+const ADMIN_AKUN = { username: 'admin', password: 'admin123', nama: 'Admin Bank Sampah' };
+
+/* ═══════════════════════════════════════════════
+   UTILITAS
+═══════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const rp  = n => 'Rp' + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const num = n => (Math.round(n * 100) / 100).toString().replace('.', ',');
+const kg  = (n, unit) => num(n) + ' ' + (unit || 'Kg');
+const r2  = n => Math.round(n * 100) / 100;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const BLN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const pad = n => String(n).padStart(2, '0');
+const fTgl = iso => { const d = new Date(iso); return d.getDate() + ' ' + BLN[d.getMonth()] + ' ' + d.getFullYear(); };
+const fJam = iso => { const d = new Date(iso); return pad(d.getHours()) + '.' + pad(d.getMinutes()) + ' WIB'; };
+const ago  = (days, hrs) => new Date(Date.now() - days * 864e5 - hrs * 36e5).toISOString();
+const badge = st => `<span class="badge ${st}">${STATUS[st]}</span>`;
+const initials = nama => nama.split(' ').slice(0, 2).map(s => s[0]).join('').toUpperCase();
+function parseNum(raw) {
+  const s = String(raw).trim().replace(',', '.');
+  if (s === '') return { empty: true };
+  const n = Number(s);
+  return isNaN(n) ? { nan: true } : { n: r2(n) };
+}
+
+/* ═══════════════════════════════════════════════
+   DATA LOKAL (mock) + PENYIMPANAN
+═══════════════════════════════════════════════ */
+const pad4 = n => String(n).padStart(4, '0');
+function seed() {
+  const S = (id, nim, jenis, berat, status, d, h, alasan) => {
+    const j = JENIS[jenis], tgl = ago(d, h), ok = status === 'diterima', nilai = ok ? Math.round(berat * j.rate) : 0;
+    const t = { id, nim, tipe: 'setor', jenis, berat: 0, beratFinal: ok ? berat : null, harga: j.rate, nilai, nilaiFinal: ok ? nilai : null,
+                tgl, exp: new Date(new Date(tgl).getTime() + QR_TTL).toISOString(), status, alasan: alasan || '', tglValidasi: null, admin: null };
+    if (ok || status === 'ditolak') { t.tglValidasi = ago(d, Math.max(h - 1, 0.2)); t.admin = ADMIN_AKUN.nama; }
+    return t;
+  };
+  const W = (id, nim, nominal, status, d, h) => ({ id, nim, tipe: 'tarik', jenis: null, berat: 0, beratFinal: null, harga: null, nilai: nominal, nilaiFinal: status === 'diterima' ? nominal : null, tgl: ago(d, h), exp: null, status, alasan: '', tglValidasi: ago(d, Math.max(h - 1, 0.2)), admin: ADMIN_AKUN.nama });
+  const A = 'P71332325040', R = 'P07120230031', D = 'P07120230047';
+  return {
+    seq: 13, tseq: 1,
+    users: [
+      { nim: A, password: 'password123', nama: 'Ahmad Rizky Ramadhan', jurusan: '-', semester: '-', ttl: '-', jk: '-', hp: '-', email: '-', alamat: '-',
+        saldo: 47500, total: 12.5,
+        notif: [
+          { id: 'N2', text: 'Setoran berhasil divalidasi (BS-2026-0001). Saldo Anda telah diperbarui.', tgl: ago(1, 4), read: false },
+          { id: 'N1', text: 'Setoran Kaleng (BS-2026-0003) ditolak. Alasan: Jenis sampah tidak sesuai. Tidak ada penambahan saldo.', tgl: ago(2, 3), read: true }
+        ] },
+      { nim: R, password: 'password123', nama: 'Rizky Pratama Putra', jurusan: '-', semester: '-', ttl: '-', jk: '-', hp: '-', email: '-', alamat: '-', saldo: 15000, total: 6.5, notif: [] },
+      { nim: D, password: 'password123', nama: 'Dewi Lestari', jurusan: '-', semester: '-', ttl: '-', jk: '-', hp: '-', email: '-', alamat: '-', saldo: 32000, total: 8, notif: [] }
+    ],
+    tx: [
+      S('BS-2026-0001', A, 'plastik', 2.8, 'diterima', 1, 5),
+      S('BS-2026-0002', A, 'kertas', 0, 'menunggu', 0, 0.5),
+      S('BS-2026-0003', A, 'kaleng', 0, 'ditolak', 2, 4, 'Jenis sampah tidak sesuai.'),
+      S('BS-2026-0004', A, 'plastik', 1.2, 'diterima', 5, 3),
+      W('BT-2026-0001', A, 20000, 'diterima', 7, 6),
+      S('BS-2026-0005', A, 'kaleng', 1.8, 'diterima', 9, 4),
+      S('BS-2026-0006', A, 'minyak', 2, 'diterima', 12, 5),
+      S('BS-2026-0007', A, 'kaca', 0, 'expired', 1, 6),
+      S('BS-2026-0008', R, 'kaca', 0, 'menunggu', 0, 0.3),
+      S('BS-2026-0009', R, 'minyak', 0, 'menunggu', 0, 1),
+      S('BS-2026-0010', R, 'plastik', 2, 'diterima', 3, 4),
+      S('BS-2026-0011', D, 'kertas', 0, 'menunggu', 0, 1.2),
+      S('BS-2026-0012', D, 'plastik', 0, 'expired', 1, 2),
+      S('BS-2026-0013', D, 'kaleng', 2, 'diterima', 4, 6)
+    ]
+  };
+}
+let db = null;
+function load() {
+  try { const raw = localStorage.getItem(STORE_KEY); if (raw) { const d = JSON.parse(raw); if (d && d.users && d.tx) return d; } } catch (e) {}
+  return seed();
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(db)); } catch (e) {} }
+const findUser = nim => db.users.find(u => u.nim === nim);
+const curUser  = () => findUser(session.nim);
+const txOf     = nim => db.tx.filter(t => t.nim === nim).sort((a, b) => new Date(b.tgl) - new Date(a.tgl));
+const unitOf   = t => (t.tipe === 'setor' ? JENIS[t.jenis].unit : '');
+const judul    = t => (t.tipe === 'tarik' ? 'Penarikan Saldo' : JENIS[t.jenis].label);
+const ikon     = t => (t.tipe === 'tarik' ? '💸' : JENIS[t.jenis].ic);
+
+let session = { role: null, nim: null };
+let loginRole = 'mahasiswa';
+let selectedType = null;
+let filterSaldo = 'semua', filterAdm = 'semua', pengTab = 'setor';
+
+/* ═══════════════════════════════════════════════
+   NAVIGASI, TOAST, SHEET
+═══════════════════════════════════════════════ */
+const STUDENT_SCREENS = ['home', 'setor', 'saldo', 'info', 'profile', 'qr'];
+const ADMIN_SCREENS   = ['admin-dash', 'admin-scan', 'admin-pengajuan', 'admin-riwayat'];
+const RENDERERS = { qr: renderQR, 'admin-scan': renderScan, home: renderHome, setor: renderSetor, saldo: renderSaldo, profile: renderProfile, 'admin-dash': renderAdminDash, 'admin-pengajuan': renderPengajuan, 'admin-riwayat': renderAdmRiwayat };
+const NAVS = {
+  student: [['home', '🏠', 'Beranda'], ['setor', '♻️', 'Setor'], ['saldo', '💰', 'Saldo'], ['info', '🎧', 'Info'], ['profile', '👤', 'Profil']],
+  admin:   [['admin-dash', '📊', 'Dasbor'], ['admin-scan', '📷', 'Scan QR'], ['admin-pengajuan', '📥', 'Pengajuan'], ['admin-riwayat', '🧾', 'Riwayat']]
+};
+function buildNavs() {
+  document.querySelectorAll('nav[data-nav]').forEach(n => {
+    n.innerHTML = NAVS[n.dataset.nav].map(([k, ic, lb]) =>
+      `<button class="nav-item${k === n.dataset.active ? ' active' : ''}" onclick="go('${k}')"><span class="nav-ic">${ic}</span><span>${lb}</span>${k === 'admin-pengajuan' ? '<i class="nav-badge" data-pend hidden>0</i>' : ''}</button>`).join('');
+  });
+  document.querySelectorAll('.status-bar').forEach(s => { s.innerHTML = '<span>9:41</span><span>●●● WiFi ▲</span>'; });
+}
+function go(name) {
+  if (STUDENT_SCREENS.includes(name) && session.role !== 'mahasiswa') name = 'login';
+  if (ADMIN_SCREENS.includes(name) && session.role !== 'admin') name = 'login';
+  syncExpiry(); stopScan(); closeSheet();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + name).classList.add('active');
+  if (RENDERERS[name]) RENDERERS[name]();
+  const sc = document.querySelector('#screen-' + name + ' .scroll');
+  if (sc) sc.scrollTop = 0;
+}
+let toastTimer;
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+function openSheet(html) { $('sheet-body').innerHTML = html; $('sheet').classList.add('active'); }
+function closeSheet() { $('sheet').classList.remove('active'); }
+
+/* ═══════════════════════════════════════════════
+   LOGIN / LOGOUT
+═══════════════════════════════════════════════ */
+function setLoginRole(r) {
+  loginRole = r;
+  $('tab-mahasiswa').classList.toggle('active', r === 'mahasiswa');
+  $('tab-admin').classList.toggle('active', r === 'admin');
+  $('lbl-user').textContent = r === 'admin' ? 'Username Admin' : 'NIM / Username';
+  $('nim-input').placeholder = r === 'admin' ? 'Masukkan username admin' : 'Masukkan NIM Anda';
+  $('nim-input').value = r === 'admin' ? ADMIN_AKUN.username : 'P71332325040';
+  $('pw-input').value  = r === 'admin' ? ADMIN_AKUN.password : 'password123';
+}
+function doLogin() {
+  const u = $('nim-input').value.trim(), p = $('pw-input').value;
+  if (!u || !p) { toast('NIM/Username dan kata sandi wajib diisi'); return; }
+  if (loginRole === 'admin') {
+    if (u.toLowerCase() === ADMIN_AKUN.username && p === ADMIN_AKUN.password) {
+      session = { role: 'admin', nim: null };
+      go('admin-dash');
+    } else toast('Username atau kata sandi admin salah');
+    return;
+  }
+  const user = db.users.find(x => x.nim.toLowerCase() === u.toLowerCase() && x.password === p);
+  if (!user) { toast('NIM atau kata sandi salah'); return; }
+  session = { role: 'mahasiswa', nim: user.nim };
+  go('home');
+  const n = user.notif.filter(x => !x.read).length;
+  if (n > 0) toast('Ada ' + n + ' pembaruan setoran baru. Ketuk 🔔 untuk melihat.');
+}
+function logout() {
+  session = { role: null, nim: null };
+  selectedType = null;
+  setLoginRole(loginRole);
+  go('login');
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER: BARIS TRANSAKSI MAHASISWA
+═══════════════════════════════════════════════ */
+function stuRow(t, full) {
+  const setor = t.tipe === 'setor', ok = t.status === 'diterima';
+  let sub = !setor ? 'Tarik saldo' : ok ? kg(t.beratFinal, unitOf(t)) : t.status === 'menunggu' ? 'Menunggu penimbangan admin' : '—';
+  if (full) sub += ' · ' + t.id + ' · ' + fTgl(t.tgl);
+  let amtCls = 'bad', amtTxt = '—';
+  if (ok) { amtCls = setor ? 'in' : 'out'; amtTxt = (setor ? '+' : '-') + rp(t.nilaiFinal); }
+  else if (t.status === 'menunggu') amtCls = 'wait';
+  const reason = !full ? '' : t.status === 'ditolak' && t.alasan ? `<div class="reason">Alasan: ${esc(t.alasan)}</div>` : t.status === 'expired' ? '<div class="reason">QR Code sudah kedaluwarsa. Silakan membuat pengajuan baru.</div>' : '';
+  return `<div class="tx-item" style="cursor:pointer" onclick="openTx('${t.id}')">
+    <div class="tx-ic">${ikon(t)}</div>
+    <div class="tx-meta"><h4>${judul(t)}</h4><p>${sub}</p>${reason}</div>
+    <div class="tx-right">${full ? `<span class="tx-amt ${amtCls}">${amtTxt}</span>` : ''}${badge(t.status)}</div>
+  </div>`;
+}
+let curQR = null, qrTick = null;
+function openTx(id) {
+  const t = db.tx.find(x => x.id === id);
+  if (!t || t.nim !== session.nim) return;
+  if (t.tipe === 'setor' && t.status === 'menunggu') { curQR = id; go('qr'); return; }
+  txDetail(id);
+}
+function txDetail(id) {
+  const t = db.tx.find(x => x.id === id); if (!t) return;
+  let h = `<div class="sheet-hd"><h3>Detail Transaksi</h3><button class="x" onclick="closeSheet()">×</button></div><div class="kv">`;
+  h += kv('Kode Transaksi', t.id) + kv('Jenis', judul(t)) + kv('Waktu Pengajuan', fTgl(t.tgl) + ' · ' + fJam(t.tgl));
+  if (t.tipe === 'setor') h += kv('Berlaku Sampai', fJam(t.exp));
+  h += kv('Status', badge(t.status));
+  if (t.status === 'diterima') h += (t.tipe === 'setor' ? kv('Berat Aktual', kg(t.beratFinal, unitOf(t))) + kv('Harga', rp(t.harga) + '/' + unitOf(t)) : '') + kv('Nilai', rp(t.nilaiFinal)) + kv('Divalidasi', fTgl(t.tglValidasi) + ' · ' + fJam(t.tglValidasi));
+  if (t.status === 'ditolak') h += kv('Alasan Penolakan', esc(t.alasan || '—'));
+  if (t.status === 'expired') h += kv('Keterangan', 'QR Code sudah kedaluwarsa');
+  openSheet(h + '</div><button class="btn-ghost" onclick="closeSheet()">Tutup</button>');
+}
+function renderQR() {
+  const t = db.tx.find(x => x.id === curQR);
+  clearInterval(qrTick);
+  if (!t || t.nim !== session.nim) { go('home'); return; }
+  const aktif = t.status === 'menunggu';
+  const offTxt = { diterima: 'SUDAH DIGUNAKAN', ditolak: 'TIDAK AKTIF', expired: 'EXPIRED' }[t.status] || '';
+  $('qr-body').innerHTML = `<div class="section-hd" style="margin-bottom:10px;">SETORAN SAMPAH</div>
+    <div class="kv" style="text-align:left;">${kv('Kode Transaksi', t.id)}${kv('Jenis', judul(t))}${kv('Status', badge(t.status))}</div>
+    <div class="qr-box${aktif ? '' : ' off'}" id="qr-box">${aktif ? '' : `<span class="qr-off">${offTxt}</span>`}</div>
+    <div class="qr-until">Berlaku sampai: ${fJam(t.exp)}${aktif ? ' · <span id="qr-left"></span>' : ''}</div>
+    <div class="qr-note">${aktif ? 'Tunjukkan QR Code ini kepada petugas Bank Sampah saat melakukan setoran.' : t.status === 'expired' ? 'QR Code sudah kedaluwarsa. Silakan membuat pengajuan baru.' : 'QR Code sudah tidak aktif karena transaksi telah divalidasi.'}</div>
+    <button class="btn-main" onclick="go('home')">KEMBALI KE HOME</button>
+    <button class="btn-ghost" onclick="txDetail('${t.id}')">LIHAT DETAIL TRANSAKSI</button>`;
+  const box = $('qr-box');
+  if (typeof QRCode !== 'undefined') new QRCode(box, { text: t.id, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+  else box.insertAdjacentHTML('afterbegin', `<b>${t.id}</b>`);
+  if (aktif) {
+    const upd = () => { const ms = new Date(t.exp) - Date.now(); if (ms <= 0) { syncExpiry(); renderQR(); return; } const el = $('qr-left'); if (el) el.textContent = 'sisa ' + Math.floor(ms / 3600000) + ' j ' + pad(Math.floor(ms % 3600000 / 60000)) + ' m ' + pad(Math.floor(ms % 60000 / 1000)) + ' d'; };
+    upd(); qrTick = setInterval(upd, 1000);
+  }
+}
+function renderSetor() { resetSetorForm(); }
+function resetSetorForm() {
+  selectedType = null;
+  document.querySelectorAll('.sampah-card').forEach(c => c.classList.remove('sel'));
+  $('jenis-disp').textContent = '—'; $('harga-disp').textContent = '—'; $('err-jenis').textContent = '';
+}
+function pilihSampah(k) {
+  selectedType = k;
+  document.querySelectorAll('.sampah-card').forEach(c => c.classList.remove('sel'));
+  $('sc-' + k).classList.add('sel');
+  $('jenis-disp').textContent = JENIS[k].label;
+  $('harga-disp').textContent = rp(JENIS[k].rate) + '/' + JENIS[k].unit;
+  $('err-jenis').textContent = '';
+}
+function submitSetoran() {
+  if (session.role !== 'mahasiswa') return;
+  if (!selectedType || !JENIS[selectedType]) { $('err-jenis').textContent = 'Silakan pilih jenis sampah.'; toast('Silakan pilih jenis sampah.'); return; }
+  const j = JENIS[selectedType], now = Date.now();
+  const t = { id: 'BS-2026-' + pad4(++db.seq), nim: session.nim, tipe: 'setor', jenis: selectedType, berat: 0, beratFinal: null, harga: j.rate, nilai: 0, nilaiFinal: null,
+              tgl: new Date(now).toISOString(), exp: new Date(now + QR_TTL).toISOString(), status: 'menunggu', alasan: '', tglValidasi: null, admin: null };
+  db.tx.push(t); save(); resetSetorForm();
+  curQR = t.id; go('qr');
+  toast('Pengajuan setoran berhasil dibuat. Silakan tunjukkan QR Code kepada petugas Bank Sampah.');
+}
+function renderHome() {
+  const u = curUser();
+  $('home-av').textContent = initials(u.nama);
+  $('home-name').textContent = 'Halo, ' + u.nama;
+  $('home-prodi').textContent = u.nim;
+  $('home-saldo').textContent = rp(u.saldo);
+  $('home-total').textContent = kg(u.total);
+  const list = txOf(u.nim);
+  const wait = list.filter(t => t.status === 'menunggu').length;
+  $('home-pending').innerHTML = wait ? `<button class="pending-chip" onclick="filterSaldo='menunggu';go('saldo')">⏳ ${wait} pengajuan menunggu validasi admin</button>` : '';
+  $('home-activity').innerHTML = list.length ? list.slice(0, 5).map(t => stuRow(t, false)).join('') : '<div class="empty">Belum ada aktivitas. Mulai dengan menyetor sampah pertama Anda.</div>';
+  const unread = u.notif.filter(n => !n.read).length;
+  const b = $('notif-badge'); b.textContent = unread; b.hidden = unread === 0;
+}
+function openNotif() {
+  const u = curUser();
+  const items = u.notif.slice().sort((a, b) => new Date(b.tgl) - new Date(a.tgl)).slice(0, 15);
+  const h = `<div class="sheet-hd"><h3>Notifikasi</h3><button class="x" onclick="closeSheet()">×</button></div>` +
+    (items.length ? items.map(n => `<div class="notif-item${n.read ? '' : ' new'}">${esc(n.text)}<time>${fTgl(n.tgl)} · ${fJam(n.tgl)}</time></div>`).join('') : '<div class="empty">Tidak ada notifikasi baru.</div>');
+  openSheet(h);
+  u.notif.forEach(n => { n.read = true; }); save();
+  const b = $('notif-badge'); b.hidden = true;
+}
+
+/* ═══════════════════════════════════════════════
+   SETOR SAMPAH
+═══════════════════════════════════════════════ */
+function buildJenisList() {
+  $('sampah-list').innerHTML = Object.keys(JENIS).map(k => {
+    const j = JENIS[k];
+    return `<div class="sampah-card" id="sc-${k}" onclick="pilihSampah('${k}')">
+      <div class="sampah-ic">${j.ic}</div>
+      <div class="sampah-info"><h4>${j.label}</h4><p>${j.desc}</p></div>
+      <span class="sampah-price">${rp(j.rate)}/${j.unit}</span></div>`;
+  }).join('');
+}
+function renderSetor() { resetSetorForm(); }
+function resetSetorForm() {
+  selectedType = null;
+  document.querySelectorAll('.sampah-card').forEach(c => c.classList.remove('sel'));
+  $('berat-input').value = ''; $('berat-input').classList.remove('err');
+  $('jenis-disp').textContent = '—'; $('unit-disp').textContent = 'Kg';
+  $('est-disp').textContent = rp(0);
+  $('err-jenis').textContent = ''; $('err-berat').textContent = '';
+}
+function pilihSampah(k) {
+  selectedType = k;
+  document.querySelectorAll('.sampah-card').forEach(c => c.classList.remove('sel'));
+  $('sc-' + k).classList.add('sel');
+  $('jenis-disp').textContent = JENIS[k].label;
+  $('unit-disp').textContent = JENIS[k].unit;
+  $('err-jenis').textContent = '';
+  hitungEstimasi();
+}
+function hitungEstimasi() {
+  $('err-berat').textContent = ''; $('berat-input').classList.remove('err');
+  const p = parseNum($('berat-input').value);
+  $('est-disp').textContent = selectedType && p.n > 0 ? rp(p.n * JENIS[selectedType].rate) : rp(0);
+}
+function submitSetoran() {
+  $('err-jenis').textContent = ''; $('err-berat').textContent = '';
+  const fail = (id, msg) => { $(id).textContent = msg; if (id === 'err-berat') $('berat-input').classList.add('err'); toast(msg); };
+  if (!selectedType) return fail('err-jenis', 'Silakan pilih jenis sampah.');
+  const p = parseNum($('berat-input').value);
+  if (p.empty) return fail('err-berat', 'Silakan masukkan berat sampah.');
+  if (p.nan)   return fail('err-berat', 'Berat sampah harus berupa angka.');
+  if (p.n <= 0) return fail('err-berat', 'Berat sampah harus lebih dari 0.');
+
+  const j = JENIS[selectedType];
+  const t = { id: 'BT-2026-' + pad4(db.tseq = (db.tseq || 1) + 1), nim: session.nim, tipe: 'setor', jenis: selectedType, berat: p.n, beratFinal: null,
+              nilai: Math.round(p.n * j.rate), nilaiFinal: null, tgl: new Date().toISOString(), status: 'menunggu', alasan: '', tglValidasi: null };
+  db.tx.push(t); save();
+  resetSetorForm();
+  toast('Setoran berhasil diajukan dan menunggu validasi admin.');
+  openSheet(`<div class="center">
+    <div class="ok-ic">✓</div>
+    <h3>Setoran berhasil diajukan.</h3>
+    <p>Setoran Anda sedang menunggu validasi admin. Saldo belum bertambah sampai setoran diterima.</p>
+    <div class="sum-box"><span><strong>${j.label}</strong> · ${kg(t.berat, j.unit)}<br><small style="color:var(--txt2)">Estimasi ${rp(t.nilai)}</small></span>${badge('menunggu')}</div>
+    <button class="btn-main" style="margin-top:14px;" onclick="filterSaldo='menunggu';go('saldo')">Lihat Riwayat</button>
+    <button class="btn-ghost" onclick="go('home')">Kembali ke Beranda</button>
+  </div>`);
+}
+
+/* ═══════════════════════════════════════════════
+   SALDO, RIWAYAT & TARIK SALDO
+═══════════════════════════════════════════════ */
+function chipsHTML(opts, cur, fn) {
+  return opts.map(([k, l]) => `<button class="chip${k === cur ? ' active' : ''}" onclick="${fn}('${k}')">${l}</button>`).join('');
+}
+function setFilterSaldo(f) { filterSaldo = f; renderSaldo(); }
+function renderSaldo() {
+  const u = curUser();
+  const list = txOf(u.nim);
+  $('saldo-display').textContent = rp(u.saldo);
+  const done = list.filter(t => t.tglValidasi).sort((a, b) => new Date(b.tglValidasi) - new Date(a.tglValidasi))[0];
+  const pendNilai = list.filter(t => t.status === 'menunggu' && t.tipe === 'setor').reduce((s, t) => s + t.nilai, 0);
+  $('saldo-upd').innerHTML = (done ? 'Diperbarui: ' + fTgl(done.tglValidasi) + ', ' + fJam(done.tglValidasi) : 'Belum ada transaksi tervalidasi') +
+    (pendNilai ? '<br>Menunggu validasi: ' + rp(pendNilai) + ' (belum masuk saldo)' : '');
+  $('saldo-chips').innerHTML = chipsHTML([['semua', 'Semua'], ['menunggu', 'Menunggu'], ['diterima', 'Diterima'], ['ditolak', 'Ditolak'], ['expired', 'Expired']], filterSaldo, 'setFilterSaldo');
+  const shown = list.filter(t => filterSaldo === 'semua' || t.status === filterSaldo);
+  $('saldo-list').innerHTML = shown.length ? shown.map(t => stuRow(t, true)).join('') : '<div class="empty">Tidak ada transaksi pada kategori ini.</div>';
+}
+function tersedia() {
+  const u = curUser();
+  return u.saldo - txOf(u.nim).filter(t => t.tipe === 'tarik' && t.status === 'menunggu').reduce((s, t) => s + t.nilai, 0);
+}
+function openTarik() {
+  openSheet(`<div class="sheet-hd"><h3>Tarik Saldo</h3><button class="x" onclick="closeSheet()">×</button></div>
+    <div class="calc-row"><span>Saldo tersedia</span><strong>${rp(tersedia())}</strong></div>
+    <label class="form-label" style="margin-top:14px;">Nominal penarikan (Rp)</label>
+    <input class="form-input" id="tarik-input" type="text" inputmode="numeric" placeholder="Contoh: 20000" autocomplete="off" style="margin-bottom:8px;" />
+    <div class="field-err in-panel" id="err-tarik" style="margin:0 0 12px;"></div>
+    <div class="calc-note">Penarikan diproses setelah disetujui admin. Saldo baru berkurang setelah pengajuan diterima.</div>
+    <button class="btn-main" onclick="submitTarik()">Ajukan Penarikan</button>`);
+}
+function submitTarik() {
+  const raw = $('tarik-input').value.replace(/[.\s]/g, '');
+  const fail = msg => { $('err-tarik').textContent = msg; };
+  if (raw === '') return fail('Silakan masukkan nominal penarikan.');
+  const n = Number(raw.replace(',', '.'));
+  if (isNaN(n)) return fail('Nominal harus berupa angka.');
+  if (n <= 0) return fail('Nominal penarikan harus lebih dari 0.');
+  if (n > tersedia()) return fail('Nominal melebihi saldo yang tersedia.');
+  db.tx.push({ id: 'TX' + (++db.seq), nim: session.nim, tipe: 'tarik', jenis: null, berat: 0, beratFinal: null, nilai: Math.round(n), nilaiFinal: null, tgl: new Date().toISOString(), status: 'menunggu', alasan: '', tglValidasi: null });
+  save(); closeSheet(); filterSaldo = 'menunggu'; renderSaldo();
+  toast('Pengajuan penarikan dikirim dan menunggu persetujuan admin.');
+}
+
+/* ═══════════════════════════════════════════════
+   PROFIL
+═══════════════════════════════════════════════ */
+function renderProfile() {
+  const u = curUser();
+  $('pf-av').textContent = initials(u.nama);
+  $('pf-name').textContent = u.nama;
+  $('pf-sub').textContent = u.nim;
+  const set = (id, v) => { $(id).textContent = v; };
+  set('pf-nama', u.nama); set('pf-nim', u.nim); set('pf-jur', u.jurusan); set('pf-sem', u.semester);
+  set('pf-ttl', u.ttl); set('pf-jk', u.jk); set('pf-hp', u.hp); set('pf-email', u.email); set('pf-alamat', u.alamat);
+  const ok = txOf(u.nim).filter(t => t.tipe === 'setor' && t.status === 'diterima').length;
+  set('pf-eco', 'Total setor: ' + kg(u.total) + ' · ' + ok + ' kali setoran diterima');
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN: DASHBOARD, PENGAJUAN, RIWAYAT
+═══════════════════════════════════════════════ */
+function updateAdminBadge() {
+  const n = db.tx.filter(t => t.status === 'menunggu').length;
+  document.querySelectorAll('[data-pend]').forEach(b => { b.textContent = n; b.hidden = n === 0; });
+}
+function admCard(t, mode) {
+  const u = findUser(t.nim);
+  const isTarik = t.tipe === 'tarik';
+  const berat = isTarik ? '' : (t.beratFinal != null ? kg(t.beratFinal, unitOf(t)) : 'Belum ditimbang');
+  const nilai = mode === 'hist' && t.status === 'diterima' ? t.nilaiFinal : t.nilai;
+  const waktu = mode === 'hist' && t.tglValidasi ? 'Divalidasi ' + fTgl(t.tglValidasi) + ' · ' + fJam(t.tglValidasi) : fTgl(t.tgl) + ' · ' + fJam(t.tgl);
+  const reason = t.status === 'ditolak' && t.alasan ? `<div class="adm-reason">Alasan: ${esc(t.alasan)}</div>` : '';
+  return `<div class="adm-card" onclick="openDetail('${t.id}')">
+    <div class="adm-top"><div><h4>${esc(u.nama)}</h4><p>${u.nim} · ${t.id}</p></div>${badge(t.status)}</div>
+    <div class="adm-mid"><span>${ikon(t)} ${isTarik ? 'Penarikan Saldo' : JENIS[t.jenis].label + ' · ' + berat}</span><span class="est">${!isTarik && t.status !== 'diterima' ? '—' : rp(nilai)}</span></div>
+    <div class="adm-time">${waktu}</div>${reason}</div>`;
+}
+function renderAdminDash() {
+  updateAdminBadge();
+  const setor = db.tx.filter(t => t.tipe === 'setor');
+  const cnt = s => setor.filter(t => t.status === s).length;
+  const total = db.users.reduce((s, u) => s + u.total, 0);
+  $('adm-stats').innerHTML = `
+    <div class="stat-box wait"><b>${cnt('menunggu')}</b><span>Menunggu Validasi</span></div>
+    <div class="stat-box ok"><b>${cnt('diterima')}</b><span>Setoran Diterima</span></div>
+    <div class="stat-box bad"><b>${cnt('ditolak')}</b><span>Setoran Ditolak</span></div>
+    <div class="stat-box tot"><b>${kg(total)}</b><span>Total Sampah Terkumpul</span></div>`;
+  const wd = db.tx.filter(t => t.tipe === 'tarik' && t.status === 'menunggu').length;
+  $('adm-wd-chip').innerHTML = wd ? `<button class="pending-chip" onclick="pengTab='tarik';go('admin-pengajuan')">💸 ${wd} pengajuan penarikan saldo menunggu persetujuan</button>` : '';
+  const pend = setor.filter(t => t.status === 'menunggu').sort((a, b) => new Date(b.tgl) - new Date(a.tgl)).slice(0, 3);
+  $('adm-recent').innerHTML = pend.length ? pend.map(t => admCard(t, 'pend')).join('') : '<div class="empty">Tidak ada pengajuan setoran yang menunggu validasi.</div>';
+}
+function setPengTab(t) { pengTab = t; renderPengajuan(); }
+function renderPengajuan() {
+  updateAdminBadge();
+  const pend = db.tx.filter(t => t.status === 'menunggu');
+  const s = pend.filter(t => t.tipe === 'setor'), w = pend.filter(t => t.tipe === 'tarik');
+  $('peng-seg').innerHTML = `<button class="${pengTab === 'setor' ? 'active' : ''}" onclick="setPengTab('setor')">Setoran (${s.length})</button><button class="${pengTab === 'tarik' ? 'active' : ''}" onclick="setPengTab('tarik')">Penarikan (${w.length})</button>`;
+  const list = (pengTab === 'setor' ? s : w).sort((a, b) => new Date(a.tgl) - new Date(b.tgl));
+  $('peng-list').innerHTML = list.length ? list.map(t => admCard(t, 'pend')).join('') : '<div class="empty">Tidak ada pengajuan yang menunggu validasi.</div>';
+}
+function setFilterAdm(f) { filterAdm = f; renderAdmRiwayat(); }
+function renderAdmRiwayat() {
+  updateAdminBadge();
+  $('adm-chips').innerHTML = chipsHTML([['semua', 'Semua'], ['diterima', 'Diterima'], ['ditolak', 'Ditolak'], ['expired', 'Expired']], filterAdm, 'setFilterAdm');
+  const list = db.tx.filter(t => t.status !== 'menunggu' && (filterAdm === 'semua' || t.status === filterAdm))
+    .sort((a, b) => new Date(b.tglValidasi || b.exp || b.tgl) - new Date(a.tglValidasi || a.exp || a.tgl));
+  $('adm-hist').innerHTML = list.length ? list.map(t => admCard(t, 'hist')).join('') : '<div class="empty">Belum ada transaksi yang diproses.</div>';
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN: DETAIL & VALIDASI (TERIMA / TOLAK)
+═══════════════════════════════════════════════ */
+const kv = (l, v) => `<div><span>${l}</span><b>${v}</b></div>`;
+function openDetail(id) {
+  const t = db.tx.find(x => x.id === id); if (!t) return;
+  if (t.tipe === 'setor' && t.status === 'menunggu') return openInfoSetor(t);
+  const u = findUser(t.nim);
+  const pend = t.status === 'menunggu';
+  const isSetor = t.tipe === 'setor';
+  let h = `<div class="sheet-hd"><h3>${isSetor ? 'Detail Setoran' : 'Detail Penarikan Saldo'}</h3><button class="x" onclick="closeSheet()">×</button></div><div class="kv">`;
+  h += kv('Nama Mahasiswa', esc(u.nama)) + kv('NIM', u.nim);
+  if (isSetor) {
+    const j = JENIS[t.jenis];
+    h += kv('Jenis Sampah', j.label) + kv('Kode Transaksi', t.id) + kv('Harga', rp(j.rate) + '/' + j.unit);
+  } else {
+    h += kv('Nominal Penarikan', rp(t.nilai)) + kv('Saldo Mahasiswa Saat Ini', rp(u.saldo));
+  }
+  h += kv('Tanggal', fTgl(t.tgl)) + kv('Waktu', fJam(t.tgl));
+  
+  h += kv('Status', badge(t.status));
+  if (!pend) {
+    if (isSetor && t.status === 'diterima') h += kv('Berat Terverifikasi', kg(t.beratFinal, unitOf(t))) + kv('Nilai Masuk Saldo', rp(t.nilaiFinal));
+    if (t.status === 'diterima' && !isSetor) h += kv('Dipotong dari Saldo', rp(t.nilaiFinal));
+    h += kv('Divalidasi', fTgl(t.tglValidasi) + ' · ' + fJam(t.tglValidasi));
+    if (t.status === 'ditolak') h += kv('Alasan Penolakan', esc(t.alasan || '—'));
+    if (t.admin) h += kv('Divalidasi oleh', esc(t.admin));
+  }
+  h += '</div>';
+  if (pend) {
+    if (isSetor) {
+      h += `<label class="form-label">Berat terverifikasi (${unitOf(t)})</label>
+        <div class="input-wrap"><input class="form-input" id="adm-berat" type="text" inputmode="decimal" value="${num(t.berat)}" oninput="admHitung('${t.id}')" /><span class="unit">${unitOf(t)}</span></div>
+        <div class="calc-row"><span>Nilai setoran (masuk saldo jika diterima)</span><strong id="adm-nilai">${rp(t.nilai)}</strong></div>`;
+    }
+    h += `<label class="form-label" style="margin-top:12px;">Alasan Penolakan <span style="text-transform:none;font-weight:500;">(wajib diisi jika menolak)</span></label>
+      <div class="reason-chips">
+        ${(isSetor ? ['Sampah masih kotor/basah', 'Jenis tidak sesuai', 'Berat tidak sesuai'] : ['Data tidak sesuai', 'Hubungi admin']).map(r => `<button onclick="$('adm-alasan').value='${r}'">${r}</button>`).join('')}
+      </div>
+      <textarea class="form-input" id="adm-alasan" placeholder="Tulis alasan penolakan…" oninput="$('adm-err').textContent=''"></textarea>
+      <div class="field-err in-panel" id="adm-err" style="margin:0 0 10px;"></div>
+      <div class="btn-row"><button class="btn-tolak" onclick="tolakTx('${t.id}')">TOLAK</button><button class="btn-terima" onclick="terimaTx('${t.id}')">TERIMA</button></div>`;
+  } else {
+    h += '<button class="btn-ghost" onclick="closeSheet()">Tutup</button>';
+  }
+  openSheet(h);
+}
+function admHitung(id) {
+  const t = db.tx.find(x => x.id === id);
+  const p = parseNum($('adm-berat').value);
+  $('adm-nilai').textContent = p.n > 0 ? rp(p.n * JENIS[t.jenis].rate) : rp(0);
+}
+function refreshAdmin() {
+  const act = document.querySelector('.screen.active');
+  const name = act ? act.id.replace('screen-', '') : 'admin-dash';
+  if (RENDERERS[name]) RENDERERS[name]();
+}
+function terimaTx(id) {
+  const t = db.tx.find(x => x.id === id);
+  if (!guardTx(t)) return;
+  const u = findUser(t.nim);
+  const now = new Date().toISOString();
+  let msg, notif;
+  if (t.tipe === 'setor') {
+    const j = JENIS[t.jenis];
+    const p = parseNum($('adm-berat').value);
+    if (p.empty) { $('adm-err').textContent = 'Berat aktual belum dimasukkan admin.'; return; }
+    if (p.nan || p.n <= 0) { $('adm-err').textContent = 'Berat aktual harus berupa angka lebih dari 0.'; return; }
+    const nilai = Math.round(p.n * j.rate);
+    t.beratFinal = p.n; t.harga = j.rate; t.nilai = nilai; t.nilaiFinal = nilai;
+    u.saldo += nilai;                 // saldo bertambah HANYA saat diterima
+    u.total = r2(u.total + p.n);      // total sampah bertambah HANYA saat diterima
+    msg = 'Setoran diterima. Saldo ' + u.nama.split(' ')[0] + ' bertambah ' + rp(nilai) + '.';
+    notif = 'Setoran berhasil divalidasi (' + t.id + '). Saldo Anda telah diperbarui +' + rp(nilai) + '.';
+  } else {
+    if (u.saldo < t.nilai) { $('adm-err').textContent = 'Saldo mahasiswa tidak mencukupi untuk penarikan ini.'; return; }
+    u.saldo -= t.nilai; t.nilaiFinal = t.nilai;
+    msg = 'Penarikan ' + rp(t.nilai) + ' disetujui untuk ' + u.nama.split(' ')[0] + '.';
+    notif = 'Penarikan saldo ' + rp(t.nilai) + ' disetujui. Silakan ambil dana di admin bank sampah.';
+  }
+  t.status = 'diterima'; t.tglValidasi = now; t.admin = ADMIN_AKUN.nama;   // QR otomatis tidak aktif (status bukan menunggu)
+  u.notif.push({ id: 'N' + Date.now(), text: notif, tgl: now, read: false });
+  save(); closeSheet(); refreshAdmin(); toast(msg);
+}
+function tolakTx(id) {
+  const t = db.tx.find(x => x.id === id);
+  if (!guardTx(t)) return;
+  const alasan = $('adm-alasan').value.trim();
+  if (!alasan) { $('adm-err').textContent = 'Silakan isi alasan penolakan.'; return; }
+  const u = findUser(t.nim);
+  const now = new Date().toISOString();
+  t.status = 'ditolak'; t.alasan = alasan; t.tglValidasi = now; t.admin = ADMIN_AKUN.nama;   // saldo & total sampah TIDAK berubah
+  const nama = t.tipe === 'setor' ? 'Setoran ' + JENIS[t.jenis].label + ' (' + t.id + ')' : 'Pengajuan penarikan ' + rp(t.nilai);
+  u.notif.push({ id: 'N' + Date.now(), text: nama + ' ditolak. Alasan: ' + alasan, tgl: now, read: false });
+  save(); closeSheet(); refreshAdmin();
+  toast((t.tipe === 'setor' ? 'Setoran' : 'Penarikan') + ' ditolak. Saldo mahasiswa tidak berubah.');
+}
+/* ═══════════════════════════════════════════════
+   ADMIN: SCAN QR, PEMERIKSAAN & VALIDASI
+═══════════════════════════════════════════════ */
+function syncExpiry() {
+  let ch = false; const n = Date.now();
+  db.tx.forEach(t => {
+    if (t.tipe === 'setor' && t.status === 'menunggu' && new Date(t.exp).getTime() <= n) {
+      t.status = 'expired'; ch = true;
+      const u = findUser(t.nim);
+      if (u) u.notif.push({ id: 'N' + n + t.id, text: 'QR Code ' + t.id + ' sudah kedaluwarsa. Silakan membuat pengajuan baru.', tgl: new Date().toISOString(), read: false });
+    }
+  });
+  if (ch) save();
+  return ch;
+}
+function guardTx(t) {
+  if (!t) { toast('Transaksi tidak ditemukan.'); return false; }
+  syncExpiry();
+  if (t.status === 'expired') { toast('QR Code sudah kedaluwarsa. Saldo tidak berubah.'); closeSheet(); refreshAdmin(); return false; }
+  if (t.status !== 'menunggu') { toast('Transaksi sudah divalidasi.'); closeSheet(); refreshAdmin(); return false; }
+  return true;
+}
+function scanMsg(text, cls) { const m = $('scan-msg'); m.textContent = text; m.className = 'scan-msg ' + (cls || ''); m.hidden = !text; }
+function renderScan() {
+  scanMsg('');
+  const list = db.tx.filter(t => t.tipe === 'setor').sort((a, b) => new Date(b.tgl) - new Date(a.tgl)).slice(0, 8);
+  $('scan-demo').innerHTML = list.map(t => `<div class="adm-card" onclick="prosesKode('${t.id}')"><div class="adm-top"><div><h4>${t.id}</h4><p>${esc(findUser(t.nim).nama)} · ${JENIS[t.jenis].label}</p></div>${badge(t.status)}</div></div>`).join('') || '<div class="empty">Belum ada setoran.</div>';
+}
+let scanStream = null, scanRaf = 0;
+async function startScan() {
+  if (typeof jsQR === 'undefined' || !navigator.mediaDevices) { scanMsg('Kamera tidak tersedia. Masukkan kode transaksi secara manual.', 'bad'); return; }
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const v = $('scan-video'); v.srcObject = scanStream; v.style.display = 'block'; await v.play();
+    const c = document.createElement('canvas'), x = c.getContext('2d', { willReadFrequently: true });
+    (function tick() {
+      if (!scanStream) return;
+      if (v.readyState === 4) {
+        c.width = v.videoWidth; c.height = v.videoHeight; x.drawImage(v, 0, 0);
+        const r = jsQR(x.getImageData(0, 0, c.width, c.height).data, c.width, c.height);
+        if (r && r.data) { stopScan(); prosesKode(r.data); return; }
+      }
+      scanRaf = requestAnimationFrame(tick);
+    })();
+  } catch (e) { stopScan(); scanMsg('Kamera tidak dapat diakses. Gunakan input kode transaksi.', 'bad'); }
+}
+function stopScan() {
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  cancelAnimationFrame(scanRaf);
+  const v = $('scan-video'); if (v) v.style.display = 'none';
+}
+function prosesKode(raw) {
+  if (session.role !== 'admin') return;
+  syncExpiry();
+  const kode = String(raw || '').trim().toUpperCase();
+  if (!kode) return scanMsg('Kode transaksi belum diisi.', 'bad');
+  if (!/^BS-\d{4}-\d{4}$/.test(kode)) return scanMsg('QR Code tidak valid.', 'bad');
+  const t = db.tx.find(x => x.id === kode && x.tipe === 'setor');
+  if (!t) return scanMsg('Transaksi tidak ditemukan.', 'bad');
+  if (t.status === 'diterima' || t.status === 'ditolak') return scanMsg('QR Code sudah digunakan. Transaksi sudah divalidasi.', 'bad');
+  if (t.status === 'expired') return scanMsg('QR Code sudah kedaluwarsa. Silakan membuat pengajuan setoran baru.', 'bad');
+  scanMsg('QR valid. Transaksi ' + t.id + ' ditemukan.', 'ok');
+  openValidasi(t.id);
+}
+function infoRows(t) {
+  const u = findUser(t.nim), j = JENIS[t.jenis];
+  return kv('Nama', esc(u.nama)) + kv('NIM', u.nim) + kv('Kode Transaksi', t.id) + kv('Jenis Sampah', j.label) + kv('Harga', rp(j.rate) + '/' + j.unit) +
+    kv('Waktu Pengajuan', fJam(t.tgl)) + kv('Berlaku Sampai', fJam(t.exp)) + kv('Status', badge(t.status));
+}
+function openInfoSetor(t) {
+  openSheet(`<div class="sheet-hd"><h3>Detail Setoran</h3><button class="x" onclick="closeSheet()">×</button></div><div class="kv">${infoRows(t)}</div>
+    <div class="calc-note">Validasi dilakukan melalui Scan QR. Scan QR mahasiswa atau masukkan kode transaksi ${t.id}.</div>
+    <button class="btn-main" onclick="go('admin-scan');$('scan-input').value='${t.id}'">Buka Scan QR</button>`);
+}
+function openValidasi(id) {
+  const t = db.tx.find(x => x.id === id), j = JENIS[t.jenis];
+  openSheet(`<div class="sheet-hd"><h3>Detail Setoran</h3><button class="x" onclick="closeSheet()">×</button></div><div class="kv">${infoRows(t)}</div>
+    <label class="form-label">Berat Aktual (${j.unit}) — hasil penimbangan</label>
+    <div class="input-wrap"><input class="form-input" id="adm-berat" type="text" inputmode="decimal" placeholder="Contoh: 2,8" autocomplete="off" oninput="admHitung('${t.id}');$('adm-err').textContent=''" /><span class="unit">${j.unit}</span></div>
+    <div class="calc-row"><span>Nilai Setoran (otomatis)</span><strong id="adm-nilai">${rp(0)}</strong></div>
+    <label class="form-label" style="margin-top:12px;">Alasan Penolakan <span style="text-transform:none;font-weight:500;">(wajib jika menolak)</span></label>
+    <div class="reason-chips">${['Berat sampah tidak sesuai.', 'Jenis sampah tidak sesuai.', 'Setoran tidak memenuhi ketentuan.'].map(r => `<button onclick="$('adm-alasan').value='${r}'">${r.replace('.', '')}</button>`).join('')}</div>
+    <textarea class="form-input" id="adm-alasan" placeholder="Tulis alasan penolakan…" oninput="$('adm-err').textContent=''"></textarea>
+    <div class="field-err in-panel" id="adm-err" style="margin:0 0 10px;"></div>
+    <div class="btn-row"><button class="btn-tolak" onclick="tolakTx('${t.id}')">TOLAK SETORAN</button><button class="btn-terima" onclick="terimaTx('${t.id}')">TERIMA SETORAN</button></div>`);
+}
+setInterval(() => { if (typeof db !== 'undefined' && db && syncExpiry() && session.role === 'admin' && !$('sheet').classList.contains('active')) refreshAdmin(); }, 20000);
+
+function resetDemo() {
+  if (!confirm('Kembalikan semua data demo ke kondisi awal?')) return;
+  db = seed(); save(); refreshAdmin(); renderScan(); toast('Data demo dikembalikan ke kondisi awal.');
+}
+
+/* ═══════════════════════════════════════════════
+   INISIALISASI
+═══════════════════════════════════════════════ */
+db = load();
+syncExpiry();
+buildNavs();
+buildJenisList();
+setLoginRole('mahasiswa');
+</script>
+</body>
+</html>

@@ -65,7 +65,7 @@ class _ConfigErrorApp extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: const [
-                Icon(Icons.settings_alert_rounded, size: 48),
+                Icon(Icons.error_outline, size: 48),
                 SizedBox(height: 16),
                 Text(
                   'Konfigurasi Supabase belum diisi.',
