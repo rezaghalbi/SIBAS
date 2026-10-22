@@ -6,7 +6,7 @@ import 'glass_panel.dart';
 /// Navigasi bawah bergaya kaca SIBAS.
 ///
 /// Hanya menerima indeks; perpindahan halaman dilakukan pemanggil (shell rute).
-/// ponytail: tanpa state internal — item statis, cukup 4 tab per peran.
+/// ponytail: tanpa state internal — item statis, 5 tab per peran.
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -23,16 +23,18 @@ class AppBottomNav extends StatelessWidget {
 
   static const _studentItems = <({IconData icon, String label})>[
     (icon: Icons.home_rounded, label: 'Beranda'),
-    (icon: Icons.add_circle_outline_rounded, label: 'Setor'),
-    (icon: Icons.receipt_long_rounded, label: 'Riwayat'),
+    (icon: Icons.recycling_rounded, label: 'Setor'),
+    (icon: Icons.account_balance_wallet_outlined, label: 'Tarik'),
+    (icon: Icons.history_rounded, label: 'Riwayat'),
     (icon: Icons.person_outline_rounded, label: 'Profil'),
   ];
 
   static const _adminItems = <({IconData icon, String label})>[
-    (icon: Icons.space_dashboard_rounded, label: 'Dashboard'),
+    (icon: Icons.dashboard_rounded, label: 'Dashboard'),
     (icon: Icons.fact_check_outlined, label: 'Pengajuan'),
     (icon: Icons.qr_code_scanner_rounded, label: 'Pindai'),
-    (icon: Icons.receipt_long_rounded, label: 'Riwayat'),
+    (icon: Icons.history_rounded, label: 'Riwayat'),
+    (icon: Icons.category_rounded, label: 'Kelola'),
   ];
 
   @override
@@ -141,7 +143,8 @@ class _NavButton extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
+                letterSpacing: -0.2,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                 color: color,
               ),

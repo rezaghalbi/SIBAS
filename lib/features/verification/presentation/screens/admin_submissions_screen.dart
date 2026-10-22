@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/colors.dart';
@@ -386,7 +387,7 @@ class _AdminSubmissionsScreenState
       ref.invalidate(adminTransactionsProvider);
       ref.invalidate(currentUserProvider);
       // Detail transaksi yang mungkin masih terbuka ikut disegarkan.
-      ref.invalidate(transactionDetailByIdProvider);
+      ref.invalidate(transactionDetailRpcProvider);
 
       final approved = status == 'APPROVED';
       _toast(
@@ -426,7 +427,7 @@ class _AdminSubmissionsScreenState
       ref.invalidate(adminTransactionsProvider);
       ref.invalidate(currentUserProvider);
       // Detail transaksi yang mungkin masih terbuka ikut disegarkan.
-      ref.invalidate(transactionDetailByIdProvider);
+      ref.invalidate(transactionDetailRpcProvider);
 
       final rejected = status == 'REJECTED';
       _toast(
@@ -509,143 +510,154 @@ class _AdminSubmissionsScreenState
     final busy = _busyId == w.id;
     final reason = (w.rejectionReason ?? '').trim();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                backgroundColor: AppColors.mintSoftBackground,
-                child: Icon(
-                  Icons.account_balance_wallet_outlined,
-                  color: AppColors.primaryMain,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.borderLine),
+        ),
+        child: InkWell(
+          onTap: () => context.push('/withdrawal/${w.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      w.studentName ?? 'Mahasiswa',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                    const CircleAvatar(
+                      backgroundColor: AppColors.mintSoftBackground,
+                      child: Icon(
+                        Icons.account_balance_wallet_outlined,
+                        color: AppColors.primaryMain,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            w.studentName ?? 'Mahasiswa',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'NIM: ${w.studentNim ?? '-'}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    StatusBadge(status: w.status),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
                     Text(
-                      'NIM: ${w.studentNim ?? '-'}',
+                      _currency.format(w.amount),
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      _date.format(w.createdAt),
+                      style: const TextStyle(
+                        fontSize: 11,
                         color: AppColors.textMuted,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              StatusBadge(status: w.status),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Text(
-                _currency.format(w.amount),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                _date.format(w.createdAt),
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ],
-          ),
-          if (reason.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.statusRejectedBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                'Alasan ditolak: $reason',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.statusRejectedText,
-                ),
-              ),
+                if (reason.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.statusRejectedBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Alasan ditolak: $reason',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.statusRejectedText,
+                      ),
+                    ),
+                  ),
+                ],
+                if (w.isPending) ...[
+                  const SizedBox(height: 12),
+                  if (busy)
+                    const Row(
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Memproses...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primaryMain,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () => _approveWithdrawal(w.id),
+                            child: const Text('Setujui'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.danger,
+                              side: const BorderSide(color: AppColors.danger),
+                            ),
+                            onPressed: () => _rejectWithdrawal(w.id),
+                            child: const Text('Tolak'),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ],
             ),
-          ],
-          if (w.isPending) ...[
-            const SizedBox(height: 12),
-            if (busy)
-              const Row(
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    'Memproses...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              )
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primaryMain,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () => _approveWithdrawal(w.id),
-                      child: const Text('Setujui'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.danger,
-                        side: const BorderSide(color: AppColors.danger),
-                      ),
-                      onPressed: () => _rejectWithdrawal(w.id),
-                      child: const Text('Tolak'),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }

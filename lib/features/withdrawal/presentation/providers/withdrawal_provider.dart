@@ -36,6 +36,15 @@ final adminWithdrawalsProvider =
   return repo.getAllWithdrawals(statusFilter: status);
 });
 
+/// Detail penarikan dari RPC server: nama pengaju, admin penyetuju, dan audit.
+final withdrawalDetailProvider =
+    FutureProvider.family<Map<String, dynamic>?, String>((ref, id) async {
+  if (id.isEmpty) return null;
+  ref.watch(sessionEpochProvider);
+  final data = await supabase.rpc('detail_penarikan', params: {'p_id': id});
+  return data as Map<String, dynamic>?;
+});
+
 /// Aksi tulis penarikan. State berisi error terakhir untuk snackbar/form.
 final withdrawalControllerProvider =
     StateNotifierProvider<WithdrawalController, AsyncValue<void>>((ref) {
@@ -93,6 +102,8 @@ class WithdrawalController extends StateNotifier<AsyncValue<void>> {
     _ref.invalidate(availableBalanceProvider);
     _ref.invalidate(studentWithdrawalsProvider);
     _ref.invalidate(adminWithdrawalsProvider);
+    // Detail ikut dibuang agar audit/nama verifikator tidak basi.
+    _ref.invalidate(withdrawalDetailProvider);
     _ref.invalidate(currentUserProvider);
   }
 }

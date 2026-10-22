@@ -11,7 +11,6 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
-import '../../../withdrawal/presentation/widgets/withdraw_sheet.dart';
 
 /// Saldo tersedia, pengajuan penarikan, dan riwayat penarikan mahasiswa.
 class SaldoScreen extends ConsumerWidget {
@@ -99,7 +98,7 @@ class SaldoScreen extends ConsumerWidget {
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: canWithdraw
-                                  ? () => showWithdrawSheet(context)
+                                  ? () => context.push('/tarik')
                                   : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,

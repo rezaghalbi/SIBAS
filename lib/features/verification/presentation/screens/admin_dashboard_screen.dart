@@ -305,6 +305,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       final weight = (item['weight'] != null) ? (item['weight'] as num).toDouble() : 0.0;
                       final status = (item['status'] as String?) ?? 'PENDING';
                       final isPending = status.toUpperCase() == 'PENDING';
+                      final id = item['id'] as String?;
+                      final canOpen = id != null && id.isNotEmpty;
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -315,6 +317,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(14),
+                          onTap: canOpen
+                              ? () => context.push('/transaction/$id')
+                              : null,
                           leading: const CircleAvatar(
                             backgroundColor: AppColors.mintSoftBackground,
                             child: Icon(Icons.recycling_rounded, color: AppColors.primaryMain),

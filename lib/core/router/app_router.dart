@@ -20,6 +20,8 @@ import '../../features/verification/presentation/providers/verification_provider
 import '../../features/verification/presentation/screens/admin_dashboard_screen.dart';
 import '../../features/verification/presentation/screens/admin_scan_screen.dart';
 import '../../features/verification/presentation/screens/admin_submissions_screen.dart';
+import '../../features/withdrawal/presentation/screens/tarik_screen.dart';
+import '../../features/withdrawal/presentation/screens/withdrawal_detail_screen.dart';
 import '../widgets/app_bottom_nav.dart';
 
 /// Konfigurasi GoRouter resmi SIBAS lengkap dengan seluruh rute aplikasi.
@@ -67,6 +69,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       const ruteMahasiswa = [
         '/dashboard',
         '/setor',
+        '/tarik',
         '/history',
         '/saldo',
         '/profile',
@@ -102,12 +105,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const _NavScaffold(index: 1, child: SetorScreen()),
       ),
       GoRoute(
+        path: '/tarik',
+        builder: (context, state) => const _NavScaffold(index: 2, child: TarikScreen()),
+      ),
+      GoRoute(
         path: '/history',
-        builder: (context, state) => const _NavScaffold(index: 2, child: HistoryScreen()),
+        builder: (context, state) => const _NavScaffold(index: 3, child: HistoryScreen()),
       ),
       GoRoute(
         path: '/profile',
-        builder: (context, state) => const _NavScaffold(index: 3, child: ProfileScreen()),
+        builder: (context, state) => const _NavScaffold(index: 4, child: ProfileScreen()),
       ),
 
       // Rute pendukung mahasiswa tanpa bottom nav
@@ -137,6 +144,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           return TransactionDetailScreen(transactionId: txId);
         },
       ),
+      GoRoute(
+        path: '/withdrawal/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return WithdrawalDetailScreen(withdrawalId: id);
+        },
+      ),
 
       // Admin — memakai bottom nav
       GoRoute(
@@ -157,7 +171,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/admin/trash-types',
-        builder: (context, state) => const TrashTypeManagementScreen(),
+        builder: (context, state) =>
+            const _NavScaffold(index: 4, child: TrashTypeManagementScreen()),
       ),
     ],
   );
@@ -189,8 +204,20 @@ class _NavScaffold extends ConsumerWidget {
         pendingCount: pendingCount,
         onTap: (target) {
           final tujuan = isAdmin
-              ? const ['/admin/dashboard', '/admin/submissions', '/admin/scan', '/admin/history'][target]
-              : const ['/dashboard', '/setor', '/history', '/profile'][target];
+              ? const [
+                  '/admin/dashboard',
+                  '/admin/submissions',
+                  '/admin/scan',
+                  '/admin/history',
+                  '/admin/trash-types',
+                ][target]
+              : const [
+                  '/dashboard',
+                  '/setor',
+                  '/tarik',
+                  '/history',
+                  '/profile',
+                ][target];
           if (target != index) context.go(tujuan);
         },
       ),

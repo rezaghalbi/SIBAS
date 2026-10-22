@@ -71,7 +71,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
         ref.invalidate(adminTransactionsProvider);
         ref.invalidate(currentUserProvider);
         // Detail transaksi yang mungkin masih terbuka ikut disegarkan.
-        ref.invalidate(transactionDetailByIdProvider);
+        ref.invalidate(transactionDetailRpcProvider);
         Navigator.pop(context);
         widget.onVerificationComplete();
         final approved = status == 'APPROVED';
@@ -126,7 +126,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
       if (mounted) {
         ref.invalidate(adminMetricsProvider);
         ref.invalidate(adminTransactionsProvider);
-        ref.invalidate(transactionDetailByIdProvider);
+        ref.invalidate(transactionDetailRpcProvider);
         Navigator.pop(context);
         widget.onVerificationComplete();
         final rejected = status == 'REJECTED';
