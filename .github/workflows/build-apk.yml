@@ -49,23 +49,6 @@ jobs:
             flutter create . --platforms=android --org com.sibas.poltekkes
           fi
 
-      # Sementara: ambil scaffolding android/ hasil `flutter create` agar bisa
-      # di-commit ke repo (mesin dev tidak punya SDK Flutter).
-      - name: Ekspor scaffolding Android
-        if: github.event_name == 'pull_request'
-        run: |
-          flutter create /tmp/scaffold --platforms=android \
-            --org com.sibas.poltekkes --project-name sibas > /dev/null
-          tar -czf /tmp/android-scaffold.tgz -C /tmp/scaffold android
-
-      - name: Upload scaffolding Android
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-scaffold
-          path: /tmp/android-scaffold.tgz
-          retention-days: 2
-
       # Dipakai setelah android/ masuk repo: android/app/build.gradle.kts
       # membaca android/key.properties bila ada.
       - name: Siapkan signing Android
