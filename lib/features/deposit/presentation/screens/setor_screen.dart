@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/deposit_provider.dart';
 import '../../domain/models/waste_category_model.dart';
 
@@ -61,18 +60,12 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
       return;
     }
 
-    final currentUser = ref.read(currentUserProvider).valueOrNull;
-    if (currentUser == null) return;
-
     setState(() => _isSubmitting = true);
     try {
       final repo = ref.read(depositRepositoryProvider);
       final tx = await repo.createDepositTransaction(
-        userId: currentUser.id,
         categoryId: _selectedCategory!.id,
-        categoryName: _selectedCategory!.name,
         weightKg: _weight,
-        estimatedAmount: _estimatedTotal,
       );
 
       if (mounted) {

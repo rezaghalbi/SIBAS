@@ -7,6 +7,14 @@
       "enabled": true
     }
   },
+  "permission": {
+    "shell": {
+      "*": "allow",
+      "git push --force*": "deny",
+      "git push -f*": "deny",
+      "git push*": "ask"
+    }
+  },
   "instructions": [
     "AGENTS.md"
   ]

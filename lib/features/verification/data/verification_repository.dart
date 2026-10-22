@@ -87,29 +87,26 @@ class VerificationRepository {
 
   /// Menyetujui setoran. Saldo, total berat, waktu, dan verifikator dihitung
   /// server. Berat pengajuan tidak boleh diubah admin (DOCX §4).
-  Future<void> approveTransaction({
-    required String transactionId,
-    required String adminId,
-    required double verifiedWeightKg,
-  }) async {
-    // ponytail: adminId & verifiedWeightKg tidak dikirim; server memakai
-    // auth.uid() dan berat pengajuan. Rapikan signature saat Fase 5.
-    await _client.rpc(
+  ///
+  /// Mengembalikan status akhir: 'APPROVED', atau 'EXPIRED' bila QR sudah
+  /// kedaluwarsa (server menandai EXPIRED, bukan melempar exception).
+  Future<String> approveTransaction({required String transactionId}) async {
+    final res = await _client.rpc(
       'approve_transaction',
       params: {'p_transaction_id': transactionId},
     );
+    return (res as Map?)?['status'] as String? ?? 'APPROVED';
   }
 
   /// Menolak setoran dengan alasan wajib. Saldo & total berat tidak berubah.
-  Future<void> rejectTransaction({
+  Future<String> rejectTransaction({
     required String transactionId,
-    required String adminId,
     required String reason,
   }) async {
-    // ponytail: adminId tidak dikirim; server memakai auth.uid().
-    await _client.rpc(
+    final res = await _client.rpc(
       'reject_transaction',
       params: {'p_transaction_id': transactionId, 'p_reason': reason},
     );
+    return (res as Map?)?['status'] as String? ?? 'REJECTED';
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/domain/models/user_model.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -13,13 +14,24 @@ import '../../features/verification/presentation/screens/admin_dashboard_screen.
 import '../../features/verification/presentation/screens/admin_scan_screen.dart';
 
 /// Konfigurasi GoRouter resmi SIBAS lengkap dengan seluruh rute aplikasi
+///
+/// Router dibuat sekali. Perubahan status login dikirim lewat `ValueNotifier`
+/// agar GoRouter tidak dibuat ulang (yang akan mereset riwayat navigasi).
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(currentUserProvider);
+  final authNotifier = ValueNotifier<AsyncValue<UserModel?>>(
+    ref.read(currentUserProvider),
+  );
+
+  ref.listen<AsyncValue<UserModel?>>(currentUserProvider, (_, next) {
+    authNotifier.value = next;
+  });
+  ref.onDispose(authNotifier.dispose);
 
   return GoRouter(
     initialLocation: '/login',
-    refreshListenable: ValueNotifier(authState),
+    refreshListenable: authNotifier,
     redirect: (context, state) {
+      final authState = authNotifier.value;
       if (authState.isLoading) return null;
 
       final user = authState.valueOrNull;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
+import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -11,8 +12,7 @@ class RegisterScreen extends ConsumerStatefulWidget {
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _nimController = TextEditingController();
@@ -22,14 +22,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
   bool _isLoading = false;
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
     _fullNameController.dispose();
     _nimController.dispose();
     _emailController.dispose();
@@ -37,24 +30,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
     super.dispose();
   }
 
-  String get _currentRole => _tabController.index == 0 ? 'mahasiswa' : 'admin';
-
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
     try {
-      await ref.read(currentUserProvider.notifier).register(
+      final user = await ref.read(currentUserProvider.notifier).register(
             email: _emailController.text,
             password: _passwordController.text,
             fullName: _fullNameController.text,
-            role: _currentRole,
-            nim: _currentRole == 'mahasiswa' ? _nimController.text : null,
+            nim: _nimController.text,
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pendaftaran berhasil!'),
+          SnackBar(
+            content: Text(
+              user == null
+                  ? 'Pendaftaran berhasil. Cek email untuk verifikasi sebelum masuk.'
+                  : 'Pendaftaran berhasil!',
+            ),
             backgroundColor: AppColors.primaryMain,
           ),
         );
@@ -63,7 +57,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Pendaftaran gagal: ${e.toString()}'),
+            content: Text('Pendaftaran gagal: ${authErrorMessage(e)}'),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -143,28 +137,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                         ),
                         const SizedBox(height: 20),
 
-                        // Tab Pemilihan Role
+                        // Registrasi hanya untuk mahasiswa; akun admin dibuat
+                        // manual lewat Dashboard Supabase.
                         Container(
-                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
                             color: AppColors.mintSoftBackground,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: TabBar(
-                            controller: _tabController,
-                            onTap: (_) => setState(() {}),
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            dividerColor: Colors.transparent,
-                            indicator: BoxDecoration(
-                              color: AppColors.primaryMain,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            labelColor: Colors.white,
-                            unselectedLabelColor: AppColors.textMuted,
-                            labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                            tabs: const [
-                              Tab(text: 'Mahasiswa'),
-                              Tab(text: 'Petugas Admin'),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.school_outlined, size: 18, color: AppColors.primaryMain),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Pendaftaran untuk akun mahasiswa. Akun admin dibuat oleh pengelola bank sampah.',
+                                  style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -192,32 +182,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> with SingleTick
                         ),
                         const SizedBox(height: 14),
 
-                        // Input NIM jika tab Mahasiswa aktif
-                        if (_currentRole == 'mahasiswa') ...[
-                          Text(
-                            'NIM (Nomor Induk Mahasiswa)',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
+                        // NIM
+                        Text(
+                          'NIM (Nomor Induk Mahasiswa)',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
                           ),
-                          const SizedBox(height: 6),
-                          TextFormField(
-                            controller: _nimController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              hintText: 'Contoh: P07124220001',
-                              prefixIcon: Icon(Icons.badge_outlined, color: AppColors.primaryMain, size: 20),
-                            ),
-                            validator: (val) {
-                              if (_currentRole == 'mahasiswa' && (val == null || val.trim().isEmpty)) {
-                                return 'NIM wajib diisi untuk mahasiswa';
-                              }
-                              return null;
-                            },
+                        ),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _nimController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            hintText: 'Contoh: P07124220001',
+                            prefixIcon: Icon(Icons.badge_outlined, color: AppColors.primaryMain, size: 20),
                           ),
-                          const SizedBox(height: 14),
-                        ],
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'NIM wajib diisi';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 14),
 
                         // Email
                         Text(

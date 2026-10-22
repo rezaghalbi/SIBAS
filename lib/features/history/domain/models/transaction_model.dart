@@ -10,6 +10,8 @@ class TransactionModel {
   final String status; // 'PENDING', 'APPROVED', 'REJECTED', 'EXPIRED'
   final String? rejectionReason;
   final String? adminId;
+  final String? qrToken;
+  final String? txCode;
   final DateTime createdAt;
   final DateTime? qrExpiresAt;
 
@@ -24,6 +26,8 @@ class TransactionModel {
     required this.status,
     this.rejectionReason,
     this.adminId,
+    this.qrToken,
+    this.txCode,
     required this.createdAt,
     this.qrExpiresAt,
   });
@@ -56,7 +60,9 @@ class TransactionModel {
           : null,
       status: (json['status'] as String?) ?? 'PENDING',
       rejectionReason: json['rejection_reason'] as String?,
-      adminId: json['admin_id'] as String?,
+      adminId: json['verified_by'] as String?,
+      qrToken: json['qr_token'] as String?,
+      txCode: json['tx_code'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),

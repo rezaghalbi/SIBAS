@@ -11,6 +11,9 @@ jobs:
   build:
     name: Build Flutter APK & Deploy Web
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
     steps:
       - name: Checkout Repository
@@ -70,14 +73,30 @@ jobs:
 
       - name: Deploy Web to Vercel (production)
         if: github.event_name != 'pull_request'
-        run: vercel deploy ./build/web --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          url=$(vercel deploy ./build/web --prod --yes --token=${{ secrets.VERCEL_TOKEN }} \
+            | grep -oE 'https://[a-z0-9.-]+\.vercel\.app' | tail -1)
+          echo "Deployment: $url"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -L "$url")
+          echo "**Production:** $url (HTTP $code)" >> "$GITHUB_STEP_SUMMARY"
+          [ "$code" = "200" ] || { echo "::error::Production deploy returned HTTP $code"; exit 1; }
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy Web to Vercel (preview)
         if: github.event_name == 'pull_request'
-        run: vercel deploy ./build/web --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          url=$(vercel deploy ./build/web --yes --token=${{ secrets.VERCEL_TOKEN }} \
+            | grep -oE 'https://[a-z0-9.-]+\.vercel\.app' | tail -1)
+          echo "Preview: $url"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -L "$url")
+          echo "HTTP $code"
+          echo "**Preview:** $url (HTTP $code)" >> "$GITHUB_STEP_SUMMARY"
+          [ "$code" = "200" ] || { echo "::error::Preview returned HTTP $code"; exit 1; }
+          gh pr comment "$PR_NUMBER" --body "Vercel preview: $url"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
