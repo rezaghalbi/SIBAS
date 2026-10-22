@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
@@ -60,10 +61,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleForgotPassword() async {
-    setState(() {
-      _errorMessage = 'Atur ulang kata sandi belum tersedia di aplikasi. '
-          'Hubungi admin bank sampah untuk mengatur ulang kata sandi akun Anda.';
-    });
+    final terkirim = await showDialog<String>(
+      context: context,
+      builder: (_) => _ForgotPasswordDialog(
+        emailAwal: _emailController.text.trim(),
+      ),
+    );
+    if (!mounted || terkirim == null) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            'Tautan atur ulang sandi dikirim ke $terkirim. Periksa kotak masuk.',
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.primaryDark,
+        ),
+      );
   }
 
   Future<void> _handleResend() async {
@@ -404,6 +419,165 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Dialog kirim tautan reset sandi. Galat ditahan di dialog supaya email bisa
+/// diperbaiki tanpa membuka ulang.
+class _ForgotPasswordDialog extends ConsumerStatefulWidget {
+  final String emailAwal;
+
+  const _ForgotPasswordDialog({required this.emailAwal});
+
+  @override
+  ConsumerState<_ForgotPasswordDialog> createState() =>
+      _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _email = TextEditingController(
+    text: widget.emailAwal,
+  );
+  bool _sibuk = false;
+  String? _galat;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    super.dispose();
+  }
+
+  String? _validasiEmail(String? val) {
+    final value = val?.trim() ?? '';
+    if (value.isEmpty) return 'Email wajib diisi';
+    final at = value.indexOf('@');
+    if (at <= 0 || !value.substring(at + 1).contains('.')) {
+      return 'Format email tidak valid';
+    }
+    return null;
+  }
+
+  Future<void> _kirim() async {
+    if (_sibuk) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final email = _email.text.trim();
+    setState(() {
+      _sibuk = true;
+      _galat = null;
+    });
+    try {
+      final notifier = ref.read(currentUserProvider.notifier);
+      await notifier.kirimTautanResetSandi(email);
+      if (!mounted) return;
+      Navigator.pop(context, email);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _sibuk = false;
+        _galat = pesanKesalahan(e);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      title: const Text(
+        'Lupa Kata Sandi',
+        style: TextStyle(fontWeight: FontWeight.w700),
+      ),
+      scrollable: true,
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Masukkan email akun. Kami kirim tautan untuk mengatur ulang '
+              'kata sandi.',
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.4,
+                color: AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              autofocus: widget.emailAwal.isEmpty,
+              decoration: const InputDecoration(
+                hintText: 'nama@poltekkes-jogja.ac.id',
+                prefixIcon: Icon(
+                  Icons.mail_outline_rounded,
+                  color: AppColors.primaryMain,
+                  size: 20,
+                ),
+              ),
+              validator: _validasiEmail,
+            ),
+            if (_galat != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.statusRejectedBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.danger.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      size: 16,
+                      color: AppColors.danger,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _galat!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: AppColors.danger,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _sibuk ? null : () => Navigator.pop(context),
+          child: const Text(
+            'Batal',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: _sibuk ? null : _kirim,
+          child: _sibuk
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Kirim Tautan'),
+        ),
+      ],
     );
   }
 }

@@ -29,6 +29,9 @@ final authStateStreamProvider = StreamProvider<dynamic>((ref) {
 /// [currentUserProvider] ikut membuang cache saat nilainya berubah.
 final sessionEpochProvider = StateProvider<int>((ref) => 0);
 
+/// True saat sesi berasal dari tautan pemulihan sandi (lupa sandi).
+final passwordRecoveryProvider = StateProvider<bool>((ref) => false);
+
 /// Provider state UserModel pengguna saat ini
 final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, AsyncValue<UserModel?>>((ref) {
   final repo = ref.watch(authRepositoryProvider);
@@ -59,6 +62,13 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         state = const AsyncValue.data(null);
         // Sesi berakhir di luar aplikasi: cache provider lain ikut dibuang.
         if (mounted) _ref.read(sessionEpochProvider.notifier).state++;
+        return;
+      }
+      if (authState.event == AuthChangeEvent.passwordRecovery) {
+        // Jangan timpa state pengguna: sesi pemulihan tetap milik user aktif.
+        if (mounted) {
+          _ref.read(passwordRecoveryProvider.notifier).state = true;
+        }
         return;
       }
       final session = authState.session;
@@ -199,6 +209,26 @@ class CurrentUserNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     required String baru,
   }) async {
     await _repo.ubahSandiDenganSandiLama(lama: lama, baru: baru);
+  }
+
+  /// Kirim tautan reset sandi (lupa sandi) ke email.
+  Future<void> kirimTautanResetSandi(String email) =>
+      _repo.kirimTautanResetSandi(email);
+
+  /// Simpan sandi baru dari sesi pemulihan lalu keluar dari mode pemulihan.
+  Future<void> simpanSandiBaru(String baru) async {
+    await _repo.simpanSandiBaru(baru);
+    if (mounted) _ref.read(passwordRecoveryProvider.notifier).state = false;
+    // Sandi sudah tersimpan; gagal memuat profil tidak boleh tampil sebagai
+    // kegagalan atur sandi.
+    try {
+      await _muatUlangProfil();
+    } catch (_) {}
+  }
+
+  /// Batalkan mode pemulihan tanpa mengubah sandi.
+  void batalPemulihanSandi() {
+    if (mounted) _ref.read(passwordRecoveryProvider.notifier).state = false;
   }
 
   /// Ambil ulang profil dari server agar UI memakai data terbaru.

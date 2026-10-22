@@ -233,6 +233,20 @@ class AuthRepository {
     );
   }
 
+  /// Kirim tautan atur ulang sandi ke email pengguna.
+  Future<void> kirimTautanResetSandi(String email) {
+    return guardRequest(
+      () => _client.auth.resetPasswordForEmail(email.trim()),
+    );
+  }
+
+  /// Simpan sandi baru memakai sesi pemulihan yang sedang aktif.
+  Future<void> simpanSandiBaru(String baru) {
+    return guardRequest(
+      () => _client.auth.updateUser(UserAttributes(password: baru)),
+    );
+  }
+
   /// Mengirim permintaan ubah email. Supabase mengirim tautan konfirmasi ke
   /// email baru (dan email lama bila "secure email change" aktif).
   Future<void> changeEmail(String newEmail) async {
