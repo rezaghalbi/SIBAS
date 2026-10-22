@@ -12,8 +12,7 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -24,14 +23,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   String? _errorMessage;
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -182,27 +174,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                         ),
                         const SizedBox(height: 24),
 
-                        // Tab Pilihan Role: Mahasiswa vs Admin
+                        // Role tidak dipilih di klien: server menentukan admin/mahasiswa
+                        // lewat tabel profiles, lalu router mengarahkan ke dashboard sesuai role.
                         Container(
-                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
                             color: AppColors.mintSoftBackground,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: TabBar(
-                            controller: _tabController,
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            dividerColor: Colors.transparent,
-                            indicator: BoxDecoration(
-                              color: AppColors.primaryMain,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            labelColor: Colors.white,
-                            unselectedLabelColor: AppColors.textMuted,
-                            labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                            tabs: const [
-                              Tab(text: 'Mahasiswa'),
-                              Tab(text: 'Admin / Petugas'),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primaryMain),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Masuk sebagai mahasiswa atau admin — diarahkan otomatis sesuai akun.',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontSize: 12,
+                                    color: AppColors.textMuted,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
