@@ -32,8 +32,8 @@ class AdminScanScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
-  // mobile_scanner tidak mendukung web: controller hanya dibuat di non-web.
-  MobileScannerController? _scannerController;
+  // mobile_scanner 5.x mendukung web (kamera peramban); controller dipakai semua platform.
+  late final MobileScannerController _scannerController;
   final _uuidInputController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -49,12 +49,12 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   @override
   void initState() {
     super.initState();
-    if (!kIsWeb) _scannerController = MobileScannerController();
+    _scannerController = MobileScannerController();
   }
 
   @override
   void dispose() {
-    _scannerController?.dispose();
+    _scannerController.dispose();
     _uuidInputController.dispose();
     super.dispose();
   }
@@ -62,6 +62,61 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: AppColors.danger),
+    );
+  }
+
+  /// Senter tidak tersedia di web dan tidak semua perangkat punya torch.
+  Future<void> _toggleTorch() async {
+    try {
+      await _scannerController.toggleTorch();
+      if (mounted) setState(() => _torchEnabled = !_torchEnabled);
+    } catch (_) {
+      // Jangan tampilkan exception mentah; cukup biarkan senter mati.
+      if (mounted) setState(() => _torchEnabled = false);
+    }
+  }
+
+  /// Panel ramah saat kamera gagal/inisialisasi atau izin ditolak.
+  Widget _cameraErrorPanel() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: GlassPanel(
+          tint: Colors.black,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.no_photography_outlined,
+                size: 56,
+                color: AppColors.mintAccent,
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Izin kamera diperlukan',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Kamera tidak dapat diakses. Izinkan akses kamera di pengaturan '
+                'peramban/perangkat, lalu muat ulang halaman. Sementara itu '
+                'gunakan tombol ketik manual atau unggah gambar di bawah.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -293,14 +348,11 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         actions: [
-          // Senter hanya relevan bila kamera tersedia (bukan web).
+          // Senter tidak tersedia di web; tombol hanya untuk Android/iOS.
           if (!kIsWeb)
             IconButton(
               icon: Icon(_torchEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded),
-              onPressed: () {
-                _scannerController?.toggleTorch();
-                setState(() => _torchEnabled = !_torchEnabled);
-              },
+              onPressed: _toggleTorch,
             ),
         ],
       ),
@@ -310,76 +362,36 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
           Expanded(
             child: Stack(
               children: [
-                // 1. Kamera Scanner View — web memakai panel info (mobile_scanner tanpa dukungan web)
-                if (kIsWeb)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: GlassPanel(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.qr_code_scanner_rounded,
-                              size: 64,
-                              color: AppColors.mintAccent,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Pemindaian kamera hanya di aplikasi Android',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _isWithdrawal
-                                  ? 'Gunakan tombol input token manual atau unggah '
-                                      'gambar QR di bawah untuk menyetujui penarikan.'
-                                  : 'Gunakan tombol input kode manual atau unggah gambar QR '
-                                      'di bawah untuk memverifikasi setoran.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
-                else ...[
-                  MobileScanner(
-                    controller: _scannerController!,
-                    onDetect: (capture) {
-                      final barcodes = capture.barcodes;
-                      for (final barcode in barcodes) {
-                        final rawValue = barcode.rawValue;
-                        if (rawValue != null && !_isProcessing) {
-                          _processRawValue(rawValue, notify: false);
-                          break;
-                        }
+                // 1. Kamera Scanner View — mobile_scanner 5.x jalan di web (izin peramban).
+                MobileScanner(
+                  controller: _scannerController,
+                  errorBuilder: (context, error, child) => _cameraErrorPanel(),
+                  placeholderBuilder: (context, child) => const Center(
+                    child: CircularProgressIndicator(color: AppColors.mintAccent),
+                  ),
+                  onDetect: (capture) {
+                    final barcodes = capture.barcodes;
+                    for (final barcode in barcodes) {
+                      final rawValue = barcode.rawValue;
+                      if (rawValue != null && !_isProcessing) {
+                        _processRawValue(rawValue, notify: false);
+                        break;
                       }
-                    },
-                  ),
+                    }
+                  },
+                ),
 
-                  // 2. Overlay Bingkai Pemindai
-                  Center(
-                    child: Container(
-                      width: 260,
-                      height: 260,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.accent, width: 3),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
+                // 2. Overlay Bingkai Pemindai
+                Center(
+                  child: Container(
+                    width: 260,
+                    height: 260,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.accent, width: 3),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                ],
+                ),
 
                 // 3. Tombol Aksi Bawah (Manual Input & Upload Fallback)
                 Positioned(
@@ -395,16 +407,31 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                           color: Colors.black.withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          kIsWeb
-                              ? (_isWithdrawal
-                                  ? 'Masukkan token QR penarikan manual atau unggah gambar QR'
-                                  : 'Masukkan kode QR manual atau unggah gambar QR mahasiswa')
-                              : (_isWithdrawal
-                                  ? 'Arahkan kamera ke QR penarikan di layar mahasiswa'
-                                  : 'Arahkan kamera ke QR mahasiswa di aplikasi SIBAS'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _isWithdrawal
+                                  ? 'Arahkan kamera ke QR penarikan di layar mahasiswa, '
+                                      'atau masukkan token/unggah gambar'
+                                  : 'Arahkan kamera ke QR mahasiswa, atau masukkan '
+                                      'kode/unggah gambar',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                            if (kIsWeb)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  'Peramban akan meminta izin kamera.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 14),
