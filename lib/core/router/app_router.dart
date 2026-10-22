@@ -121,26 +121,52 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ResetPasswordScreen(),
       ),
 
-      // Mahasiswa — memakai bottom nav
-      GoRoute(
-        path: '/dashboard',
-        builder: (context, state) => const _NavScaffold(index: 0, child: DashboardScreen()),
-      ),
-      GoRoute(
-        path: '/setor',
-        builder: (context, state) => const _NavScaffold(index: 1, child: SetorScreen()),
-      ),
-      GoRoute(
-        path: '/tarik',
-        builder: (context, state) => const _NavScaffold(index: 2, child: TarikScreen()),
-      ),
-      GoRoute(
-        path: '/history',
-        builder: (context, state) => const _NavScaffold(index: 3, child: HistoryScreen()),
-      ),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => const _NavScaffold(index: 4, child: ProfileScreen()),
+      // Mahasiswa — bottom nav tetap, isi tab disimpan IndexedStack.
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            _NavScaffold(navigationShell: navigationShell, isAdmin: false),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/dashboard',
+                builder: (context, state) => const DashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/setor',
+                builder: (context, state) => const SetorScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/tarik',
+                builder: (context, state) => const TarikScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/history',
+                builder: (context, state) => const HistoryScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                builder: (context, state) => const ProfileScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
 
       // Rute pendukung mahasiswa tanpa bottom nav
@@ -178,74 +204,86 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Admin — memakai bottom nav
-      GoRoute(
-        path: '/admin/dashboard',
-        builder: (context, state) => const _NavScaffold(index: 0, child: AdminDashboardScreen()),
-      ),
-      GoRoute(
-        path: '/admin/submissions',
-        builder: (context, state) => const _NavScaffold(index: 1, child: AdminSubmissionsScreen()),
-      ),
-      GoRoute(
-        path: '/admin/scan',
-        builder: (context, state) => const _NavScaffold(index: 2, child: AdminScanScreen()),
-      ),
-      GoRoute(
-        path: '/admin/history',
-        builder: (context, state) => const _NavScaffold(index: 3, child: AdminHistoryScreen()),
-      ),
-      GoRoute(
-        path: '/admin/trash-types',
-        builder: (context, state) =>
-            const _NavScaffold(index: 4, child: TrashTypeManagementScreen()),
+      // Admin — shell terpisah agar tiap peran punya riwayat tab sendiri.
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            _NavScaffold(navigationShell: navigationShell, isAdmin: true),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/dashboard',
+                builder: (context, state) => const AdminDashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/submissions',
+                builder: (context, state) => const AdminSubmissionsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/scan',
+                builder: (context, state) => const AdminScanScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/history',
+                builder: (context, state) => const AdminHistoryScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/admin/trash-types',
+                builder: (context, state) => const TrashTypeManagementScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );
 });
 
-/// Membungkus layar dengan bottom nav sesuai role pengguna.
-///
-/// Badge pengajuan hanya dihitung untuk admin dan memakai cache
-/// [adminMetricsProvider], bukan query tambahan per navigasi.
+/// Membungkus shell tab dengan bottom nav. Scaffold berada di luar
+/// [navigationShell], jadi nav tidak ikut transisi dan state tab tetap hidup.
 class _NavScaffold extends ConsumerWidget {
-  final int index;
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
+  final bool isAdmin;
 
-  const _NavScaffold({required this.index, required this.child});
+  const _NavScaffold({
+    required this.navigationShell,
+    required this.isAdmin,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider).valueOrNull;
-    final isAdmin = user?.isAdmin ?? false;
+    // Badge pengajuan hanya untuk admin, memakai cache [adminMetricsProvider].
     final pendingCount = isAdmin
         ? (ref.watch(adminMetricsProvider).valueOrNull?.pendingCount ?? 0)
         : 0;
 
     return Scaffold(
-      body: child,
+      body: navigationShell,
       bottomNavigationBar: AppBottomNav(
-        currentIndex: index,
+        currentIndex: navigationShell.currentIndex,
         isAdmin: isAdmin,
         pendingCount: pendingCount,
-        onTap: (target) {
-          final tujuan = isAdmin
-              ? const [
-                  '/admin/dashboard',
-                  '/admin/submissions',
-                  '/admin/scan',
-                  '/admin/history',
-                  '/admin/trash-types',
-                ][target]
-              : const [
-                  '/dashboard',
-                  '/setor',
-                  '/tarik',
-                  '/history',
-                  '/profile',
-                ][target];
-          if (target != index) context.go(tujuan);
-        },
+        onTap: (target) => navigationShell.goBranch(
+          target,
+          // Tap tab yang sedang aktif mengembalikan ke lokasi awal tab itu.
+          initialLocation: target == navigationShell.currentIndex,
+        ),
       ),
     );
   }
