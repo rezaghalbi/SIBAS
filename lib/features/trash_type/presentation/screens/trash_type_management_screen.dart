@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/colors.dart';
@@ -109,6 +112,36 @@ class _TrashTypeManagementScreenState
     return '${_currency.format(price)} / ${unit.isEmpty ? 'kg' : unit}';
   }
 
+  Widget _thumbCard(String? imagePath) {
+    final fallback = Container(
+      width: 46,
+      height: 46,
+      color: AppColors.mintSoftBackground,
+      child: const Icon(
+        Icons.recycling_rounded,
+        size: 22,
+        color: AppColors.primaryMain,
+      ),
+    );
+
+    return Consumer(
+      builder: (context, ref, _) {
+        final url = ref.watch(fotoJenisSampahUrlProvider(imagePath));
+        if (url == null || url.isEmpty) return fallback;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            url,
+            width: 46,
+            height: 46,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => fallback,
+          ),
+        );
+      },
+    );
+  }
+
   Widget _itemCard(Map<String, dynamic> item) {
     final id = item['id'] as String? ?? '';
     final name = (item['name'] as String?) ?? 'Tanpa nama';
@@ -129,6 +162,8 @@ class _TrashTypeManagementScreenState
         children: [
           Row(
             children: [
+              _thumbCard(item['image_path'] as String?),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,21 +336,20 @@ class _TrashTypeManagementScreenState
 
     final confirmed = await _confirm(
       title: 'Hapus jenis sampah?',
-      message: '"${(item['name'] as String?) ?? ''}" akan dihapus permanen. '
-          'Riwayat setoran lama tetap tersimpan.',
+      message: '"${(item['name'] as String?) ?? ''}" akan dihapus permanen '
+          'bila belum dipakai transaksi. Jenis yang sudah dipakai akan '
+          'dinonaktifkan dan riwayat setoran tetap tersimpan.',
     );
     if (!confirmed || !mounted) return;
 
     setState(() => _busyId = id);
-    final ok = await ref.read(trashTypeControllerProvider.notifier).delete(id);
+    final mode = await ref
+        .read(trashTypeControllerProvider.notifier)
+        .hapusAman(id);
     if (!mounted) return;
     setState(() => _busyId = null);
 
-    if (ok) {
-      ref.invalidate(allTrashTypesProvider);
-      ref.invalidate(wasteCategoriesProvider);
-      _toast('Jenis sampah dihapus.');
-    } else {
+    if (mode == null) {
       _toast(
         _friendlyError(
           ref.read(trashTypeControllerProvider).error,
@@ -323,7 +357,16 @@ class _TrashTypeManagementScreenState
         ),
         isError: true,
       );
+      return;
     }
+
+    ref.invalidate(allTrashTypesProvider);
+    ref.invalidate(wasteCategoriesProvider);
+    _toast(
+      mode == 'nonaktif'
+          ? 'Jenis sampah dinonaktifkan karena sudah dipakai transaksi.'
+          : 'Jenis sampah dihapus.',
+    );
   }
 
   Future<bool> _confirm({
@@ -461,6 +504,14 @@ String _friendlyError(Object? error, String fallback) {
   return triggers.any((t) => lower.contains(t)) ? raw : fallback;
 }
 
+/// MIME berdasarkan ekstensi; default JPEG.
+String _mimeFromName(String name) {
+  final lower = name.toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  return 'image/jpeg';
+}
+
 /// Form tambah/ubah jenis sampah. Pop `true` bila berhasil disimpan.
 class _TrashTypeFormDialog extends ConsumerStatefulWidget {
   final Map<String, dynamic>? initial;
@@ -482,7 +533,19 @@ class _TrashTypeFormDialogState extends ConsumerState<_TrashTypeFormDialog> {
   bool _saving = false;
   String? _error;
 
+  Uint8List? _fotoBytes;
+  String? _fotoMime;
+  bool _hapusFoto = false;
+
   bool get _isEdit => widget.initial != null;
+
+  String? get _initialFoto {
+    final raw = (widget.initial?['image_path'] as String?)?.trim() ?? '';
+    return raw.isEmpty ? null : raw;
+  }
+
+  bool get _hasFoto =>
+      _fotoBytes != null || (!_hapusFoto && _initialFoto != null);
 
   @override
   void initState() {
@@ -532,12 +595,17 @@ class _TrashTypeFormDialogState extends ConsumerState<_TrashTypeFormDialog> {
             unit: unit,
             pricePerKg: price,
             description: description.isEmpty ? null : description,
+            foto: _fotoBytes,
+            fotoMime: _fotoMime,
+            hapusFoto: _hapusFoto,
           )
         : await controller.create(
             name: name,
             unit: unit,
             pricePerKg: price,
             description: description.isEmpty ? null : description,
+            foto: _fotoBytes,
+            fotoMime: _fotoMime,
           );
 
     if (!mounted) return;
@@ -553,6 +621,150 @@ class _TrashTypeFormDialogState extends ConsumerState<_TrashTypeFormDialog> {
         'Gagal menyimpan jenis sampah. Coba lagi.',
       );
     });
+  }
+
+  Future<void> _openFotoSheet() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Ambil dari Kamera'),
+              onTap: () => Navigator.pop(ctx, 'kamera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Pilih dari Galeri'),
+              onTap: () => Navigator.pop(ctx, 'galeri'),
+            ),
+            if (_hasFoto)
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.danger,
+                ),
+                title: const Text('Hapus Foto'),
+                onTap: () => Navigator.pop(ctx, 'hapus'),
+              ),
+            ListTile(
+              leading: const Icon(Icons.close_rounded),
+              title: const Text('Batal'),
+              onTap: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+
+    if (action == 'kamera') {
+      await _pickFoto(ImageSource.camera);
+    } else if (action == 'galeri') {
+      await _pickFoto(ImageSource.gallery);
+    } else if (action == 'hapus') {
+      setState(() {
+        // Foto baru yang belum disimpan cukup dibuang; foto lama di server
+        // baru dihapus bila tidak ada foto baru yang menunggu.
+        final adaBaru = _fotoBytes != null;
+        _fotoBytes = null;
+        _fotoMime = null;
+        _hapusFoto = !adaBaru && _initialFoto != null;
+      });
+    }
+  }
+
+  Future<void> _pickFoto(ImageSource source) async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _fotoBytes = bytes;
+        _fotoMime = _mimeFromName(picked.name);
+        _hapusFoto = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'Gagal memilih foto. Coba lagi.');
+    }
+  }
+
+  Widget _fotoField() {
+    final url = _hapusFoto
+        ? null
+        : ref.watch(fotoJenisSampahUrlProvider(_initialFoto));
+    const placeholder = ColoredBox(
+      color: AppColors.mintSoftBackground,
+      child: Icon(Icons.image_outlined, size: 30, color: AppColors.textMuted),
+    );
+
+    Widget preview;
+    if (_fotoBytes != null) {
+      preview = Image.memory(_fotoBytes!, fit: BoxFit.cover);
+    } else if (url == null || url.isEmpty) {
+      preview = placeholder;
+    } else {
+      preview = Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => placeholder,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Foto (opsional)',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: SizedBox(width: 84, height: 84, child: preview),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _saving ? null : _openFotoSheet,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'Pilih Foto',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -619,6 +831,8 @@ class _TrashTypeFormDialogState extends ConsumerState<_TrashTypeFormDialog> {
                   border: OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 14),
+              _fotoField(),
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Container(
