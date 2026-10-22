@@ -5,10 +5,10 @@ class AppColors {
   AppColors._();
 
   /// Primary Palette
-  static const Color primaryDark = Color(0xFF095C3B);
-  static const Color primaryMain = Color(0xFF0E7A4F);
+  static const Color primaryDark = Color(0xFF005746);
+  static const Color primaryMain = Color(0xFF16865D);
   static const Color primary = primaryMain; // Alias standard
-  static const Color primaryLight = Color(0xFF2FA56F);
+  static const Color primaryLight = Color(0xFF9BD84A);
 
   /// Mint & Accent
   static const Color mint = Color(0xFFDFF3E8);
@@ -35,7 +35,7 @@ class AppColors {
   static const Color heroCardBorder = Color.fromRGBO(255, 255, 255, 0.25);
 
   /// Status Badges & Chips
-  /// Menunggu Validasi / Verifikasi
+  /// Menunggu Verifikasi
   static const Color statusPendingText = Color(0xFFB45309);
   static const Color statusPendingBg = Color(0xFFFEF3C7);
   static const Color statusPending = statusPendingText;
@@ -57,9 +57,9 @@ class AppColors {
   /// Hero Header Gradient
   static const LinearGradient heroGradient = LinearGradient(
     colors: [
-      Color(0xFF095C3B),
-      Color(0xFF0E7A4F),
-      Color(0xFF2FA56F),
+      Color(0xFF005746),
+      Color(0xFF16865D),
+      Color(0xFF9BD84A),
     ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -67,7 +67,7 @@ class AppColors {
 
   /// Soft Card Shadow
   static const BoxShadow cardShadow = BoxShadow(
-    color: Color.fromRGBO(9, 92, 59, 0.12),
+    color: Color.fromRGBO(0, 87, 70, 0.12),
     blurRadius: 24,
     offset: Offset(0, 4),
   );

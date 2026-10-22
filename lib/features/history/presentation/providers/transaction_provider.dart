@@ -17,3 +17,22 @@ final recentTransactionsProvider = FutureProvider<List<TransactionModel>>((ref) 
   final repo = ref.watch(transactionRepositoryProvider);
   return repo.getStudentTransactions(user.id, limit: 5);
 });
+
+/// Detail satu transaksi sebagai baris mentah (Map) untuk layar detail.
+///
+/// `TransactionModel` membuang `verified_at` dan nama verifikator, padahal
+/// layar detail butuh keduanya. Jadi query diambil langsung dengan join
+/// `profiles` lewat FK `transactions_verified_by_fkey`. Null bila tidak ada.
+final transactionDetailByIdProvider =
+    FutureProvider.family<Map<String, dynamic>?, String>((ref, id) async {
+  if (id.isEmpty) return null;
+
+  return supabase
+      .from('transactions')
+      .select(
+        '*, verifier:profiles!transactions_verified_by_fkey(full_name), '
+        'trash_types(name, price_per_kg)',
+      )
+      .eq('id', id)
+      .maybeSingle();
+});

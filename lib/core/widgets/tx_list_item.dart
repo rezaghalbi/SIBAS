@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../constants/colors.dart';
+import '../utils/status_helper.dart';
 import 'status_badge.dart';
 
 /// Item baris transaksi dengan ikon jenis sampah, berat (kg), estimasi saldo, tanggal, dan StatusBadge
@@ -12,6 +13,13 @@ class TxListItem extends StatelessWidget {
   final DateTime createdAt;
   final VoidCallback? onTap;
 
+  /// NIM mahasiswa; hanya tampil bila [showNim] true (dipakai layar admin)
+  final String? nim;
+  final bool showNim;
+
+  /// Waktu verifikasi; bila tidak null tampil sebagai teks kecil
+  final DateTime? verifiedAt;
+
   const TxListItem({
     super.key,
     required this.categoryName,
@@ -20,6 +28,9 @@ class TxListItem extends StatelessWidget {
     required this.status,
     required this.createdAt,
     this.onTap,
+    this.nim,
+    this.showNim = false,
+    this.verifiedAt,
   });
 
   IconData _getCategoryIcon(String category) {
@@ -49,7 +60,7 @@ class TxListItem extends StatelessWidget {
         border: Border.all(color: AppColors.borderLine, width: 1.0),
         boxShadow: const [
           BoxShadow(
-            color: Color.fromRGBO(9, 92, 59, 0.04),
+            color: Color.fromRGBO(0, 87, 70, 0.04),
             blurRadius: 10,
             offset: Offset(0, 2),
           ),
@@ -81,7 +92,7 @@ class TxListItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 14),
 
-                // Kategori & Tanggal
+                // Kategori, NIM (opsional), Tanggal, Waktu verifikasi (opsional)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,6 +107,19 @@ class TxListItem extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (showNim && nim != null && nim!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'NIM: $nim',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textMuted,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                       const SizedBox(height: 4),
                       Text(
                         dateFormat.format(createdAt),
@@ -104,6 +128,16 @@ class TxListItem extends StatelessWidget {
                           color: AppColors.textMuted,
                         ),
                       ),
+                      if (verifiedAt != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Diverifikasi ${dateFormat.format(verifiedAt!)}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -112,7 +146,12 @@ class TxListItem extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    StatusBadge(status: status),
+                    // Label resmi dari TransactionStatusHelper
+                    StatusBadge(
+                      status: status,
+                      customLabel:
+                          TransactionStatusHelper.toDisplayLabel(status),
+                    ),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisSize: MainAxisSize.min,

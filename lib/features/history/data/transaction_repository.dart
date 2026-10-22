@@ -7,23 +7,34 @@ class TransactionRepository {
 
   TransactionRepository(this._client);
 
-  /// Mengambil transaksi terbaru untuk mahasiswa tertentu
-  Future<List<TransactionModel>> getStudentTransactions(String userId, {int limit = 10}) async {
-    try {
-      final response = await _client
-          .from('transactions')
-          .select('*, trash_types(name)')
-          .eq('mahasiswa_id', userId)
-          .order('created_at', ascending: false)
-          .limit(limit);
+  static const _selectWithRelations =
+      '*, profiles:profiles!transactions_mahasiswa_id_fkey(full_name, nim), '
+      'trash_types(name, price_per_kg)';
 
-      return (response as List<dynamic>)
-          .map((item) => TransactionModel.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      // Jika terjadi error atau offline, kembalikan list kosong
-      return [];
-    }
+  /// Mengambil transaksi terbaru untuk mahasiswa tertentu.
+  /// Error dibiarkan naik agar provider menjadi AsyncError (bukan data palsu).
+  Future<List<TransactionModel>> getStudentTransactions(String userId, {int limit = 10}) async {
+    final response = await _client
+        .from('transactions')
+        .select('*, trash_types(name)')
+        .eq('mahasiswa_id', userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return (response as List<dynamic>)
+        .map((item) => TransactionModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Detail satu transaksi beserta profil mahasiswa dan jenis sampahnya.
+  Future<TransactionModel> getTransactionDetail(String id) async {
+    final row = await _client
+        .from('transactions')
+        .select(_selectWithRelations)
+        .eq('id', id)
+        .single();
+
+    return TransactionModel.fromJson(row);
   }
 
   /// Realtime stream transaksi mahasiswa

@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/saldo_hero_card.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 
-/// Halaman Dashboard Utama Mahasiswa dengan tampilan visual presisi sesuai prototype
+/// Halaman Dashboard Utama Mahasiswa dengan tampilan kaca SIBAS.
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -22,6 +24,16 @@ class DashboardScreen extends ConsumerWidget {
     final userNim = user?.nim != null ? 'NIM: ${user!.nim}' : 'Mahasiswa Poltekkes';
     final balance = user?.balance ?? 0.0;
     final totalWeight = user?.totalWeight ?? 0.0;
+
+    // Rupiah hanya ditampilkan bila ada jenis sampah dengan tarif > 0.
+    final categoriesState = ref.watch(wasteCategoriesProvider);
+    final hasActiveRate =
+        categoriesState.valueOrNull?.any((item) => item.pricePerKg > 0) ?? false;
+
+    final pendingCount = recentTxState.valueOrNull
+            ?.where((tx) => tx.status.toUpperCase() == 'PENDING')
+            .length ??
+        0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -72,100 +84,112 @@ class DashboardScreen extends ConsumerWidget {
               bottomContent: SaldoHeroCard(
                 balance: balance,
                 totalWeightKg: totalWeight,
-                hasActiveRate: true,
+                hasActiveRate: hasActiveRate,
                 onSetorPressed: () => context.push('/setor'),
               ),
             ),
           ),
 
-          // 2. Baris Judul & Shortcut Setor
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-            sliver: SliverToBoxAdapter(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Aktivitas Setor Terakhir',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+          // 2. Chip pengajuan menunggu verifikasi
+          if (pendingCount > 0)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              sliver: SliverToBoxAdapter(
+                child: GestureDetector(
+                  onTap: () => context.push('/history'),
+                  child: GlassPanel(
+                    radius: 18,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.statusPendingBg,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.hourglass_top_rounded,
+                            size: 16,
+                            color: AppColors.statusPendingText,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '$pendingCount pengajuan menunggu verifikasi',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: AppColors.textMuted,
+                        ),
+                      ],
                     ),
                   ),
-                  TextButton(
-                    onPressed: () => context.push('/history'),
-                    child: const Text(
-                      'Lihat Semua',
-                      style: TextStyle(
-                        color: AppColors.primaryMain,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
 
-          // 3. Daftar Transaksi Terbaru
+          // 3. Aktivitas setor terakhir dalam satu panel kaca
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
             sliver: recentTxState.when(
               data: (transactions) {
-                if (transactions.isEmpty) {
-                  return SliverToBoxAdapter(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardSurface,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.borderLine),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: const BoxDecoration(
-                              color: AppColors.mintSoftBackground,
-                              shape: BoxShape.circle,
+                return SliverToBoxAdapter(
+                  child: GlassPanel(
+                    radius: 24,
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.only(left: 4, top: 6),
+                              child: Text(
+                                'Aktivitas Setor Terakhir',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
                             ),
-                            child: const Icon(Icons.inventory_2_outlined, color: AppColors.primaryMain, size: 32),
-                          ),
-                          const SizedBox(height: 14),
-                          const Text(
-                            'Belum Ada Setoran',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Kumpulkan sampah daur ulang Anda dan mulailah setor untuk tabungan lingkungan.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-                          ),
-                        ],
-                      ),
+                            TextButton(
+                              onPressed: () => context.push('/history'),
+                              child: const Text(
+                                'Lihat Semua',
+                                style: TextStyle(
+                                  color: AppColors.primaryMain,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (transactions.isEmpty)
+                          const _EmptyActivity()
+                        else
+                          for (final tx in transactions)
+                            TxListItem(
+                              categoryName: tx.categoryName,
+                              weightKg: tx.weight,
+                              amountRp: tx.finalAmount ?? tx.estimatedAmount,
+                              status: tx.status,
+                              createdAt: tx.createdAt,
+                              onTap: () => context.push('/qr/${tx.id}'),
+                            ),
+                      ],
                     ),
-                  );
-                }
-
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final tx = transactions[index];
-                      return TxListItem(
-                        categoryName: tx.categoryName,
-                        weightKg: tx.weight,
-                        amountRp: tx.finalAmount ?? tx.estimatedAmount,
-                        status: tx.status,
-                        createdAt: tx.createdAt,
-                        onTap: () => context.push('/qr/${tx.id}'),
-                      );
-                    },
-                    childCount: transactions.length,
                   ),
                 );
               },
@@ -191,38 +215,44 @@ class DashboardScreen extends ConsumerWidget {
           ),
 
           const SliverToBoxAdapter(
-            child: SizedBox(height: 80), // Padding untuk Floating Button
+            child: SizedBox(height: 104), // Ruang untuk bottom nav shell
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton.icon(
-            onPressed: () => context.push('/setor'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryMain,
-              foregroundColor: Colors.white,
-              elevation: 4,
-              shadowColor: AppColors.primaryMain.withValues(alpha: 0.4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+    );
+  }
+}
+
+class _EmptyActivity extends StatelessWidget {
+  const _EmptyActivity();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 24),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color: AppColors.mintSoftBackground,
+              shape: BoxShape.circle,
             ),
-            icon: const Icon(Icons.add_circle_outline_rounded, size: 22),
-            label: const Text(
-              '+ SETOR SAMPAH',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.5,
-              ),
-            ),
+            child: const Icon(Icons.inventory_2_outlined, color: AppColors.primaryMain, size: 32),
           ),
-        ),
+          const SizedBox(height: 14),
+          const Text(
+            'Belum Ada Setoran',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Kumpulkan sampah daur ulang Anda dan mulailah setor untuk tabungan lingkungan.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+          ),
+        ],
       ),
     );
   }

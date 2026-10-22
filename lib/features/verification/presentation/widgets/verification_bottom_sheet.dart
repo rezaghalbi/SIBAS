@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/verification_provider.dart';
 
 /// Modal Bottom Sheet untuk memvalidasi transaksi via RPC Supabase
@@ -64,6 +65,10 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
       final status = await repo.approveTransaction(transactionId: txId);
 
       if (mounted) {
+        // Metrik, daftar admin, dan data mahasiswa ikut disegarkan setelah approve.
+        ref.invalidate(adminMetricsProvider);
+        ref.invalidate(adminTransactionsProvider);
+        ref.invalidate(currentUserProvider);
         Navigator.pop(context);
         widget.onVerificationComplete();
         final approved = status == 'APPROVED';
@@ -84,7 +89,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal verifikasi: ${e.toString()}'),
+            content: Text('Gagal memverifikasi. Periksa koneksi lalu coba lagi.'),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -116,6 +121,8 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
       );
 
       if (mounted) {
+        ref.invalidate(adminMetricsProvider);
+        ref.invalidate(adminTransactionsProvider);
         Navigator.pop(context);
         widget.onVerificationComplete();
         final rejected = status == 'REJECTED';
@@ -135,7 +142,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal menolak: ${e.toString()}'),
+            content: Text('Gagal menolak transaksi. Periksa koneksi lalu coba lagi.'),
             backgroundColor: AppColors.danger,
           ),
         );
