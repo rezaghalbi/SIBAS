@@ -67,6 +67,11 @@ Isi migration:
 - `20261024000000_jadwalkan_expire_transaksi.sql` — job pg_cron
   `expire-stale-transactions` tiap 5 menit. Bila pg_cron belum aktif, migration
   tetap sukses dan hanya memberi NOTICE.
+- `20261025000000_metrik_admin.sql` — RPC `admin_metrics()`; metrik dashboard
+  admin dihitung di server, bukan dari seluruh baris `transactions` di klien.
+- `20261026000000_kunci_kolom_profil.sql` — trigger `profiles_guard_update`
+  (fungsi `guard_profile_update`) menolak perubahan kolom sensitif `profiles`
+  dari klien biasa.
 
 ## Perintah
 
@@ -84,7 +89,9 @@ flutter build apk --release --no-tree-shake-icons \
   --dart-define=SUPABASE_ANON_KEY=<anon-key>
 ```
 
-Direktori `test/` belum ada; `flutter test` tidak menjalankan apa pun.
+`test/` berisi uji unit (`api_guard_test.dart`, `auth_error_message_test.dart`,
+`status_helper_test.dart`, `withdrawal_model_test.dart`); belum ada widget atau
+integration test.
 
 ## Akun Uji
 
@@ -102,10 +109,64 @@ kosong (`''`) — `confirmation_token`, `recovery_token`, `email_change`,
 `email_change_token_new`, `phone_change`, `phone_change_token`. Bila kolom itu
 `NULL`, login membalas 500 `Database error querying schema`.
 
+## Sesi & Keamanan
+
+- Sesi disimpan oleh Supabase di penyimpanan browser. `CurrentUserNotifier`
+  mendengarkan `onAuthStateChange`; event `signedOut` (logout di tab/perangkat
+  lain atau token kedaluwarsa) langsung mengosongkan pengguna aktif, lalu
+  `refreshListenable` GoRouter mengarahkan ke `/login`.
+- Setiap request Supabase dibungkus `guardRequest` di
+  `lib/core/network/api_guard.dart` dengan batas waktu 20 detik. Kegagalan
+  jaringan menyalakan `offlineNotifier` (banner "Tidak ada koneksi — data
+  mungkin tidak terbaru") dan melempar `JaringanException`. UI memakai
+  `pesanKesalahan()` sehingga yang tampil pesan yang bisa dibaca, bukan
+  `toString()` mentah.
+- Respons 401 atau `PGRST301` memaksa `signOut()` lokal lewat
+  `_keluarSesiDiam()`, lalu UI menampilkan "Sesi Anda berakhir. Silakan masuk
+  lagi.".
+- Pengguna dapat mengubah nama (`updateFullName`), kata sandi
+  (`changePassword`, dengan verifikasi sandi lama), dan memilih "Keluar dari
+  semua perangkat" (`signOutEverywhere` memakai `SignOutScope.global`) dari
+  halaman Profil.
+- Sesi yang tidak ada interaksi selama 30 menit otomatis diakhiri.
+  `SessionIdleWatcher` (`lib/core/widgets/session_idle_watcher.dart`) dipasang
+  di `lib/main.dart`, hanya aktif saat pengguna masuk, dan timer direset oleh
+  klik/sentuhan (`onPointerDown`) serta saat aplikasi kembali aktif
+  (`AppLifecycleState.resumed`).
+- Kolom sensitif `profiles` (`role`, `balance`, `total_weight`, `nim`, `email`,
+  `id`, `created_at`) dilindungi trigger `profiles_guard_update` yang
+  menjalankan `guard_profile_update`. Klien biasa ditolak; admin dan konteks
+  server (tanpa JWT, mis. migrasi/SQL editor) tetap boleh.
+- Masa berlaku token (JWT expiry, refresh token reuse interval) diatur di
+  Dashboard Supabase, bukan di repo. Admin project perlu memeriksa nilainya
+  sebelum rilis.
+
+## Penanganan Error & Cache
+
+- `FlutterError.onError`, `PlatformDispatcher.instance.onError`, dan
+  `ErrorWidget.builder` dipasang di `lib/main.dart`. Exception tak tertangkap
+  dicatat ke konsol dan widget gagal menampilkan pesan, bukan layar putih.
+- `sessionEpochProvider` naik pada login, logout, dan event `signedOut` dari
+  `onAuthStateChange` (termasuk token kedaluwarsa atau logout di perangkat
+  lain). Provider data yang bergantung padanya (riwayat, penarikan,
+  verifikasi) membuang cache agar data akun sebelumnya tidak terbawa.
+- Header cache di `web/vercel.json`: `index.html`, `flutter_bootstrap.js`, dan
+  `main.dart.js` memakai `no-cache, must-revalidate`; `/assets/*` dan
+  `/canvaskit/*` memakai `max-age=31536000, immutable`. Saat service worker
+  menemukan versi baru, `web/index.html` menampilkan banner "Versi baru SIBAS
+  tersedia.".
+- `test/api_guard_test.dart` menguji `guardRequest` dan `pesanKesalahan`
+  (timeout, status offline, pemetaan pesan, penyamaran pesan teknis).
+- Tidak ada telemetry atau error reporting terpusat. Error hanya tercatat di
+  konsol (lihat Keterbatasan).
+
 ## RPC
 
 Semua penulisan transaksi/saldo lewat RPC `security definer`, bukan langsung
 dari klien. `expire_stale_transactions()` hanya untuk `service_role` (cron).
+Tabel berikut memuat 11 RPC aplikasi yang benar-benar ada di migration;
+`handle_new_user()` dan `guard_profile_update()` adalah fungsi trigger, bukan
+RPC yang dipanggil klien.
 
 | RPC | Keterangan |
 | --- | --- |
@@ -119,6 +180,7 @@ dari klien. `expire_stale_transactions()` hanya untuk `service_role` (cron).
 | `reject_withdrawal(p_withdrawal_id uuid, p_reason text)` | Tolak penarikan + alasan |
 | `is_admin()` | Cek role pemanggil |
 | `available_balance(p_user uuid)` | Saldo dikurangi penarikan PENDING |
+| `admin_metrics()` | Metrik dashboard admin: total berat APPROVED dan jumlah per status (JSON) |
 
 Tabel: `profiles`, `trash_types`, `transactions`, `transaction_audits`,
 `withdrawals`. Schema hanya diubah lewat migration baru di
@@ -148,5 +210,7 @@ gh run view <run-id> --log-failed
 - Flutter dipin `3.47.7` di kedua workflow karena `lib/` memakai
   `withValues(alpha:)`. Jangan hapus pin tanpa menyesuaikan seluruh kode.
 - Deploy produksi Vercel hanya dari `push` ke `main`; PR hanya preview.
-- Belum ada test otomatis (tidak ada direktori `test/`) dan job pg_cron perlu
-  pg_cron aktif di project Supabase.
+- Uji yang ada baru unit test; belum ada widget/integration test. Job pg_cron
+  juga perlu pg_cron aktif di project Supabase.
+- Tidak ada telemetry/error reporting terpusat; error hanya tercatat di konsol.
+- Belum ada ubah email dan hapus akun dari aplikasi.
