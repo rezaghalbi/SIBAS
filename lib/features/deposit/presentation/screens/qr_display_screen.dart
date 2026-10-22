@@ -22,7 +22,7 @@ class QrDisplayScreen extends ConsumerStatefulWidget {
 
 class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
   Timer? _timer;
-  Duration _remainingTime = const Duration(hours: 2);
+  DateTime? _expiresAt;
 
   final _currencyFormat = NumberFormat.currency(
     locale: 'id_ID',
@@ -30,21 +30,23 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
     decimalDigits: 0,
   );
 
-  @override
-  void initState() {
-    super.initState();
-    _startCountdown();
+  /// Sisa waktu dihitung dari `qr_expires_at` server, bukan dari durasi lokal.
+  Duration get _remainingTime {
+    final expiresAt = _expiresAt;
+    if (expiresAt == null) return Duration.zero;
+    final diff = expiresAt.difference(DateTime.now());
+    return diff.isNegative ? Duration.zero : diff;
   }
 
-  void _startCountdown() {
+  void _ensureCountdown(DateTime? expiresAt) {
+    if (expiresAt == null || _expiresAt != null) return;
+    _expiresAt = expiresAt;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingTime.inSeconds > 0) {
-        setState(() {
-          _remainingTime = _remainingTime - const Duration(seconds: 1);
-        });
-      } else {
+      if (!mounted || _remainingTime.inSeconds <= 0) {
         timer.cancel();
+        return;
       }
+      setState(() {});
     });
   }
 
@@ -80,6 +82,7 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
       body: SafeArea(
         child: txDetail.when(
           data: (tx) {
+            _ensureCountdown(tx?.qrExpiresAt);
             // Evaluasi status transaksi
             final status = tx?.status ?? 'PENDING';
             final isPending = status.toUpperCase() == 'PENDING';
@@ -155,7 +158,7 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                                 border: Border.all(color: AppColors.mintAccent, width: 2),
                               ),
                               child: QrImageView(
-                                data: widget.transactionId,
+                                data: tx?.qrToken ?? widget.transactionId,
                                 version: QrVersions.auto,
                                 size: 220,
                                 eyeStyle: const QrEyeStyle(
@@ -215,9 +218,9 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // UUID Info
+                        // Kode transaksi (bukan UUID internal)
                         Text(
-                          'ID: ${widget.transactionId}',
+                          tx?.txCode ?? 'ID: ${widget.transactionId}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontFamily: 'monospace',

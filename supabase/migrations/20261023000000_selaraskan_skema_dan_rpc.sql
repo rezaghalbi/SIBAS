@@ -97,6 +97,13 @@ begin
   end if;
 end $$;
 
+-- FK lama memakai RESTRICT; rancangan memakai cascade agar menghapus user
+-- tidak menyisakan transaksi yatim.
+alter table public.transactions drop constraint if exists transactions_mahasiswa_id_fkey;
+alter table public.transactions
+  add constraint transactions_mahasiswa_id_fkey
+  foreign key (mahasiswa_id) references public.profiles (id) on delete cascade;
+
 update public.transactions t
 set price_per_kg_snapshot = tt.price_per_kg
 from public.trash_types tt
