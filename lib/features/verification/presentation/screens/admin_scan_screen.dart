@@ -309,8 +309,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
       color: Colors.black,
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: SegmentedButton<_ScanMode>(
-        // Ikon centang bawaan menyita lebar sampai label "Penarikan" terpotong.
-        showSelectedIcon: false,
+        // Bagi lebar penuh agar label "Penarikan" tidak terpotong di layar sempit.
+        expandedInsets: EdgeInsets.zero,
         segments: const [
           ButtonSegment<_ScanMode>(
             value: _ScanMode.setoran,
