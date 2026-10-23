@@ -1,5 +1,29 @@
 # LOG PROGRESS
 
+## 2026-10-23 — Glass 2.0 tahap 5 batch 1: layar mahasiswa
+
+**Layar** (semua tetap `AppColors`, mode gelap belum diaktifkan)
+
+| Layar | Perubahan |
+|---|---|
+| Dashboard | `GlassPanel` 2 → 0 (kaca hanya panel saldo di hero), konten 1120 px, target sentuh 44 px, empty state aktivitas, ruang bawah 96 px + safe area |
+| Setor | Dua kolom ≥1024 px dengan kartu Ringkasan 320 px, kaca dilepas, CTA sticky 52 px yang disembunyikan saat keyboard terbuka, grid kategori 2/3 kolom dengan tinggi tetap 108 px |
+| Tarik | Konten 640 px, aksi ditumpuk (primer 52 px, "Tarik Semua" 48 px), panel saldo tone `hero`, riwayat radius 20 + tombol QR 44 px |
+| Riwayat | Kepala halaman, chip filter 44 px di scroller horizontal sendiri, empty state + "Tampilkan semua status", error state tanpa objek mentah |
+| Saldo | Hero tone `hero` + nominal `FittedBox`, konten 720 px, tombol kembali, kartu ringkasan, riwayat 4 terakhir dengan badge di bawah tanggal |
+
+**Widget bersama**
+- `hero_header.dart`: judul/subjudul `Expanded` + ellipsis (menghilangkan overflow ±28 px di 360 px saat nama panjang).
+- `saldo_hero_card.dart`: label `Flexible`, chip tidak menyusut.
+- `tx_list_item.dart`: `tabularFigures`, radius 18 → 20, bayangan dihapus (kartu di dalam kartu), kolom kanan dibatasi 172 px.
+
+**Perbaikan analyzer**
+- `const` pada `ConstrainedBox` dihapus (bukan konstruktor const), parameter `radius` `_SolidCard` yang tak terpakai dihapus, `import 'dart:ui'` yang redundan dibuang di 8 file, `p` di `darkTheme` jadi `const`.
+
+**Verifikasi**
+- `Analyze & Test` `39898883244` hijau; `Build + Vercel` `39898883294` hijau untuk `6305d67`.
+- Preview `https://sibas-ky5ruadox-rezaghalbis-projects.vercel.app`.
+
 ## 2026-10-23 — Glass 2.0 tahap 4 + perbaikan setor & dashboard admin
 
 **Tahap 4 — `AdaptiveShell`**
