@@ -24,11 +24,18 @@ class WithdrawalRepository {
   }
 
   /// Ajukan penarikan. Nominal & status awal ditentukan server.
-  Future<WithdrawalModel> createWithdrawal(double amount) {
+  Future<WithdrawalModel> createWithdrawal(
+    double amount, {
+    String? locationId,
+  }) {
     return guardRequest(() async {
       final res = await _client.rpc(
         'create_withdrawal',
-        params: {'p_amount': amount},
+        params: {
+          'p_amount': amount,
+          // Null berarti server memakai lokasi aktif pertama.
+          'p_location_id': locationId,
+        },
       );
 
       if (res is Map) {

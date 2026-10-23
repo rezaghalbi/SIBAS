@@ -12,6 +12,12 @@ class TransactionModel {
   final String? adminId;
   final String? qrToken;
   final String? txCode;
+
+  /// Lokasi bank sampah tempat setoran diajukan. Null untuk data lama yang
+  /// belum punya relasi lokasi.
+  final String? locationId;
+  final String? locationName;
+
   final DateTime createdAt;
   final DateTime? qrExpiresAt;
 
@@ -28,6 +34,8 @@ class TransactionModel {
     this.adminId,
     this.qrToken,
     this.txCode,
+    this.locationId,
+    this.locationName,
     required this.createdAt,
     this.qrExpiresAt,
   });
@@ -46,6 +54,10 @@ class TransactionModel {
       catName = json['category_name'] as String;
     }
 
+    // Relasi lokasi hanya ada pada respons RPC (insert/detail), bisa null.
+    final lokasi = json['location'];
+    final lokasiMap = lokasi is Map ? lokasi : null;
+
     return TransactionModel(
       id: json['id'] as String,
       userId: (json['mahasiswa_id'] as String?) ?? '',
@@ -63,6 +75,8 @@ class TransactionModel {
       adminId: json['verified_by'] as String?,
       qrToken: json['qr_token'] as String?,
       txCode: json['tx_code'] as String?,
+      locationId: json['location_id'] as String?,
+      locationName: lokasiMap?['name'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
@@ -83,6 +97,7 @@ class TransactionModel {
       'status': status,
       'rejection_reason': rejectionReason,
       'admin_id': adminId,
+      'location_id': locationId,
       'created_at': createdAt.toIso8601String(),
       'qr_expires_at': qrExpiresAt?.toIso8601String(),
     };

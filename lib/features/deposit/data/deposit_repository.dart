@@ -30,11 +30,17 @@ class DepositRepository {
   Future<TransactionModel> createDepositTransaction({
     required String categoryId,
     required double weightKg,
+    String? locationId,
   }) {
     return guardRequest(() async {
       final res = await _client.rpc(
         'create_deposit',
-        params: {'p_trash_type_id': categoryId, 'p_weight': weightKg},
+        params: {
+          'p_trash_type_id': categoryId,
+          'p_weight': weightKg,
+          // Null berarti server memakai lokasi aktif pertama.
+          'p_location_id': locationId,
+        },
       );
 
       return TransactionModel.fromJson(Map<String, dynamic>.from(res as Map));

@@ -58,10 +58,13 @@ class WithdrawalController extends StateNotifier<AsyncValue<void>> {
 
   WithdrawalRepository get _repo => _ref.read(withdrawalRepositoryProvider);
 
-  Future<WithdrawalModel?> create(double amount) async {
+  Future<WithdrawalModel?> create(double amount, {String? locationId}) async {
     state = const AsyncValue.loading();
     try {
-      final created = await _repo.createWithdrawal(amount);
+      final created = await _repo.createWithdrawal(
+        amount,
+        locationId: locationId,
+      );
       state = const AsyncValue.data(null);
       _refresh();
       return created;
