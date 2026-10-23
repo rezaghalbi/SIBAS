@@ -29,6 +29,11 @@
   (`991280d`). Preview
   `https://sibas-97gu0auh2-rezaghalbis-projects.vercel.app`.
 
+**Kerapian**
+- Pemilih lokasi diangkat jadi satu widget bersama
+  (`features/bank_location/presentation/widgets/location_section.dart`);
+  layar setor dan tarik tidak lagi menyimpan salinan ±590 baris.
+
 **Catatan**
 - Verifikasi visual mode gelap masih manual di preview.
 - Subagent tidak bisa dipakai (saldo provider), pekerjaan migrasi dikerjakan
