@@ -7,6 +7,7 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="SIBAS - Sistem Informasi Bank Sampah Poltekkes Kemenkes Yogyakarta">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <!-- Mobile meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -14,8 +15,9 @@
   <meta name="apple-mobile-web-app-title" content="SIBAS">
   <link rel="apple-touch-icon" href="icon-192.png">
 
-  <!-- Theme color sesuai palet SIBAS (#005746) -->
-  <meta name="theme-color" content="#005746">
+  <!-- Theme color sesuai palet SIBAS (#005746 light, #0A1411 dark) -->
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#005746">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0A1411">
   <meta name="msapplication-navbutton-color" content="#005746">
 
   <!-- Favicon -->
@@ -29,7 +31,10 @@
     body {
       background-color: #F3F8F5;
       margin: 0;
-      height: 100vh;
+      box-sizing: border-box;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -63,6 +68,21 @@
       font-weight: 700;
       font-size: 15px;
       letter-spacing: 0.5px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #0A1411;
+      }
+
+      .spinner {
+        border-color: rgba(223, 243, 232, 0.16);
+        border-top-color: #8FE6B8;
+      }
+
+      .loading-text {
+        color: #DFF3E8;
+      }
     }
   </style>
 </head>
