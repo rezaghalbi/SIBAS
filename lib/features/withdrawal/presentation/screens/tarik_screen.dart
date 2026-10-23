@@ -48,7 +48,6 @@ const double _panelRadius = 16;
 const double _noteRadius = 12;
 
 /// Radius sheet (r-28) sesuai §4.
-const double _sheetRadius = 28;
 
 /// Pengajuan pencairan saldo tabungan sampah beserta riwayat penarikannya.
 class TarikScreen extends ConsumerStatefulWidget {

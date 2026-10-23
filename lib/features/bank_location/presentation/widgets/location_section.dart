@@ -10,6 +10,9 @@ import '../providers/bank_location_provider.dart';
 /// Panel radius untuk kartu lokasi dan baris di dalamnya (§4).
 const double _panelRadius = 16;
 
+/// Radius sheet pilihan lokasi (§4: r-28).
+const double _sheetRadius = 28;
+
 /// Blok pemilih lokasi bank sampah, dipakai layar setor dan tarik.
 ///
 /// Status muat dan galat dibaca dari [bankLocationsProvider]; daftar lokasi

@@ -30,7 +30,6 @@ const double _cardRadius = 20;
 const double _innerRadius = 16;
 
 /// Radius sheet (r-28) sesuai §4.
-const double _sheetRadius = 28;
 
 class SetorScreen extends ConsumerStatefulWidget {
   const SetorScreen({super.key});
