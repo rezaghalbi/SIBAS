@@ -656,6 +656,20 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _openUbah(ctx, m);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 48),
+                          foregroundColor: SibasColors.leaf,
+                          side: BorderSide(color: SibasColors.border),
+                        ),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: const Text('Ubah data mahasiswa'),
+                      ),
+                      const SizedBox(height: 8),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
@@ -681,6 +695,21 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
         ),
       ),
     );
+  }
+
+  /// Form koreksi identitas mahasiswa oleh admin (nama, NIM, nomor WA).
+  Future<void> _openUbah(BuildContext ctx, StudentModel m) async {
+    final berhasil = await showModalBottomSheet<bool>(
+      context: ctx,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: SibasColors.scrim,
+      builder: (_) => _UbahMahasiswaSheet(mahasiswa: m),
+    );
+    if (berhasil == true && ctx.mounted) {
+      ref.invalidate(studentsProvider);
+    }
   }
 
   Widget _ringkasan(String label, String nilai) {
@@ -749,4 +778,207 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
 String _nilaiAtauStrip(String? value) {
   final teks = value?.trim() ?? '';
   return teks.isEmpty ? '-' : teks;
+}
+
+
+/// Sheet koreksi identitas mahasiswa. Hanya nama, NIM, dan nomor WhatsApp;
+/// peran, saldo, dan status akun tetap diatur server.
+class _UbahMahasiswaSheet extends ConsumerStatefulWidget {
+  const _UbahMahasiswaSheet({required this.mahasiswa});
+
+  final StudentModel mahasiswa;
+
+  @override
+  ConsumerState<_UbahMahasiswaSheet> createState() =>
+      _UbahMahasiswaSheetState();
+}
+
+class _UbahMahasiswaSheetState extends ConsumerState<_UbahMahasiswaSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nama;
+  late final TextEditingController _nim;
+  late final TextEditingController _wa;
+
+  bool _menyimpan = false;
+  String? _pesan;
+
+  @override
+  void initState() {
+    super.initState();
+    _nama = TextEditingController(text: widget.mahasiswa.fullName);
+    _nim = TextEditingController(text: widget.mahasiswa.nim ?? '');
+    _wa = TextEditingController(text: widget.mahasiswa.phone ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nama.dispose();
+    _nim.dispose();
+    _wa.dispose();
+    super.dispose();
+  }
+
+  Future<void> _simpan() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() {
+      _menyimpan = true;
+      _pesan = null;
+    });
+    try {
+      await ref.read(studentRepositoryProvider).ubahMahasiswa(
+            id: widget.mahasiswa.id,
+            fullName: _nama.text.trim(),
+            nim: _nim.text.trim().isEmpty ? null : _nim.text.trim(),
+            phone: _wa.text.trim().isEmpty ? null : _wa.text.trim(),
+          );
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _menyimpan = false;
+        _pesan = pesanKesalahan(error);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final inset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: inset),
+      child: GlassPanel(
+        tone: GlassTone.dense,
+        radius: 28,
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Ubah data mahasiswa',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                      color: SibasColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Peran, saldo, dan status akun tidak dapat diubah di sini.',
+                    style: TextStyle(fontSize: 12.5, color: SibasColors.muted),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _nama,
+                    textCapitalization: TextCapitalization.words,
+                    style: TextStyle(fontSize: 16, color: SibasColors.text),
+                    decoration: const InputDecoration(labelText: 'Nama lengkap'),
+                    validator: (value) {
+                      final nama = (value ?? '').trim();
+                      if (nama.length < 2 || nama.length > 80) {
+                        return 'Nama harus 2 sampai 80 karakter.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _nim,
+                    style: TextStyle(fontSize: 16, color: SibasColors.text),
+                    decoration: const InputDecoration(labelText: 'NIM'),
+                    validator: (value) {
+                      final nim = (value ?? '').trim();
+                      if (nim.isEmpty) return null;
+                      if (!RegExp(r'^[A-Za-z0-9]{3,20}$').hasMatch(nim)) {
+                        return 'NIM hanya huruf dan angka, 3 sampai 20.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _wa,
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(fontSize: 16, color: SibasColors.text),
+                    decoration: const InputDecoration(
+                      labelText: 'Nomor WhatsApp',
+                      hintText: '081234567890',
+                    ),
+                    validator: (value) {
+                      final wa = (value ?? '').trim();
+                      if (wa.isEmpty) return null;
+                      if (!RegExp(r'^[0-9+][0-9 -]{7,19}$').hasMatch(wa)) {
+                        return 'Nomor WhatsApp tidak valid.';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (_pesan != null) ...[
+                    const SizedBox(height: 12),
+                    SurfaceCard(
+                      tone: SurfaceTone.subtle,
+                      radius: 12,
+                      color: SibasColors.status.rejectedBackground,
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        _pesan!,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: SibasColors.status.rejectedText,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed:
+                              _menyimpan ? null : () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                            side: BorderSide(color: SibasColors.border),
+                          ),
+                          child: const Text('Batal'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: _menyimpan ? null : _simpan,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: SibasColors.leaf,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(0, 48),
+                          ),
+                          child: _menyimpan
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Simpan'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
