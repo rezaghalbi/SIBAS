@@ -1,5 +1,18 @@
 # LOG PROGRESS
 
+## 2026-10-23 — Aplikasi wajib online
+
+- Tidak ada cache offline. `pesanWajibOnline` dipakai untuk semua kegagalan
+  jaringan dan auth: "Maaf, Anda sedang offline. SIBAS memerlukan koneksi
+  internet…".
+- `guardRequest` membedakan timeout dan gangguan jaringan dengan pesan yang
+  berbeda; `pesanKesalahan` mengembalikan pesan offline bila status offline
+  aktif, termasuk untuk galat PostgREST.
+- Banner atas kini menjelaskan syarat koneksi (ikon wifi-off, dua baris, tema).
+- Test: `api_guard_test.dart` (pesan offline) dan `offline_banner_test.dart`
+  disesuaikan.
+
+
 ## 2026-10-23 — Paginasi admin, penjaga pengajuan ganda, rekap lokasi, koreksi mahasiswa
 
 **Database** (migration `20261035000000_penjaga_dan_laporan.sql`, diterapkan ke remote)
