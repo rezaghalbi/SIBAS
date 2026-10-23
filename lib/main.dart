@@ -14,6 +14,7 @@ import 'core/router/app_router.dart';
 import 'core/widgets/offline_banner.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'core/theme/sibas_colors.dart';
+import 'core/theme/theme_mode_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -96,7 +97,7 @@ class SibasApp extends ConsumerWidget {
 
     // Sumber warna untuk layar lama. Disamakan dengan themeMode di bawah agar
     // tema Flutter dan konstanta layar tidak pernah berbeda mode.
-    final mode = ThemeMode.light;
+    final mode = ref.watch(themeModeProvider);
     SibasColors.applyMode(
       manual: mode == ThemeMode.system
           ? null
