@@ -241,13 +241,42 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                               ),
                             );
                           }
+                          final limit =
+                              ref.watch(adminPageLimitProvider);
+                          final adaLagi = list.length >= limit;
                           return ListView.builder(
                             padding: EdgeInsets.only(
                               bottom: 96 + bottomInset,
                             ),
-                            itemCount: list.length,
-                            itemBuilder: (context, index) =>
-                                _historyRow(list[index]),
+                            itemCount: list.length + (adaLagi ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == list.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 4,
+                                    bottom: 8,
+                                  ),
+                                  child: OutlinedButton(
+                                    onPressed: () => ref
+                                        .read(
+                                          adminPageLimitProvider.notifier,
+                                        )
+                                        .state += 50,
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(0, 48),
+                                      foregroundColor: SibasColors.leaf,
+                                      side: BorderSide(
+                                        color: SibasColors.border,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Muat ${limit} riwayat lagi',
+                                    ),
+                                  ),
+                                );
+                              }
+                              return _historyRow(list[index]);
+                            },
                           );
                         },
                         loading: () => _centeredState(const _LoadingCard()),

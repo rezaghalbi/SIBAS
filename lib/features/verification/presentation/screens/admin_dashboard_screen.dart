@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../info/presentation/providers/app_settings_provider.dart';
 import '../../../students/presentation/providers/student_provider.dart';
+import '../../domain/models/admin_metrics_model.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
 import '../../../../core/theme/sibas_colors.dart';
@@ -262,6 +264,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 ),
               );
             },
+          ),
+
+          // Rekap per lokasi bank sampah + filter cepat.
+          const SliverPadding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
+            sliver: SliverToBoxAdapter(
+              child: ContentWidth(child: _LocationRecap()),
+            ),
           ),
 
           // Pintasan pengelolaan jenis sampah & tarif
@@ -600,3 +610,129 @@ class _DashboardShortcutTile extends StatelessWidget {
   }
 }
 
+
+
+/// Rekap setoran per lokasi bank sampah.
+///
+/// Mengetuk satu baris memasang filter lokasi untuk dashboard sekaligus
+/// daftar pengajuan dan riwayat; "Semua lokasi" menghapus filter.
+class _LocationRecap extends ConsumerWidget {
+  const _LocationRecap();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final metrics = ref.watch(adminMetricsProvider).valueOrNull;
+    final lokasi = metrics?.locations ?? const <LocationMetric>[];
+    final terpilih = ref.watch(adminFilterProvider).locationId;
+
+    if (lokasi.isEmpty) return const SizedBox.shrink();
+
+    return SurfaceCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Rekap per lokasi',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                    color: SibasColors.text,
+                  ),
+                ),
+              ),
+              if (terpilih != null)
+                TextButton(
+                  onPressed: () => ref
+                      .read(adminFilterProvider.notifier)
+                      .update((f) => f.copyWith(clearLocation: true)),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    foregroundColor: SibasColors.leaf,
+                  ),
+                  child: const Text('Semua lokasi'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (final item in lokasi)
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                final aktif = terpilih == item.id;
+                ref.read(adminFilterProvider.notifier).update(
+                      (f) => aktif
+                          ? f.copyWith(clearLocation: true)
+                          : f.copyWith(locationId: item.id),
+                    );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      terpilih == item.id
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      size: 18,
+                      color: terpilih == item.id
+                          ? SibasColors.leaf
+                          : SibasColors.muted,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: SibasColors.text,
+                            ),
+                          ),
+                          Text(
+                            '${_kg(item.totalWeightKg)} kg · '
+                            '${item.pendingCount} menunggu',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: SibasColors.muted,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!item.isActive)
+                      Text(
+                        'Nonaktif',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: SibasColors.muted,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _kg(double nilai) => nilai.toStringAsFixed(1);
+}

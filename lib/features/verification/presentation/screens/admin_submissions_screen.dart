@@ -138,6 +138,7 @@ class _AdminSubmissionsScreenState
   List<Widget> _setoranSlivers() {
     final txState = ref.watch(adminTransactionsProvider);
     final filter = ref.watch(adminFilterProvider);
+    final limit = ref.watch(adminPageLimitProvider);
     final searching = filter.query.trim().isNotEmpty;
     final total = txState.valueOrNull?.length;
 
@@ -197,11 +198,19 @@ class _AdminSubmissionsScreenState
               ),
             );
           }
+          final adaLagi = list.length >= limit;
           return SliverList.builder(
-            itemCount: list.length,
-            itemBuilder: (_, i) => ContentWidth(
-              child: _setoranCard(list[i]),
-            ),
+            itemCount: list.length + (adaLagi ? 1 : 0),
+            itemBuilder: (_, i) {
+              if (i == list.length) {
+                return _muatLagi(
+                  label: 'Muat ${limit} setoran lagi',
+                  onTap: () =>
+                      ref.read(adminPageLimitProvider.notifier).state += 50,
+                );
+              }
+              return ContentWidth(child: _setoranCard(list[i]));
+            },
           );
         },
         loading: () => _stateSliver(const _LoadingCard()),
@@ -661,11 +670,20 @@ class _AdminSubmissionsScreenState
               ),
             );
           }
+          final limit = ref.watch(adminPageLimitProvider);
+          final adaLagi = list.length >= limit;
           return SliverList.builder(
-            itemCount: list.length,
-            itemBuilder: (_, i) => ContentWidth(
-              child: _penarikanCard(list[i]),
-            ),
+            itemCount: list.length + (adaLagi ? 1 : 0),
+            itemBuilder: (_, i) {
+              if (i == list.length) {
+                return _muatLagi(
+                  label: 'Muat ${limit} penarikan lagi',
+                  onTap: () =>
+                      ref.read(adminPageLimitProvider.notifier).state += 50,
+                );
+              }
+              return ContentWidth(child: _penarikanCard(list[i]));
+            },
           );
         },
         loading: () => _stateSliver(const _LoadingCard()),
@@ -682,6 +700,24 @@ class _AdminSubmissionsScreenState
         ),
       ),
     ];
+  }
+
+  /// Tombol paginasi: menambah batas baris yang diminta ke server.
+  Widget _muatLagi({required String label, required VoidCallback onTap}) {
+    return ContentWidth(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 4, bottom: 8),
+        child: OutlinedButton(
+          onPressed: onTap,
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(0, 48),
+            foregroundColor: SibasColors.leaf,
+            side: BorderSide(color: SibasColors.border),
+          ),
+          child: Text(label),
+        ),
+      ),
+    );
   }
 
   Widget _penarikanCard(WithdrawalModel w) {
