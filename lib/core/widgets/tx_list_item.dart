@@ -1,3 +1,5 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../constants/colors.dart';
@@ -39,6 +41,14 @@ class TxListItem extends StatelessWidget {
     this.onShowQr,
   });
 
+  /// Batas lebar kolom metrik kanan (badge + kg + nominal).
+  ///
+  /// Isi baris di layar 360 px: 360 - (2 x 16 gutter) - (2 x 16 padding
+  /// kartu) - 48 ikon - 14 jarak = 234 px. Badge terpanjang ("Menunggu
+  /// Verifikasi") +/- 147 px, jadi 172 px masih menampungnya utuh dan
+  /// menyisakan +/- 62 px untuk kolom teks kiri.
+  static const double _metricsMaxWidth = 172;
+
   IconData _getCategoryIcon(String category) {
     final lower = category.toLowerCase();
     if (lower.contains('plastik')) return Icons.local_drink_rounded;
@@ -59,28 +69,26 @@ class TxListItem extends StatelessWidget {
     );
     final showQrAction = canShowQr && onShowQr != null;
 
+    // Berat dan nominal memakai angka tabular agar kolom kanan tidak
+    // bergoyang saat nilai berubah.
+    const nominal = <FontFeature>[FontFeature.tabularFigures()];
+    const metricsConstraints = BoxConstraints(maxWidth: _metricsMaxWidth);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderLine, width: 1.0),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 87, 70, 0.04),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             InkWell(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(20),
               onTap: onTap,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -153,41 +161,51 @@ class TxListItem extends StatelessWidget {
                     ),
 
                     // Metrik Berat, Saldo, dan Badge Status
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        // Label resmi dari TransactionStatusHelper
-                        StatusBadge(
-                          status: status,
-                          customLabel:
-                              TransactionStatusHelper.toDisplayLabel(status),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '${weightKg.toStringAsFixed(1)} kg',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            if (amountRp != null && amountRp! > 0) ...[
-                              const SizedBox(width: 6),
+                    ConstrainedBox(
+                      constraints: metricsConstraints,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Label resmi dari TransactionStatusHelper
+                          StatusBadge(
+                            status: status,
+                            customLabel:
+                                TransactionStatusHelper.toDisplayLabel(status),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               Text(
-                                '• ${currencyFormat.format(amountRp)}',
+                                '${weightKg.toStringAsFixed(1)} kg',
                                 style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primaryMain,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                  fontFeatures: nominal,
                                 ),
                               ),
+                              if (amountRp != null && amountRp! > 0) ...[
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    '• ${currencyFormat.format(amountRp)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primaryMain,
+                                      fontFeatures: nominal,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

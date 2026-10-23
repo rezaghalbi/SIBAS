@@ -52,15 +52,21 @@ class SaldoHeroCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: ink.withValues(alpha: 0.90),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
+                // Label boleh menyusut; chip di kanan tidak pernah dipotong.
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: ink.withValues(alpha: 0.90),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -72,6 +78,7 @@ class SaldoHeroCard extends StatelessWidget {
                   ),
                   child: Text(
                     'SIBAS POLTEKKES',
+                    maxLines: 1,
                     style: TextStyle(
                       color: ink,
                       fontSize: 10,

@@ -100,38 +100,46 @@ class HeroHeader extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Row(
-                              children: [
-                                mark ?? _DefaultMark(ink: palette.heroInk),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
+                            mark ?? _DefaultMark(ink: palette.heroInk),
+                            const SizedBox(width: 12),
+                            // Teks mengambil sisa lebar: judul dan subjudul
+                            // dipotong ellipsis, `trailing` tetap utuh.
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: palette.heroInk,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                  if (subtitle != null) ...[
+                                    const SizedBox(height: 2),
                                     Text(
-                                      title,
+                                      subtitle!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        color: palette.heroInk,
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.2,
+                                        color: palette.heroMuted,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                    if (subtitle != null) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        subtitle!,
-                                        style: TextStyle(
-                                          color: palette.heroMuted,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
                                   ],
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            if (trailing != null) trailing!,
+                            if (trailing != null) ...[
+                              const SizedBox(width: 12),
+                              trailing!,
+                            ],
                           ],
                         ),
                         if (bottomContent != null) ...[
