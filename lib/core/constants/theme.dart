@@ -162,7 +162,7 @@ class AppTheme {
   /// [lightTheme]; hanya warnanya yang memakai token §2.2.
   static ThemeData get darkTheme {
     final baseTextTheme = GoogleFonts.plusJakartaSansTextTheme();
-    final p = AppPalette.dark;
+    const p = AppPalette.dark;
     final status = AppStatusColors.of(p.brightness);
 
     return ThemeData(

@@ -1,5 +1,3 @@
-import 'dart:ui' show FontFeature;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -343,20 +341,18 @@ class _SolidCard extends StatelessWidget {
   const _SolidCard({
     required this.child,
     this.padding = const EdgeInsets.all(16),
-    this.radius = _cardRadius,
     this.color,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
-  final double radius;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: padding,
-      decoration: _cardDecoration(color: color, radius: radius),
+      decoration: _cardDecoration(color: color),
       child: child,
     );
   }
@@ -515,9 +511,9 @@ class _EmptyActivity extends StatelessWidget {
           const SizedBox(height: 12),
           const Text('Belum Ada Setoran', style: _sectionTitle),
           const SizedBox(height: 4),
-          const ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 300),
-            child: Text(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 300),
+            child: const Text(
               'Kumpulkan sampah daur ulang Anda dan mulailah setor untuk '
               'tabungan lingkungan.',
               textAlign: TextAlign.center,
