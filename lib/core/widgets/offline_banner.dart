@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_palette.dart';
 import '../network/api_guard.dart';
+import '../theme/sibas_colors.dart';
 
 /// Bar tipis di atas layar saat permintaan terakhir gagal karena jaringan.
 class OfflineBanner extends StatelessWidget {
@@ -9,8 +9,6 @@ class OfflineBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final warna = AppStatusColors.of(p.brightness);
-
     return ValueListenableBuilder<bool>(
       valueListenable: offlineNotifier,
       builder: (context, offline, _) {
@@ -21,7 +19,7 @@ class OfflineBanner extends StatelessWidget {
           child: Container(
             height: 28,
             width: double.infinity,
-            color: warna.pendingBackground,
+            color: SibasColors.status.pendingBackground,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
@@ -30,7 +28,7 @@ class OfflineBanner extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
-                color: warna.pendingText,
+                color: SibasColors.status.pendingText,
                 fontWeight: FontWeight.w600,
               ),
             ),

@@ -1,45 +1,5 @@
 # LOG PROGRESS
 
-## 2026-10-23 — Lokasi bank sampah, penyeragaman kaca, mulai migrasi dark
-
-**Lokasi bank sampah** (fitur baru, migration `20261034000000`)
-- `bank_locations`: nama, alamat, latitude/longitude, status aktif, `created_by`.
-- `transactions.location_id` dan `withdrawals.location_id` + index; semua baris
-  lama di-backfill ke lokasi default `Bank Sampah Poltekkes`.
-- RPC: `get_locations`, `simpan_lokasi`, `hapus_lokasi` (hapus-aman), serta
-  `create_deposit` / `create_withdrawal` dengan `p_location_id` (null → lokasi
-  aktif pertama, lokasi nonaktif ditolak). Audit mencatat
-  "Pengajuan setoran/penarikan dibuat di <nama lokasi>".
-- `detail_transaksi`, `detail_penarikan`, `tarik_by_qr` mengembalikan
-  `location {id, name, address, latitude, longitude}`.
-- **Migration sudah diterapkan** ke project remote `urhgqecrmyxzutvfowhm`.
-  Verifikasi SQL: 1 lokasi, `0` transaksi/penarikan tanpa lokasi, 8 RPC dengan
-  signature benar dan `anon` dicabut.
-- Flutter: model/repository/provider lokasi; pemilih lokasi wajib di setor dan
-  tarik (`selectedLocationProvider`, auto-pilih bila hanya satu); layar
-  `/admin/locations` (CRUD + hapus-aman + koordinat) dan pintasan di dashboard;
-  lokasi tampil di QR, detail setoran/penarikan, pratinjau verifikasi, dan
-  kolom `Lokasi` di ekspor CSV. Query daftar memakai embed
-  `location:bank_locations(...)`.
-
-**Penyeragaman bahasa visual**
-- `SurfaceCard` (`tone: card | subtle`) jadi satu-satunya kartu konten — kaca
-  statis tanpa `BackdropFilter`; `GlassPanel` hanya untuk hero, nav, dan sheet.
-- Semua border kaca/kartu **1.0 px**. `AGENTS.md` §2, skill `sibas-glass-ui`,
-  dan `docs/DESIGN_SYSTEM_V2.md` §7 diselaraskan.
-- Seluruh layar mahasiswa dan admin memakai `SurfaceCard`; empat layar admin
-  yang belum dipoles (jenis sampah, data mahasiswa, pengaturan, detail
-  penarikan) ikut dirapikan.
-
-**Verifikasi**
-- `Analyze & Test` `39908870143` dan `39910059652` hijau; `Build + Vercel`
-  `39908870218` hijau (`0dbb1e9`). Preview
-  `https://sibas-sr198o7gf-rezaghalbis-projects.vercel.app`.
-
-**Berjalan**
-- Migrasi token `AppColors` → `AppPalette` di seluruh layar untuk menyiapkan
-  sakelar mode gelap.
-
 ## 2026-10-23 — Glass 2.0 tahap 5 batch 1: layar mahasiswa
 
 **Layar** (semua tetap `AppColors`, mode gelap belum diaktifkan)

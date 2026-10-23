@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../theme/app_palette.dart';
 import '../../../../core/utils/status_helper.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
@@ -11,6 +10,7 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../providers/transaction_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Lebar kolom baca detail di desktop (§8).
 const double _contentMaxWidth = 720;
@@ -31,7 +31,7 @@ TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: p.text,
+  color: SibasColors.text,
 );
 
 /// Rincian satu transaksi setoran: nominal, status, waktu, dan verifikator.
@@ -45,15 +45,13 @@ class TransactionDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = AppPalette.of(context);
-
     final provider = transactionDetailRpcProvider(transactionId);
     final detailState = ref.watch(provider);
     final row = detailState.valueOrNull;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -226,8 +224,6 @@ class _DetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final categoryName = _text(row['trash_name']) ?? 'Sampah Daur Ulang';
 
     final weight = _num(row['weight']) ?? 0;
@@ -271,8 +267,8 @@ class _DetailBody extends StatelessWidget {
               icon: const Icon(Icons.qr_code_2_rounded, size: 18),
               label: const Text('Tampilkan QR Setoran'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: p.primary,
-                side: BorderSide(color: p.border),
+                foregroundColor: SibasColors.primary,
+                side: BorderSide(color: SibasColors.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -399,8 +395,8 @@ class _DetailBody extends StatelessWidget {
           child: OutlinedButton(
             onPressed: () => _goBack(context),
             style: OutlinedButton.styleFrom(
-              foregroundColor: p.primary,
-              side: BorderSide(color: p.border),
+              foregroundColor: SibasColors.primary,
+              side: BorderSide(color: SibasColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -452,8 +448,6 @@ class _StudentBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final displayName = name ?? 'Tidak diketahui';
 
     return Row(
@@ -464,9 +458,9 @@ class _StudentBlock extends StatelessWidget {
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: p.mintWash,
+            color: SibasColors.mintWash,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: p.border),
+            border: Border.all(color: SibasColors.border),
           ),
           child: Text(
             _initials(displayName),
@@ -474,7 +468,7 @@ class _StudentBlock extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.4,
-              color: p.primary,
+              color: SibasColors.primary,
             ),
           ),
         ),
@@ -492,8 +486,8 @@ class _StudentBlock extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   height: 1.3,
                   color: name == null
-                      ? p.muted
-                      : p.text,
+                      ? SibasColors.muted
+                      : SibasColors.text,
                 ),
               ),
               const SizedBox(height: 2),
@@ -502,7 +496,7 @@ class _StudentBlock extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   height: 1.4,
-                  color: p.muted,
+                  color: SibasColors.muted,
                   fontFeatures: _tabularFigures,
                 ),
               ),
@@ -540,13 +534,11 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-    Color valueColor = p.text;
+    Color valueColor = SibasColors.text;
     if (muted) {
-      valueColor = p.muted;
+      valueColor = SibasColors.muted;
     } else if (emphasis) {
-      valueColor = p.primary;
+      valueColor = SibasColors.primary;
     }
 
     return Padding(
@@ -561,7 +553,7 @@ class _InfoRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.4,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
           ),
@@ -591,7 +583,7 @@ class _InfoRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.4,
-                      color: p.muted,
+                      color: SibasColors.muted,
                     ),
                   ),
                 ],
@@ -612,8 +604,6 @@ class _PhotoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return _Section(
       title: 'Bukti Foto',
       child: SurfaceCard(
@@ -626,7 +616,7 @@ class _PhotoSection extends StatelessWidget {
             fit: BoxFit.cover,
             semanticLabel: 'Bukti foto setoran',
             errorBuilder: (context, error, stackTrace) => Container(
-              color: p.mintWash,
+              color: SibasColors.mintWash,
               alignment: Alignment.center,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -634,14 +624,14 @@ class _PhotoSection extends StatelessWidget {
                   Icon(
                     Icons.broken_image_outlined,
                     size: 28,
-                    color: p.muted,
+                    color: SibasColors.muted,
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Foto tidak dapat dimuat',
                     style: TextStyle(
                       fontSize: 12.5,
-                      color: p.muted,
+                      color: SibasColors.muted,
                     ),
                   ),
                 ],
@@ -676,8 +666,6 @@ class _AuditTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final entries = audits.whereType<Map>().toList()
       ..sort((a, b) {
         final left = _date(a['created_at']);
@@ -694,7 +682,7 @@ class _AuditTimeline extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             )
           : SurfaceCard(
@@ -726,8 +714,6 @@ class _AuditRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final toStatus = entry['to_status']?.toString();
     final color = TransactionStatusHelper.getStatusColor(toStatus);
     final note = _text(entry['note']);
@@ -758,7 +744,7 @@ class _AuditRow extends StatelessWidget {
                   child: Container(
                     width: 2,
                     margin: const EdgeInsets.symmetric(vertical: 3),
-                    color: p.border,
+                    color: SibasColors.border,
                   ),
                 ),
             ],
@@ -786,7 +772,7 @@ class _AuditRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.5,
                         height: 1.45,
-                        color: p.text,
+                        color: SibasColors.text,
                       ),
                     ),
                   ],
@@ -796,7 +782,7 @@ class _AuditRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: p.muted,
+                      color: SibasColors.muted,
                       fontFeatures: _tabularFigures,
                     ),
                   ),
@@ -823,18 +809,17 @@ class _NoteBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final warna = AppStatusColors.of(p.brightness);
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         tone: SurfaceTone.subtle,
         radius: 16,
         padding: const EdgeInsets.all(16),
-        color: warna.rejectedBackground,
+        color: SibasColors.status.rejectedBackground,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 20, color: warna.badText),
+            Icon(icon, size: 20, color: SibasColors.status.badText),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -842,19 +827,19 @@ class _NoteBox extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: warna.badText,
+                      color: SibasColors.status.badText,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     text,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
-                      color: warna.badText,
+                      color: SibasColors.status.badText,
                     ),
                   ),
                 ],
@@ -873,8 +858,6 @@ class _LoadingPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
@@ -894,7 +877,7 @@ class _LoadingPanel extends StatelessWidget {
                 fontSize: 14.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: p.text,
+                color: SibasColors.text,
               ),
             ),
             SizedBox(height: 4),
@@ -904,7 +887,7 @@ class _LoadingPanel extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
           ],
@@ -945,12 +928,9 @@ class _StatePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
-    final accent = danger ? warna.badText : p.primary;
+    final accent = danger ? SibasColors.status.badText : SibasColors.primary;
     final badge =
-        danger ? warna.rejectedBackground : p.mintWash;
+        danger ? SibasColors.status.rejectedBackground : SibasColors.mintWash;
 
     return SizedBox(
       width: double.infinity,
@@ -975,7 +955,7 @@ class _StatePanel extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: p.text,
+                color: SibasColors.text,
               ),
             ),
             const SizedBox(height: 6),
@@ -985,7 +965,7 @@ class _StatePanel extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
             if (action != null) ...[
@@ -997,8 +977,8 @@ class _StatePanel extends StatelessWidget {
                   icon: Icon(action!.icon, size: 18),
                   label: Text(action!.label),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: p.primary,
-                    side: BorderSide(color: p.border),
+                    foregroundColor: SibasColors.primary,
+                    side: BorderSide(color: SibasColors.border),
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),

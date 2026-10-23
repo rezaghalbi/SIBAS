@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_palette.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../profile/domain/validasi_profil.dart';
 import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -38,7 +38,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
-    final p = AppPalette.of(context);
     // Pesan lama dibersihkan supaya tidak menyesatkan percobaan berikutnya.
     setState(() => _errorMessage = null);
     if (!_formKey.currentState!.validate()) return;
@@ -60,7 +59,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ? 'Pendaftaran berhasil. Cek email untuk verifikasi sebelum masuk.'
                   : 'Pendaftaran berhasil!',
             ),
-            backgroundColor: p.leaf,
+            backgroundColor: SibasColors.leaf,
           ),
         );
       }
@@ -76,14 +75,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
-
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -105,16 +100,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             width: 68,
                             height: 68,
                             decoration: BoxDecoration(
-                              color: p.mintWash,
+                              color: SibasColors.mintWash,
                               shape: BoxShape.circle,
-                              border: Border.all(color: p.mint, width: 2),
+                              border: Border.all(color: SibasColors.mint, width: 2),
                             ),
                             padding: const EdgeInsets.all(10),
                             // Tanpa berkas logo: ikon wordmark bawaan.
                             child: Icon(
                               Icons.person_add_rounded,
                               size: 36,
-                              color: p.leaf,
+                              color: SibasColors.leaf,
                             ),
                           ),
                         ),
@@ -123,7 +118,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Daftar Akun SIBAS',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleLarge?.copyWith(
-                            color: p.primary,
+                            color: SibasColors.primary,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -132,7 +127,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Sistem Informasi Bank Sampah Poltekkes Jogja',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
+                            color: SibasColors.muted,
                             fontSize: 13,
                           ),
                         ),
@@ -143,17 +138,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: p.mintWash,
+                            color: SibasColors.mintWash,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.school_outlined, size: 18, color: p.leaf),
+                              Icon(Icons.school_outlined, size: 18, color: SibasColors.leaf),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Pendaftaran untuk akun mahasiswa. Akun admin dibuat oleh pengelola bank sampah.',
-                                  style: TextStyle(fontSize: 12.5, color: p.muted),
+                                  style: TextStyle(fontSize: 12.5, color: SibasColors.muted),
                                 ),
                               ),
                             ],
@@ -166,7 +161,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Nama Lengkap',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: p.text,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -174,7 +169,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           controller: _fullNameController,
                           decoration: InputDecoration(
                             hintText: 'Masukkan nama lengkap',
-                            prefixIcon: Icon(Icons.person_outline_rounded, color: p.leaf, size: 20),
+                            prefixIcon: Icon(Icons.person_outline_rounded, color: SibasColors.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) return 'Nama lengkap wajib diisi';
@@ -188,7 +183,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'NIM (Nomor Induk Mahasiswa)',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: p.text,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -197,7 +192,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             hintText: 'Contoh: P07124220001',
-                            prefixIcon: Icon(Icons.badge_outlined, color: p.leaf, size: 20),
+                            prefixIcon: Icon(Icons.badge_outlined, color: SibasColors.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {
@@ -213,7 +208,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Nomor WhatsApp',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: p.text,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -225,7 +220,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             hintText: 'Contoh: 081234567890',
                             helperText: 'Dipakai admin untuk menghubungi Anda',
                             helperMaxLines: 2,
-                            prefixIcon: Icon(Icons.chat_outlined, color: p.leaf, size: 20),
+                            prefixIcon: Icon(Icons.chat_outlined, color: SibasColors.leaf, size: 20),
                           ),
                           validator: validasiNomorWa,
                         ),
@@ -236,7 +231,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Email Kampus / Akun',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: p.text,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -245,7 +240,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: 'nama@poltekkes-jogja.ac.id',
-                            prefixIcon: Icon(Icons.mail_outline_rounded, color: p.leaf, size: 20),
+                            prefixIcon: Icon(Icons.mail_outline_rounded, color: SibasColors.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) return 'Email wajib diisi';
@@ -260,7 +255,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Kata Sandi',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: p.text,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -269,11 +264,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: 'Minimal 6 karakter',
-                            prefixIcon: Icon(Icons.lock_outline_rounded, color: p.leaf, size: 20),
+                            prefixIcon: Icon(Icons.lock_outline_rounded, color: SibasColors.leaf, size: 20),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                color: p.muted,
+                                color: SibasColors.muted,
                                 size: 20,
                               ),
                               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -293,7 +288,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Ulangi Kata Sandi',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: p.text,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -302,7 +297,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: 'Ulangi kata sandi',
-                            prefixIcon: Icon(Icons.lock_outline_rounded, color: p.leaf, size: 20),
+                            prefixIcon: Icon(Icons.lock_outline_rounded, color: SibasColors.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.isEmpty) return 'Ulangi kata sandi';
@@ -317,10 +312,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: warna.rejectedBackground,
+                              color: SibasColors.status.rejectedBackground,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: warna.badText.withValues(alpha: 0.35),
+                                color: SibasColors.status.badText.withValues(alpha: 0.35),
                               ),
                             ),
                             child: Row(
@@ -329,7 +324,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 Icon(
                                   Icons.error_outline_rounded,
                                   size: 18,
-                                  color: warna.badText,
+                                  color: SibasColors.status.badText,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -337,7 +332,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     _errorMessage!,
                                     style: TextStyle(
                                       fontSize: 12.5,
-                                      color: warna.badText,
+                                      color: SibasColors.status.badText,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -371,7 +366,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               child: Text(
                                 'Masuk di sini',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: p.leaf,
+                                  color: SibasColors.leaf,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
                                 ),

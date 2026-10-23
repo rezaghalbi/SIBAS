@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../constants/colors.dart';
+import '../theme/sibas_colors.dart';
 
 /// Helper pemetaan status transaksi sesuai matriks resmi di .antigravity/prd.md
 enum TransactionStatus {
@@ -51,13 +51,13 @@ class TransactionStatusHelper {
     final parsed = fromString(status);
     switch (parsed) {
       case TransactionStatus.pending:
-        return AppColors.statusPending;
+        return SibasColors.status.pendingText;
       case TransactionStatus.approved:
-        return AppColors.statusApproved;
+        return SibasColors.status.approvedText;
       case TransactionStatus.rejected:
-        return AppColors.statusRejected;
+        return SibasColors.status.rejectedText;
       case TransactionStatus.expired:
-        return AppColors.statusExpired;
+        return SibasColors.status.neutralText;
     }
   }
 }

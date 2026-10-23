@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_palette.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -61,7 +61,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleForgotPassword() async {
-    final p = AppPalette.of(context);
     final terkirim = await showDialog<String>(
       context: context,
       builder: (_) => _ForgotPasswordDialog(
@@ -77,20 +76,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             'Tautan atur ulang sandi dikirim ke $terkirim. Periksa kotak masuk.',
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: p.primary,
+          backgroundColor: SibasColors.primary,
         ),
       );
   }
 
   Future<void> _handleResend() async {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Isi email terlebih dahulu untuk mengirim ulang verifikasi'),
-          backgroundColor: warna.badText,
+          backgroundColor: SibasColors.status.badText,
         ),
       );
       return;
@@ -103,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Email verifikasi dikirim ulang ke $email'),
-            backgroundColor: p.leaf,
+            backgroundColor: SibasColors.leaf,
           ),
         );
       }
@@ -112,7 +109,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(authErrorMessage(e)),
-            backgroundColor: warna.badText,
+            backgroundColor: SibasColors.status.badText,
           ),
         );
       }
@@ -123,14 +120,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
-
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -178,7 +171,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'SIBAS',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleLarge?.copyWith(
-                            color: p.primary,
+                            color: SibasColors.primary,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,
                           ),
@@ -188,7 +181,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Bank Sampah Poltekkes Kemenkes Yogyakarta',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: p.muted,
+                            color: SibasColors.muted,
                             fontSize: 13,
                           ),
                         ),
@@ -199,19 +192,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: p.mintWash,
+                            color: SibasColors.mintWash,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.info_outline_rounded, size: 16, color: p.leaf),
+                              Icon(Icons.info_outline_rounded, size: 16, color: SibasColors.leaf),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Masuk sebagai mahasiswa atau admin — diarahkan otomatis sesuai akun.',
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     fontSize: 12,
-                                    color: p.muted,
+                                    color: SibasColors.muted,
                                   ),
                                 ),
                               ),
@@ -225,10 +218,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                             decoration: BoxDecoration(
-                              color: warna.rejectedBackground,
+                              color: SibasColors.status.rejectedBackground,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: warna.badText.withValues(alpha: 0.35),
+                                color: SibasColors.status.badText.withValues(alpha: 0.35),
                               ),
                             ),
                             child: Column(
@@ -240,7 +233,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     Icon(
                                       Icons.mark_email_unread_outlined,
                                       size: 18,
-                                      color: warna.badText,
+                                      color: SibasColors.status.badText,
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
@@ -248,7 +241,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         _verificationNotice!,
                                         style: TextStyle(
                                           fontSize: 12.5,
-                                          color: warna.badText,
+                                          color: SibasColors.status.badText,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -277,7 +270,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Email Kampus / Akun',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: p.text,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -286,7 +279,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: 'nama@poltekkes-jogja.ac.id',
-                            prefixIcon: Icon(Icons.mail_outline_rounded, color: p.leaf, size: 20),
+                            prefixIcon: Icon(Icons.mail_outline_rounded, color: SibasColors.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) return 'Email wajib diisi';
@@ -301,7 +294,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Kata Sandi',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: p.text,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -310,11 +303,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: '••••••••',
-                            prefixIcon: Icon(Icons.lock_outline_rounded, color: p.leaf, size: 20),
+                            prefixIcon: Icon(Icons.lock_outline_rounded, color: SibasColors.leaf, size: 20),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                color: p.muted,
+                                color: SibasColors.muted,
                                 size: 20,
                               ),
                               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -340,7 +333,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               'Lupa kata sandi?',
                               style: TextStyle(
                                 fontSize: 12.5,
-                                color: p.leaf,
+                                color: SibasColors.leaf,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -353,10 +346,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: warna.rejectedBackground,
+                              color: SibasColors.status.rejectedBackground,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: warna.badText.withValues(alpha: 0.35),
+                                color: SibasColors.status.badText.withValues(alpha: 0.35),
                               ),
                             ),
                             child: Row(
@@ -365,7 +358,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 Icon(
                                   Icons.error_outline_rounded,
                                   size: 18,
-                                  color: warna.badText,
+                                  color: SibasColors.status.badText,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -373,7 +366,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     _errorMessage!,
                                     style: TextStyle(
                                       fontSize: 12.5,
-                                      color: warna.badText,
+                                      color: SibasColors.status.badText,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -410,7 +403,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               child: Text(
                                 'Buat Akun Baru',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: p.leaf,
+                                  color: SibasColors.leaf,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
                                 ),
@@ -490,10 +483,6 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
-
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       title: const Text(
@@ -513,7 +502,7 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
             const SizedBox(height: 12),
@@ -526,7 +515,7 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
                 hintText: 'nama@poltekkes-jogja.ac.id',
                 prefixIcon: Icon(
                   Icons.mail_outline_rounded,
-                  color: p.leaf,
+                  color: SibasColors.leaf,
                   size: 20,
                 ),
               ),
@@ -538,10 +527,10 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: warna.rejectedBackground,
+                  color: SibasColors.status.rejectedBackground,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: warna.badText.withValues(alpha: 0.35),
+                    color: SibasColors.status.badText.withValues(alpha: 0.35),
                   ),
                 ),
                 child: Row(
@@ -550,7 +539,7 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
                     Icon(
                       Icons.error_outline_rounded,
                       size: 16,
-                      color: warna.badText,
+                      color: SibasColors.status.badText,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -559,7 +548,7 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.4,
-                          color: warna.badText,
+                          color: SibasColors.status.badText,
                         ),
                       ),
                     ),
@@ -575,7 +564,7 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
           onPressed: _sibuk ? null : () => Navigator.pop(context),
           child: Text(
             'Batal',
-            style: TextStyle(color: p.muted),
+            style: TextStyle(color: SibasColors.muted),
           ),
         ),
         ElevatedButton(

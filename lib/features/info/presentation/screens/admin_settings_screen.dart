@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../theme/app_palette.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -10,6 +9,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../domain/models/app_settings_model.dart';
 import '../../domain/validasi_pengaturan.dart';
 import '../providers/app_settings_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Target sentuh minimum (§4).
 const double _touch = 44;
@@ -20,7 +20,7 @@ const double _maxContentWidth = 1120;
 /// Field 16 px agar Safari iOS tidak memperbesar halaman (§9).
 TextStyle _fieldText = TextStyle(
   fontSize: 16,
-  color: p.text,
+  color: SibasColors.text,
 );
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
@@ -28,7 +28,7 @@ TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: p.text,
+  color: SibasColors.text,
 );
 
 /// Pengaturan global aplikasi: masa berlaku QR dan kontak admin.
@@ -74,13 +74,11 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final state = ref.watch(appSettingsProvider);
     final inset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -166,7 +164,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
   /// CTA 48 px; di mobile mengisi lebar form, di desktop dibatasi 280 px.
   Widget _tombolSimpan() {
-    final p = AppPalette.of(context);
     return Align(
       alignment: Alignment.centerLeft,
       child: ConstrainedBox(
@@ -176,10 +173,10 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
           child: FilledButton(
             onPressed: _menyimpan ? null : _simpan,
             style: FilledButton.styleFrom(
-              backgroundColor: p.leaf,
+              backgroundColor: SibasColors.leaf,
               foregroundColor: Colors.white,
               disabledBackgroundColor:
-                  p.leaf.withValues(alpha: 0.5),
+                  SibasColors.leaf.withValues(alpha: 0.5),
               disabledForegroundColor: Colors.white,
               elevation: 0,
               minimumSize: const Size(0, 48),
@@ -209,7 +206,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _kartuTtl() {
-    final p = AppPalette.of(context);
     return SurfaceCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -222,7 +218,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -248,7 +244,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _kartuKontak() {
-    final p = AppPalette.of(context);
     return SurfaceCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -261,7 +256,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -317,7 +312,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 Icon(
                   Icons.info_outline_rounded,
                   size: 16,
-                  color: p.leaf,
+                  color: SibasColors.leaf,
                 ),
                 SizedBox(width: 8),
                 Expanded(
@@ -328,7 +323,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                     style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: p.muted,
+                      color: SibasColors.muted,
                     ),
                   ),
                 ),
@@ -341,17 +336,16 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _labelSeksi(IconData icon, String teks) {
-    final p = AppPalette.of(context);
     return Row(
       children: [
         Container(
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: p.mintWash,
+            color: SibasColors.mintWash,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 17, color: p.leaf),
+          child: Icon(icon, size: 17, color: SibasColors.leaf),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -367,14 +361,13 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _pesanBanner() {
-    final warna = AppStatusColors.of(p.brightness);
     final sukses = _pesanSukses;
     final ink = sukses
-        ? warna.approvedText
-        : warna.rejectedText;
+        ? SibasColors.status.approvedText
+        : SibasColors.status.rejectedText;
     final surface = sukses
-        ? warna.approvedBackground
-        : warna.rejectedBackground;
+        ? SibasColors.status.approvedBackground
+        : SibasColors.status.rejectedBackground;
 
     return SurfaceCard(
       tone: SurfaceTone.subtle,
@@ -415,8 +408,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _kartuGalat(Object error) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
     return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       child: Column(
@@ -425,13 +416,13 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: warna.rejectedBackground,
+              color: SibasColors.status.rejectedBackground,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.cloud_off_rounded,
               size: 26,
-              color: warna.badText,
+              color: SibasColors.status.badText,
             ),
           ),
           const SizedBox(height: 14),
@@ -441,7 +432,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: p.text,
+              color: SibasColors.text,
             ),
           ),
           const SizedBox(height: 4),
@@ -451,7 +442,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -463,8 +454,8 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               label: const Text('Coba Lagi'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, _touch),
-                foregroundColor: p.leaf,
-                side: BorderSide(color: p.border),
+                foregroundColor: SibasColors.leaf,
+                side: BorderSide(color: SibasColors.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../theme/app_palette.dart';
 import '../utils/status_helper.dart';
 import 'status_badge.dart';
+import '../theme/sibas_colors.dart';
 
 /// Item baris transaksi dengan ikon jenis sampah, berat (kg), estimasi saldo, tanggal, dan StatusBadge
 class TxListItem extends StatelessWidget {
@@ -59,8 +59,6 @@ class TxListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
     final currencyFormat = NumberFormat.currency(
       locale: 'id_ID',
@@ -77,9 +75,9 @@ class TxListItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: p.surface,
+        color: SibasColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: p.border, width: 1.0),
+        border: Border.all(color: SibasColors.border, width: 1.0),
       ),
       child: Material(
         color: Colors.transparent,
@@ -99,12 +97,12 @@ class TxListItem extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: p.mintWash,
+                        color: SibasColors.mintWash,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
                         _getCategoryIcon(categoryName),
-                        color: p.leaf,
+                        color: SibasColors.leaf,
                         size: 24,
                       ),
                     ),
@@ -120,7 +118,7 @@ class TxListItem extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: p.text,
+                              color: SibasColors.text,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -132,7 +130,7 @@ class TxListItem extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: p.muted,
+                                color: SibasColors.muted,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -143,7 +141,7 @@ class TxListItem extends StatelessWidget {
                             dateFormat.format(createdAt),
                             style: TextStyle(
                               fontSize: 12,
-                              color: p.muted,
+                              color: SibasColors.muted,
                             ),
                           ),
                           if (verifiedAt != null) ...[
@@ -152,7 +150,7 @@ class TxListItem extends StatelessWidget {
                               'Diverifikasi ${dateFormat.format(verifiedAt!)}',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: p.muted,
+                                color: SibasColors.muted,
                               ),
                             ),
                           ],
@@ -182,7 +180,7 @@ class TxListItem extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: p.text,
+                                  color: SibasColors.text,
                                   fontFeatures: nominal,
                                 ),
                               ),
@@ -196,7 +194,7 @@ class TxListItem extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: p.leaf,
+                                      color: SibasColors.leaf,
                                       fontFeatures: nominal,
                                     ),
                                   ),
@@ -223,7 +221,7 @@ class TxListItem extends StatelessWidget {
                       icon: const Icon(Icons.qr_code_2_rounded, size: 18),
                       label: const Text('Tampilkan QR'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: p.leaf,
+                        foregroundColor: SibasColors.leaf,
                         minimumSize: const Size(0, 40),
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -232,7 +230,7 @@ class TxListItem extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                         side: BorderSide(
-                          color: p.leaf.withValues(alpha: 0.45),
+                          color: SibasColors.leaf.withValues(alpha: 0.45),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

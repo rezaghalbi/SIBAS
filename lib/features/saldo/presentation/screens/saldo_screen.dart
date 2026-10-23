@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -13,6 +12,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Angka uang, berat, dan tanggal memakai tabular figures (§3).
 const List<FontFeature> _tabularFigures = [FontFeature.tabularFigures()];
@@ -29,8 +29,6 @@ class SaldoScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = AppPalette.of(context);
-
     final user = ref.watch(currentUserProvider).valueOrNull;
     final balanceState = ref.watch(availableBalanceProvider);
     final withdrawalsState = ref.watch(studentWithdrawalsProvider);
@@ -55,7 +53,7 @@ class SaldoScreen extends ConsumerWidget {
     final hasError = balanceState.hasError || withdrawalsState.hasError;
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(availableBalanceProvider);
@@ -121,14 +119,13 @@ class SaldoScreen extends ConsumerWidget {
                           const SizedBox(height: 16),
                           LayoutBuilder(
                             builder: (context, constraints) {
-    final p = AppPalette.of(context);
                               final withdrawButton = ElevatedButton.icon(
                                 onPressed: canWithdraw
                                     ? () => context.push('/tarik')
                                     : null,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: p.leaf,
+                                  foregroundColor: SibasColors.leaf,
                                   disabledBackgroundColor:
                                       Colors.white.withValues(alpha: 0.35),
                                   disabledForegroundColor:
@@ -453,10 +450,6 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     return SurfaceCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -468,7 +461,7 @@ class _SummaryCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
           const SizedBox(height: 8),
@@ -486,7 +479,7 @@ class _SummaryCard extends StatelessWidget {
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.4,
-                      color: p.text,
+                      color: SibasColors.text,
                       fontFeatures: _tabularFigures,
                     ),
                   ),
@@ -498,7 +491,7 @@ class _SummaryCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
-                  color: p.muted,
+                  color: SibasColors.muted,
                 ),
               ),
             ],
@@ -517,10 +510,6 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     return Row(
       children: [
         Expanded(
@@ -530,7 +519,7 @@ class _SectionTitle extends StatelessWidget {
               fontSize: 15.5,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.2,
-              color: p.text,
+              color: SibasColors.text,
             ),
           ),
         ),
@@ -540,7 +529,7 @@ class _SectionTitle extends StatelessWidget {
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
       ],
@@ -556,10 +545,6 @@ class _WithdrawalTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
-
     final currency = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
@@ -579,12 +564,12 @@ class _WithdrawalTile extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: p.mintWash,
+              color: SibasColors.mintWash,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               Icons.payments_rounded,
-              color: p.leaf,
+              color: SibasColors.leaf,
               size: 20,
             ),
           ),
@@ -601,7 +586,7 @@ class _WithdrawalTile extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.2,
-                    color: p.text,
+                    color: SibasColors.text,
                     fontFeatures: _tabularFigures,
                   ),
                 ),
@@ -610,7 +595,7 @@ class _WithdrawalTile extends StatelessWidget {
                   date.format(withdrawal.createdAt),
                   style: TextStyle(
                     fontSize: 12,
-                    color: p.muted,
+                    color: SibasColors.muted,
                     fontFeatures: _tabularFigures,
                   ),
                 ),
@@ -624,7 +609,7 @@ class _WithdrawalTile extends StatelessWidget {
                     width: double.infinity,
                     child: SurfaceCard(
                       tone: SurfaceTone.subtle,
-                      color: warna.rejectedBackground,
+                      color: SibasColors.status.rejectedBackground,
                       radius: 16,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -635,7 +620,7 @@ class _WithdrawalTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.4,
-                          color: warna.badText,
+                          color: SibasColors.status.badText,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -656,10 +641,6 @@ class _EmptyWithdrawals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     return SurfaceCard(
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
       child: Column(
@@ -668,12 +649,12 @@ class _EmptyWithdrawals extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: p.mintWash,
+              color: SibasColors.mintWash,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
               Icons.account_balance_wallet_outlined,
-              color: p.leaf,
+              color: SibasColors.leaf,
               size: 26,
             ),
           ),
@@ -684,7 +665,7 @@ class _EmptyWithdrawals extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: p.text,
+              color: SibasColors.text,
             ),
           ),
           const SizedBox(height: 6),
@@ -694,7 +675,7 @@ class _EmptyWithdrawals extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               height: 1.5,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
         ],
@@ -710,10 +691,6 @@ class _Footnote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     return Padding(
       padding: const EdgeInsets.only(top: 2),
       child: Text(
@@ -721,7 +698,7 @@ class _Footnote extends StatelessWidget {
         style: TextStyle(
           fontSize: 11.5,
           height: 1.5,
-          color: p.muted,
+          color: SibasColors.muted,
         ),
       ),
     );
@@ -767,11 +744,8 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final warna = AppStatusColors.of(p.brightness);
-
-
     return SurfaceCard(
-      color: warna.rejectedBackground,
+      color: SibasColors.status.rejectedBackground,
       radius: 16,
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -783,7 +757,7 @@ class _ErrorBox extends StatelessWidget {
               Icon(
                 Icons.cloud_off_rounded,
                 size: 18,
-                color: warna.badText,
+                color: SibasColors.status.badText,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -792,7 +766,7 @@ class _ErrorBox extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: warna.badText,
+                    color: SibasColors.status.badText,
                   ),
                 ),
               ),
@@ -805,7 +779,7 @@ class _ErrorBox extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Coba Lagi'),
-              style: TextButton.styleFrom(foregroundColor: warna.badText),
+              style: TextButton.styleFrom(foregroundColor: SibasColors.status.badText),
             ),
           ),
         ],

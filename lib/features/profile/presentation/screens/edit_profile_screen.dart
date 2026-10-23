@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../theme/app_palette.dart';
+import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/theme.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/validasi_profil.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Edit data akun: foto, nama, NIM, dan nomor WhatsApp. Email hanya baca dan
 /// diubah lewat menu Ubah Email di layar Profil.
@@ -85,8 +86,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _pilihSumberFoto(bool adaFoto) async {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
     final aksi = await showModalBottomSheet<_AksiFoto>(
       context: context,
       useSafeArea: true,
@@ -106,7 +105,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: p.border,
+                color: SibasColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -119,7 +118,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: p.text,
+                    color: SibasColors.text,
                   ),
                 ),
               ),
@@ -136,27 +135,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             ),
             if (adaFoto)
               ListTile(
-                leading: const _IkonSheet(
+                leading: _IkonSheet(
                   icon: Icons.delete_outline_rounded,
-                  warna: warna.badText,
+                  warna: SibasColors.status.badText,
                 ),
-                title: const Text(
+                title: Text(
                   'Hapus Foto',
                   style: TextStyle(
-                    color: warna.badText,
+                    color: SibasColors.status.badText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 onTap: () => Navigator.pop(ctx, _AksiFoto.hapus),
               ),
-            Divider(height: 1, color: p.border),
+            Divider(height: 1, color: SibasColors.border),
             ListTile(
               onTap: () => Navigator.pop(ctx),
               title: Center(
                 child: Text(
                   'Batal',
                   style: TextStyle(
-                    color: p.muted,
+                    color: SibasColors.muted,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -226,8 +225,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     ref.listen(currentUserProvider, (_, next) => _isiForm(next.valueOrNull));
 
     final user = ref.watch(currentUserProvider).valueOrNull;
@@ -236,7 +233,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final bisaAksi = !_fotoSibuk && !_simpanSibuk;
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: Column(
         children: [
           HeroHeader(
@@ -293,7 +290,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     clipBehavior: Clip.antiAlias,
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
-                                      color: p.lime,
+                                      color: SibasColors.lime,
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: Colors.white,
@@ -301,7 +298,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: p.border,
+                                          color: SibasColors.border,
                                           blurRadius: 10,
                                           offset: const Offset(0, 2),
                                         ),
@@ -345,7 +342,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               'Ketuk foto untuk mengganti',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: p.muted,
+                                color: SibasColors.muted,
                               ),
                             ),
                           ],
@@ -355,9 +352,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: p.surface,
+                          color: SibasColors.surface,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: p.border),
+                          border: Border.all(color: SibasColors.border),
                         ),
                         child: Form(
                           key: _formKey,
@@ -374,7 +371,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   hintText: 'Nama lengkap',
                                   prefixIcon: Icon(
                                     Icons.person_outline_rounded,
-                                    color: p.leaf,
+                                    color: SibasColors.leaf,
                                     size: 20,
                                   ),
                                 ),
@@ -390,7 +387,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   hintText: 'Contoh: P07124220001',
                                   prefixIcon: Icon(
                                     Icons.badge_outlined,
-                                    color: p.leaf,
+                                    color: SibasColors.leaf,
                                     size: 20,
                                   ),
                                 ),
@@ -411,7 +408,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   helperMaxLines: 2,
                                   prefixIcon: Icon(
                                     Icons.chat_outlined,
-                                    color: p.leaf,
+                                    color: SibasColors.leaf,
                                     size: 20,
                                   ),
                                 ),
@@ -426,16 +423,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: p.mintWash,
+                                  color: SibasColors.mintWash,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: p.border),
+                                  border: Border.all(color: SibasColors.border),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
                                       Icons.lock_outline_rounded,
                                       size: 18,
-                                      color: p.muted,
+                                      color: SibasColors.muted,
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
@@ -444,7 +441,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                         style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
-                                          color: p.text,
+                                          color: SibasColors.text,
                                         ),
                                       ),
                                     ),
@@ -456,7 +453,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 'Ubah lewat menu Ubah Email di Profil.',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: p.muted,
+                                  color: SibasColors.muted,
                                 ),
                               ),
                               if (_galat != null) ...[
@@ -503,8 +500,6 @@ class _Inisial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final parts = (nama ?? '')
         .trim()
         .split(RegExp(r'\s+'))
@@ -517,7 +512,7 @@ class _Inisial extends StatelessWidget {
       child: Text(
         huruf,
         style: TextStyle(
-          color: p.primary,
+          color: SibasColors.primary,
           fontSize: 32,
           fontWeight: FontWeight.w800,
         ),
@@ -530,17 +525,15 @@ class _IkonSheet extends StatelessWidget {
   final IconData icon;
   final Color warna;
 
-  _IkonSheet({required this.icon, this.warna = p.leaf});
+  _IkonSheet({required this.icon, this.warna = SibasColors.leaf});
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return Container(
       width: 34,
       height: 34,
       decoration: BoxDecoration(
-        color: p.mintWash,
+        color: SibasColors.mintWash,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(icon, size: 18, color: warna),
@@ -556,31 +549,30 @@ class _BannerGalat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final warna = AppStatusColors.of(p.brightness);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: warna.rejectedBackground,
+        color: SibasColors.status.rejectedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: warna.badText.withValues(alpha: 0.35)),
+        border: Border.all(color: SibasColors.status.badText.withValues(alpha: 0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
             size: 18,
-            color: warna.badText,
+            color: SibasColors.status.badText,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: warna.badText,
+                color: SibasColors.status.badText,
               ),
             ),
           ),
@@ -603,12 +595,11 @@ Widget _label(String teks) => Text(
       style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w700,
-        color: p.text,
+        color: SibasColors.text,
       ),
     );
 
 void _snack(BuildContext context, String message) {
-    final p = AppPalette.of(context);
   final messenger = ScaffoldMessenger.of(context);
   messenger
     ..hideCurrentSnackBar()
@@ -616,7 +607,7 @@ void _snack(BuildContext context, String message) {
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: p.primary,
+        backgroundColor: SibasColors.primary,
       ),
     );
 }

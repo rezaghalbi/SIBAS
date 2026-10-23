@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
+import '../theme/sibas_colors.dart';
 
-import '../theme/app_palette.dart';
-
-/// Chip status yang mengikuti tema light/dark (§2.3).
-///
-/// - Menunggu Verifikasi: `pending`
-/// - Disetujui / Diterima: `approved`
-/// - Ditolak / Kedaluwarsa: `rejected`
+/// Chip status dengan visual presisi sesuai prototype .antigravity/design_system.md
+/// - Menunggu Verifikasi: Text #B45309, BG #FEF3C7
+/// - Disetujui / Diterima: Text #15803D, BG #DCFCE7
+/// - Ditolak / Kedaluwarsa: Text #B91C1C, BG #FEE2E2
 class StatusBadge extends StatelessWidget {
   final String status;
   final String? customLabel;
@@ -19,10 +17,6 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    final palette = AppPalette.of(context);
-    final colors = AppStatusColors.of(palette.brightness);
-
     Color textColor;
     Color bgColor;
     String label;
@@ -33,30 +27,30 @@ class StatusBadge extends StatelessWidget {
       case 'APPROVED':
       case 'DITERIMA':
       case 'DISETUJUI':
-        textColor = colors.approvedText;
-        bgColor = colors.approvedBackground;
+        textColor = SibasColors.status.approvedText;
+        bgColor = SibasColors.status.approvedBackground;
         label = customLabel ?? 'Disetujui';
         break;
 
       case 'REJECTED':
       case 'DITOLAK':
-        textColor = colors.rejectedText;
-        bgColor = colors.rejectedBackground;
+        textColor = SibasColors.status.rejectedText;
+        bgColor = SibasColors.status.rejectedBackground;
         label = customLabel ?? 'Ditolak';
         break;
 
       case 'EXPIRED':
       case 'KEDALUWARSA':
-        textColor = colors.rejectedText;
-        bgColor = colors.rejectedBackground;
+        textColor = SibasColors.status.rejectedText;
+        bgColor = SibasColors.status.rejectedBackground;
         label = customLabel ?? 'Kedaluwarsa';
         break;
 
       case 'PENDING':
       case 'MENUNGGU':
       default:
-        textColor = colors.pendingText;
-        bgColor = colors.pendingBackground;
+        textColor = SibasColors.status.pendingText;
+        bgColor = SibasColors.status.pendingBackground;
         label = customLabel ?? 'Menunggu Verifikasi';
         break;
     }

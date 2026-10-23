@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../theme/app_palette.dart';
 import '../../../../core/utils/status_helper.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -14,6 +13,7 @@ import '../../../verification/presentation/providers/verification_provider.dart'
 import '../../../verification/presentation/widgets/verification_bottom_sheet.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Target sentuh minimum (§1, §4).
 const double _touchTarget = 44;
@@ -23,7 +23,7 @@ TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: p.text,
+  color: SibasColors.text,
 );
 
 /// Riwayat seluruh penyetoran (semua status) untuk Admin,
@@ -150,14 +150,12 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final txState = ref.watch(adminTransactionsProvider);
     final filter = ref.watch(adminFilterProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -324,9 +322,9 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
       constraints: const BoxConstraints(minHeight: 52),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: p.surface,
+        color: SibasColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.border),
+        border: Border.all(color: SibasColors.border),
       ),
       child: TextField(
         controller: _searchController,
@@ -340,7 +338,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: p.text,
+          color: SibasColors.text,
         ),
         decoration: InputDecoration(
           border: InputBorder.none,
@@ -352,11 +350,11 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
           hintMaxLines: 1,
           hintStyle: TextStyle(
             fontSize: 15,
-            color: p.muted,
+            color: SibasColors.muted,
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
-            color: p.leaf,
+            color: SibasColors.leaf,
             size: 20,
           ),
           prefixIconConstraints: const BoxConstraints(
@@ -369,7 +367,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                   icon: Icon(
                     Icons.close_rounded,
                     size: 18,
-                    color: p.muted,
+                    color: SibasColors.muted,
                   ),
                   onPressed: _clearQuery,
                 )
@@ -382,8 +380,6 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
   /// Satu baris riwayat: `TxListItem` (kolom kanan tidak terpotong) dengan
   /// catatan nama mahasiswa dan aksi validasi di bawahnya.
   Widget _historyRow(Map<String, dynamic> item) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
     final profile = item['profiles'] as Map<String, dynamic>?;
     final category = item['trash_types'] as Map<String, dynamic>?;
     final name = (profile?['full_name'] as String?) ?? 'Mahasiswa';
@@ -422,7 +418,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
               Icon(
                 Icons.person_outline_rounded,
                 size: 14,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -433,7 +429,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: p.muted,
+                    color: SibasColors.muted,
                   ),
                 ),
               ),
@@ -453,8 +449,8 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                     icon: const Icon(Icons.fact_check_outlined, size: 16),
                     label: const Text('Validasi'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: p.leaf,
-                      side: BorderSide(color: p.border),
+                      foregroundColor: SibasColors.leaf,
+                      side: BorderSide(color: SibasColors.border),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -476,13 +472,13 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
             tone: SurfaceTone.subtle,
             radius: 16,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            color: warna.rejectedBackground,
+            color: SibasColors.status.rejectedBackground,
             child: Text(
               'Alasan ditolak: $reason',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: warna.rejectedText,
+                color: SibasColors.status.rejectedText,
               ),
             ),
           ),
@@ -524,8 +520,6 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return Semantics(
       button: true,
       selected: selected,
@@ -534,13 +528,13 @@ class _FilterChip extends StatelessWidget {
         child: Ink(
           decoration: ShapeDecoration(
             color: selected
-                ? p.leaf
-                : p.mintWash,
+                ? SibasColors.leaf
+                : SibasColors.mintWash,
             shape: StadiumBorder(
               side: BorderSide(
                 color: selected
-                    ? p.leaf
-                    : p.border,
+                    ? SibasColors.leaf
+                    : SibasColors.border,
               ),
             ),
           ),
@@ -558,7 +552,7 @@ class _FilterChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected ? Colors.white : p.text,
+                  color: selected ? Colors.white : SibasColors.text,
                 ),
               ),
             ),
@@ -633,8 +627,6 @@ class _StateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final label = actionLabel;
 
     return SizedBox(
@@ -647,10 +639,10 @@ class _StateCard extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: p.mintWash,
+                color: SibasColors.mintWash,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(icon, size: 30, color: p.leaf),
+              child: Icon(icon, size: 30, color: SibasColors.leaf),
             ),
             const SizedBox(height: 16),
             Text(
@@ -665,7 +657,7 @@ class _StateCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
             if (label != null && onAction != null) ...[
@@ -677,8 +669,8 @@ class _StateCard extends StatelessWidget {
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: Text(label),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: p.leaf,
-                    side: BorderSide(color: p.border),
+                    foregroundColor: SibasColors.leaf,
+                    side: BorderSide(color: SibasColors.border),
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -704,8 +696,6 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
@@ -720,7 +710,7 @@ class _LoadingCard extends StatelessWidget {
             SizedBox(height: 12),
             Text(
               'Memuat riwayat...',
-              style: TextStyle(fontSize: 12.5, color: p.muted),
+              style: TextStyle(fontSize: 12.5, color: SibasColors.muted),
             ),
           ],
         ),

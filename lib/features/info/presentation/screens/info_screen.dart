@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../providers/app_settings_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Kontak resmi unit bank sampah. Isi hanya setelah admin menetapkan nilainya;
 /// jangan mengarang nomor telepon/email. String kosong otomatis tampil
@@ -39,7 +39,7 @@ TextStyle _sectionTitle = TextStyle(
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
   height: 1.25,
-  color: p.text,
+  color: SibasColors.text,
 );
 
 /// Label baris sebagai metadata kecil (§3), bukan teks utama.
@@ -48,7 +48,7 @@ TextStyle _rowLabel = TextStyle(
   fontWeight: FontWeight.w600,
   letterSpacing: 0.1,
   height: 1.4,
-  color: p.muted,
+  color: SibasColors.muted,
 );
 
 /// Angka pada nomor telepon dan langkah memakai lebar digit tetap (§3).
@@ -63,8 +63,6 @@ class InfoScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = AppPalette.of(context);
-
     final settingsState = ref.watch(appSettingsProvider);
 
     // Saat memuat atau gagal, nilai tampil "Belum diatur" — bukan karangan.
@@ -72,7 +70,7 @@ class InfoScreen extends ConsumerWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -167,7 +165,7 @@ class InfoScreen extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.45,
-                          color: p.muted,
+                          color: SibasColors.muted,
                         ),
                       ),
                     ],
@@ -227,16 +225,13 @@ class _SettingsNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
     final isError = !isLoading;
-    final accent = isError ? warna.badText : p.leaf;
+    final accent = isError ? SibasColors.status.badText : SibasColors.leaf;
 
     return SurfaceCard(
       color: isError
-          ? warna.rejectedBackground
-          : p.mintWash,
+          ? SibasColors.status.rejectedBackground
+          : SibasColors.mintWash,
       radius: 16,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(
@@ -263,7 +258,7 @@ class _SettingsNotice extends StatelessWidget {
                 fontSize: 12,
                 height: 1.45,
                 fontWeight: FontWeight.w500,
-                color: isError ? warna.badText : p.muted,
+                color: isError ? SibasColors.status.badText : SibasColors.muted,
               ),
             ),
           ),
@@ -271,7 +266,7 @@ class _SettingsNotice extends StatelessWidget {
             TextButton(
               onPressed: onRetry,
               style: TextButton.styleFrom(
-                foregroundColor: warna.badText,
+                foregroundColor: SibasColors.status.badText,
                 minimumSize: const Size(0, _touchTarget),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
@@ -296,8 +291,6 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return SurfaceCard(
       radius: _cardRadius,
       padding: const EdgeInsets.all(20),
@@ -310,10 +303,10 @@ class _SectionCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: p.mintWash,
+                  color: SibasColors.mintWash,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, size: 20, color: p.leaf),
+                child: Icon(icon, size: 20, color: SibasColors.leaf),
               ),
               const SizedBox(width: 12),
               Expanded(child: Text(title, style: _sectionTitle)),
@@ -337,21 +330,18 @@ class _InfoRow extends StatelessWidget {
   const _InfoRow({required this.label, required this.value, this.copyValue});
 
   Future<void> _copy(BuildContext context) async {
-    final p = AppPalette.of(context);
     await Clipboard.setData(ClipboardData(text: copyValue!));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Nomor admin disalin'),
-        backgroundColor: p.leaf,
+        backgroundColor: SibasColors.leaf,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final shown = _display(value);
     final isUnset = shown == 'Belum diatur';
     final valueStyle = TextStyle(
@@ -359,7 +349,7 @@ class _InfoRow extends StatelessWidget {
       fontWeight: isUnset ? FontWeight.w500 : FontWeight.w600,
       fontStyle: isUnset ? FontStyle.italic : FontStyle.normal,
       height: 1.4,
-      color: isUnset ? p.muted : p.text,
+      color: isUnset ? SibasColors.muted : SibasColors.text,
       fontFeatures: _tabular,
     );
 
@@ -398,7 +388,7 @@ class _InfoRow extends StatelessWidget {
               icon: Icon(
                 Icons.copy_rounded,
                 size: 18,
-                color: p.leaf,
+                color: SibasColors.leaf,
               ),
             ),
           ],
@@ -416,8 +406,6 @@ class _StepRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -428,7 +416,7 @@ class _StepRow extends StatelessWidget {
             height: 24,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: p.mintWash,
+              color: SibasColors.mintWash,
               shape: BoxShape.circle,
             ),
             child: Text(
@@ -436,7 +424,7 @@ class _StepRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                color: p.primary,
+                color: SibasColors.primary,
                 fontFeatures: _tabular,
               ),
             ),
@@ -447,7 +435,7 @@ class _StepRow extends StatelessWidget {
               text,
               style: TextStyle(
                 fontSize: 13,
-                color: p.text,
+                color: SibasColors.text,
                 height: 1.5,
               ),
             ),
@@ -463,10 +451,8 @@ class _ComplaintFormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return SurfaceCard(
-      color: p.mintWash,
+      color: SibasColors.mintWash,
       radius: _cardRadius,
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -479,7 +465,7 @@ class _ComplaintFormCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -506,7 +492,7 @@ class _ComplaintFormCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
         ],

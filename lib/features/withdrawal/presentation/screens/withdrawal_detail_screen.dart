@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/network/api_guard.dart';
-import '../../../../core/theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -13,6 +12,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/withdrawal_provider.dart';
 import '../widgets/withdraw_qr_sheet.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Lebar isi detail: cukup untuk dua kolom label–nilai di desktop.
 const double _maxContentWidth = 720;
@@ -32,12 +32,12 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-TextStyle _sectionTitle(AppPalette p) => TextStyle(
-      fontSize: 15.5,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.2,
-      color: p.text,
-    );
+TextStyle _sectionTitle = TextStyle(
+  fontSize: 15.5,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -0.2,
+  color: SibasColors.text,
+);
 
 final _currency = NumberFormat.currency(
   locale: 'id_ID',
@@ -56,9 +56,6 @@ class WithdrawalDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = AppPalette.of(context);
-
-
     final detailState = ref.watch(withdrawalDetailProvider(withdrawalId));
     final row = detailState.valueOrNull;
     final isAdmin =
@@ -66,7 +63,7 @@ class WithdrawalDetailScreen extends ConsumerWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -160,12 +157,11 @@ String _statusLabel(String status) => switch (status.toUpperCase()) {
       _ => 'Status diperbarui',
     };
 
-Color _statusColor(String status, AppStatusColors s) =>
-    switch (status.toUpperCase()) {
-      'APPROVED' => s.approvedText,
-      'REJECTED' => s.rejectedText,
-      'EXPIRED' => s.neutralText,
-      _ => s.pendingText,
+Color _statusColor(String status) => switch (status.toUpperCase()) {
+      'APPROVED' => SibasColors.status.approvedText,
+      'REJECTED' => SibasColors.status.rejectedText,
+      'EXPIRED' => SibasColors.status.neutralText,
+      _ => SibasColors.status.pendingText,
     };
 
 /// Inisial pengaju: maksimal dua huruf.
@@ -244,8 +240,6 @@ class _DetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 
     final status = _text(row['status']) ?? 'PENDING';
@@ -342,9 +336,9 @@ class _DetailBody extends StatelessWidget {
               icon: const Icon(Icons.qr_code_2_rounded, size: 18),
               label: const Text('Tampilkan QR Penarikan'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: p.primary,
+                foregroundColor: SibasColors.primary,
                 minimumSize: const Size(0, _action),
-                side: BorderSide(color: p.border),
+                side: BorderSide(color: SibasColors.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -394,7 +388,7 @@ class _Section extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: _sectionTitle(p)),
+            Text(title, style: _sectionTitle),
             const SizedBox(height: 16),
             child,
           ],
@@ -413,9 +407,6 @@ class _StudentBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -424,9 +415,9 @@ class _StudentBlock extends StatelessWidget {
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: p.mintWash,
+            color: SibasColors.mintWash,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: p.border),
+            border: Border.all(color: SibasColors.border),
           ),
           child: Text(
             _initials(name),
@@ -434,7 +425,7 @@ class _StudentBlock extends StatelessWidget {
               fontSize: 14,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.4,
-              color: p.primary,
+              color: SibasColors.primary,
             ),
           ),
         ),
@@ -451,7 +442,7 @@ class _StudentBlock extends StatelessWidget {
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
                   height: 1.3,
-                  color: p.text,
+                  color: SibasColors.text,
                 ),
               ),
               const SizedBox(height: 2),
@@ -460,7 +451,7 @@ class _StudentBlock extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   height: 1.4,
-                  color: p.muted,
+                  color: SibasColors.muted,
                   fontFeatures: _numbers,
                 ),
               ),
@@ -492,9 +483,6 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
       child: Row(
@@ -507,7 +495,7 @@ class _InfoRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.4,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
           ),
@@ -522,7 +510,9 @@ class _InfoRow extends StatelessWidget {
                     fontSize: 13.5,
                     height: 1.4,
                     fontWeight: FontWeight.w700,
-                    color: emphasis ? p.primary : p.text,
+                    color: emphasis
+                        ? SibasColors.primary
+                        : SibasColors.text,
                     fontFeatures: numbers ? _numbers : null,
                   ),
                 ),
@@ -533,7 +523,7 @@ class _InfoRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.4,
-                      color: p.muted,
+                      color: SibasColors.muted,
                       fontFeatures: _numbers,
                     ),
                   ),
@@ -558,8 +548,6 @@ class _LocationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -570,7 +558,7 @@ class _LocationRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
         ),
@@ -584,7 +572,7 @@ class _LocationRow extends StatelessWidget {
                 child: Icon(
                   Icons.place_outlined,
                   size: 15,
-                  color: p.leaf,
+                  color: SibasColors.leaf,
                 ),
               ),
               const SizedBox(width: 8),
@@ -598,7 +586,7 @@ class _LocationRow extends StatelessWidget {
                         fontSize: 13.5,
                         height: 1.4,
                         fontWeight: FontWeight.w700,
-                        color: p.text,
+                        color: SibasColors.text,
                       ),
                     ),
                     if (alamat != null) ...[
@@ -608,7 +596,7 @@ class _LocationRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.4,
-                          color: p.muted,
+                          color: SibasColors.muted,
                         ),
                       ),
                     ],
@@ -619,7 +607,7 @@ class _LocationRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.4,
-                          color: p.muted,
+                          color: SibasColors.muted,
                           fontFeatures: _numbers,
                         ),
                       ),
@@ -643,8 +631,6 @@ class _Timeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return _Section(
       title: 'Riwayat Proses',
       child: audits.isEmpty
@@ -653,7 +639,7 @@ class _Timeline extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             )
           : SurfaceCard(
@@ -682,8 +668,6 @@ class _TimelineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final status = _text(audit['to_status']) ?? '';
     final color = _statusColor(status);
     final note = _text(audit['note']);
@@ -713,7 +697,7 @@ class _TimelineItem extends StatelessWidget {
                   child: Container(
                     width: 2,
                     margin: const EdgeInsets.symmetric(vertical: 3),
-                    color: p.border,
+                    color: SibasColors.border,
                   ),
                 ),
             ],
@@ -741,7 +725,7 @@ class _TimelineItem extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.5,
                         height: 1.45,
-                        color: p.text,
+                        color: SibasColors.text,
                       ),
                     ),
                   ],
@@ -751,7 +735,7 @@ class _TimelineItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: p.muted,
+                      color: SibasColors.muted,
                       fontFeatures: _numbers,
                     ),
                   ),
@@ -810,7 +794,6 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
   }
 
   Future<void> _approve() async {
-    final p = AppPalette.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -827,14 +810,14 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
             onPressed: () => Navigator.of(dialogContext).pop(false),
             style: TextButton.styleFrom(
               minimumSize: const Size(0, _touch),
-              foregroundColor: p.muted,
+              foregroundColor: SibasColors.muted,
             ),
             child: const Text('Batal'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: p.leaf,
+              backgroundColor: SibasColors.leaf,
               foregroundColor: Colors.white,
               minimumSize: const Size(0, _touch),
               shape: RoundedRectangleBorder(
@@ -873,9 +856,6 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
@@ -890,7 +870,7 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.4,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
             const SizedBox(height: 16),
@@ -899,7 +879,7 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
               icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
               label: const Text('Setujui'),
               style: FilledButton.styleFrom(
-                backgroundColor: p.leaf,
+                backgroundColor: SibasColors.leaf,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 minimumSize: const Size(0, _action),
@@ -918,9 +898,9 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
               icon: const Icon(Icons.cancel_outlined, size: 18),
               label: const Text('Tolak'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: warna.badText,
+                foregroundColor: SibasColors.status.badText,
                 minimumSize: const Size(0, _action),
-                side: const BorderSide(color: warna.badText),
+                side: BorderSide(color: SibasColors.status.badText),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -945,7 +925,7 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
                     'Memproses...',
                     style: TextStyle(
                       fontSize: 12,
-                      color: p.muted,
+                      color: SibasColors.muted,
                     ),
                   ),
                 ],
@@ -986,9 +966,6 @@ class _RejectDialogState extends State<_RejectDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -1003,7 +980,7 @@ class _RejectDialogState extends State<_RejectDialog> {
             style: TextStyle(
               fontSize: 13,
               height: 1.4,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
           const SizedBox(height: 12),
@@ -1026,14 +1003,14 @@ class _RejectDialogState extends State<_RejectDialog> {
           onPressed: () => Navigator.of(context).pop(),
           style: TextButton.styleFrom(
             minimumSize: const Size(0, _touch),
-            foregroundColor: p.muted,
+            foregroundColor: SibasColors.muted,
           ),
           child: const Text('Batal'),
         ),
         FilledButton(
           onPressed: _submit,
           style: FilledButton.styleFrom(
-            backgroundColor: warna.badText,
+            backgroundColor: SibasColors.status.badText,
             foregroundColor: Colors.white,
             minimumSize: const Size(0, _touch),
             shape: RoundedRectangleBorder(
@@ -1060,18 +1037,17 @@ class _NoteBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final warna = AppStatusColors.of(p.brightness);
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         tone: SurfaceTone.subtle,
         radius: 16,
         padding: const EdgeInsets.all(16),
-        color: warna.rejectedBackground,
+        color: SibasColors.status.rejectedBackground,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 20, color: warna.badText),
+            Icon(icon, size: 20, color: SibasColors.status.badText),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1079,19 +1055,19 @@ class _NoteBox extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: warna.badText,
+                      color: SibasColors.status.badText,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     text,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
-                      color: warna.badText,
+                      color: SibasColors.status.badText,
                     ),
                   ),
                 ],
@@ -1110,8 +1086,6 @@ class _LoadingPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
@@ -1131,7 +1105,7 @@ class _LoadingPanel extends StatelessWidget {
                 fontSize: 14.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: p.text,
+                color: SibasColors.text,
               ),
             ),
             SizedBox(height: 4),
@@ -1141,7 +1115,7 @@ class _LoadingPanel extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
           ],
@@ -1159,9 +1133,6 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
@@ -1172,13 +1143,13 @@ class _ErrorBox extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: warna.rejectedBackground,
+                color: SibasColors.status.rejectedBackground,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.cloud_off_rounded,
                 size: 26,
-                color: warna.badText,
+                color: SibasColors.status.badText,
               ),
             ),
             const SizedBox(height: 16),
@@ -1189,7 +1160,7 @@ class _ErrorBox extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: p.text,
+                color: SibasColors.text,
               ),
             ),
             const SizedBox(height: 6),
@@ -1199,7 +1170,7 @@ class _ErrorBox extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
             const SizedBox(height: 16),
@@ -1208,9 +1179,9 @@ class _ErrorBox extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Coba Lagi'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: p.primary,
+                foregroundColor: SibasColors.primary,
                 minimumSize: const Size(0, _touch),
-                side: BorderSide(color: p.border),
+                side: BorderSide(color: SibasColors.border),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1233,8 +1204,6 @@ class _NotFoundBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
@@ -1245,13 +1214,13 @@ class _NotFoundBox extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: p.mintWash,
+                color: SibasColors.mintWash,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
                 Icons.search_off_rounded,
                 size: 26,
-                color: p.primary,
+                color: SibasColors.primary,
               ),
             ),
             const SizedBox(height: 16),
@@ -1262,7 +1231,7 @@ class _NotFoundBox extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: p.text,
+                color: SibasColors.text,
               ),
             ),
             const SizedBox(height: 6),
@@ -1272,7 +1241,7 @@ class _NotFoundBox extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
             const SizedBox(height: 16),
@@ -1287,9 +1256,9 @@ class _NotFoundBox extends StatelessWidget {
               icon: const Icon(Icons.arrow_back_rounded, size: 18),
               label: const Text('Kembali'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: p.primary,
+                foregroundColor: SibasColors.primary,
                 minimumSize: const Size(0, _touch),
-                side: BorderSide(color: p.border),
+                side: BorderSide(color: SibasColors.border),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

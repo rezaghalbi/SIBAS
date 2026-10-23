@@ -6,13 +6,13 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../providers/trash_type_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Target sentuh minimum (§4).
 const double _touch = 44;
@@ -30,20 +30,20 @@ TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: p.text,
+  color: SibasColors.text,
 );
 
 /// Field 16 px agar Safari iOS tidak memperbesar halaman (§9).
 TextStyle _fieldText = TextStyle(
   fontSize: 16,
-  color: p.text,
+  color: SibasColors.text,
 );
 
 /// Tombol batal di sheet form: garis tipis, tinggi 48 px.
 final ButtonStyle _batalStyle = OutlinedButton.styleFrom(
   minimumSize: const Size(0, 48),
-  foregroundColor: p.muted,
-  side: BorderSide(color: p.border),
+  foregroundColor: SibasColors.muted,
+  side: BorderSide(color: SibasColors.border),
   shape: RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(12),
   ),
@@ -52,7 +52,7 @@ final ButtonStyle _batalStyle = OutlinedButton.styleFrom(
 
 /// Tombol simpan: hijau, tinggi 48 px.
 final ButtonStyle _simpanStyle = FilledButton.styleFrom(
-  backgroundColor: p.leaf,
+  backgroundColor: SibasColors.leaf,
   foregroundColor: Colors.white,
   elevation: 0,
   minimumSize: const Size(0, 48),
@@ -83,16 +83,14 @@ class _TrashTypeManagementScreenState
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final state = ref.watch(allTrashTypesProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(),
-        backgroundColor: p.leaf,
+        backgroundColor: SibasColors.leaf,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Tambah Jenis'),
@@ -164,7 +162,6 @@ class _TrashTypeManagementScreenState
   List<Widget> _listSlivers(
     AsyncValue<List<Map<String, dynamic>>> state,
   ) {
-    final p = AppPalette.of(context);
     return state.when(
       data: (list) {
         if (list.isEmpty) {
@@ -191,7 +188,7 @@ class _TrashTypeManagementScreenState
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: p.muted,
+                        color: SibasColors.muted,
                         fontFeatures: _numbers,
                       ),
                     ),
@@ -266,10 +263,10 @@ class _TrashTypeManagementScreenState
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: p.mintWash,
+                    color: SibasColors.mintWash,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, size: 20, color: p.leaf),
+                  child: Icon(icon, size: 20, color: SibasColors.leaf),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -283,7 +280,7 @@ class _TrashTypeManagementScreenState
                         style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: p.text,
+                          color: SibasColors.text,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -293,7 +290,7 @@ class _TrashTypeManagementScreenState
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
-                          color: p.muted,
+                          color: SibasColors.muted,
                         ),
                       ),
                     ],
@@ -302,7 +299,7 @@ class _TrashTypeManagementScreenState
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 20,
-                  color: p.muted,
+                  color: SibasColors.muted,
                 ),
               ],
             ),
@@ -313,16 +310,15 @@ class _TrashTypeManagementScreenState
   }
 
   Widget _thumbCard(String? imagePath) {
-    final p = AppPalette.of(context);
     const fallback = ColoredBox(
-      color: p.mintWash,
+      color: SibasColors.mintWash,
       child: SizedBox(
         width: 40,
         height: 40,
         child: Icon(
           Icons.recycling_rounded,
           size: 20,
-          color: p.leaf,
+          color: SibasColors.leaf,
         ),
       ),
     );
@@ -348,8 +344,6 @@ class _TrashTypeManagementScreenState
   }
 
   Widget _itemCard(Map<String, dynamic> item) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
     final id = item['id'] as String? ?? '';
     final name = (item['name'] as String?) ?? 'Tanpa nama';
     final description = ((item['description'] as String?) ?? '').trim();
@@ -386,7 +380,7 @@ class _TrashTypeManagementScreenState
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.35,
-                          color: p.muted,
+                          color: SibasColors.muted,
                         ),
                       ),
                     ],
@@ -398,7 +392,7 @@ class _TrashTypeManagementScreenState
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: p.primary,
+                        color: SibasColors.primary,
                         fontFeatures: _numbers,
                       ),
                     ),
@@ -417,10 +411,10 @@ class _TrashTypeManagementScreenState
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Ubah'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: p.leaf,
+                  foregroundColor: SibasColors.leaf,
                   minimumSize: const Size(0, _touch),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  side: BorderSide(color: p.border),
+                  side: BorderSide(color: SibasColors.border),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -437,8 +431,8 @@ class _TrashTypeManagementScreenState
                 icon: const Icon(Icons.delete_outline_rounded, size: 20),
                 style: IconButton.styleFrom(
                   minimumSize: const Size(_touch, _touch),
-                  backgroundColor: warna.rejectedBackground,
-                  foregroundColor: warna.badText,
+                  backgroundColor: SibasColors.status.rejectedBackground,
+                  foregroundColor: SibasColors.status.badText,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -457,12 +451,10 @@ class _TrashTypeManagementScreenState
     bool isActive,
     bool busy,
   ) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-    final ink = isActive ? warna.approvedText : p.muted;
+    final ink = isActive ? SibasColors.status.approvedText : SibasColors.muted;
     final surface = isActive
-        ? warna.approvedBackground
-        : warna.neutralText.withValues(alpha: 0.10);
+        ? SibasColors.status.approvedBackground
+        : SibasColors.status.neutralText.withValues(alpha: 0.10);
 
     return Semantics(
       button: true,
@@ -523,12 +515,11 @@ class _TrashTypeManagementScreenState
   }
 
   Future<void> _openForm([Map<String, dynamic>? initial]) async {
-    final p = AppPalette.of(context);
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: p.text.withValues(alpha: 0.36),
+      barrierColor: SibasColors.text.withValues(alpha: 0.36),
       builder: (_) => _TrashTypeFormSheet(initial: initial),
     );
     if (saved != true || !mounted) return;
@@ -627,7 +618,7 @@ class _TrashTypeManagementScreenState
           style: TextStyle(
             fontSize: 14,
             height: 1.45,
-            color: p.muted,
+            color: SibasColors.muted,
           ),
         ),
         actions: [
@@ -635,13 +626,13 @@ class _TrashTypeManagementScreenState
             onPressed: () => Navigator.pop(ctx, false),
             style: TextButton.styleFrom(
               minimumSize: const Size(0, _touch),
-              foregroundColor: p.muted,
+              foregroundColor: SibasColors.muted,
             ),
             child: const Text('Batal'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: warna.badText,
+              backgroundColor: SibasColors.status.badText,
               foregroundColor: Colors.white,
               minimumSize: const Size(0, _touch),
               shape: RoundedRectangleBorder(
@@ -662,13 +653,12 @@ class _TrashTypeManagementScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? warna.badText : p.primary,
+        backgroundColor: isError ? SibasColors.status.badText : SibasColors.primary,
       ),
     );
   }
 
   Widget _emptyCard() {
-    final p = AppPalette.of(context);
     return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       child: Column(
@@ -677,13 +667,13 @@ class _TrashTypeManagementScreenState
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: p.mintWash,
+              color: SibasColors.mintWash,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
               Icons.recycling_rounded,
               size: 26,
-              color: p.leaf,
+              color: SibasColors.leaf,
             ),
           ),
           const SizedBox(height: 14),
@@ -693,7 +683,7 @@ class _TrashTypeManagementScreenState
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: p.text,
+              color: SibasColors.text,
             ),
           ),
           const SizedBox(height: 4),
@@ -703,7 +693,7 @@ class _TrashTypeManagementScreenState
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
         ],
@@ -712,7 +702,6 @@ class _TrashTypeManagementScreenState
   }
 
   Widget _loadingCard() {
-    final p = AppPalette.of(context);
     return SurfaceCard(
       padding: EdgeInsets.all(28),
       child: Column(
@@ -725,7 +714,7 @@ class _TrashTypeManagementScreenState
           SizedBox(height: 12),
           Text(
             'Memuat jenis sampah...',
-            style: TextStyle(fontSize: 12.5, color: p.muted),
+            style: TextStyle(fontSize: 12.5, color: SibasColors.muted),
           ),
         ],
       ),
@@ -741,13 +730,13 @@ class _TrashTypeManagementScreenState
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: warna.rejectedBackground,
+              color: SibasColors.status.rejectedBackground,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.cloud_off_rounded,
               size: 26,
-              color: warna.badText,
+              color: SibasColors.status.badText,
             ),
           ),
           const SizedBox(height: 14),
@@ -757,7 +746,7 @@ class _TrashTypeManagementScreenState
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: p.text,
+              color: SibasColors.text,
             ),
           ),
           const SizedBox(height: 4),
@@ -767,7 +756,7 @@ class _TrashTypeManagementScreenState
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -777,8 +766,8 @@ class _TrashTypeManagementScreenState
             label: const Text('Coba Lagi'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(0, _touch),
-              foregroundColor: p.leaf,
-              side: BorderSide(color: p.border),
+              foregroundColor: SibasColors.leaf,
+              side: BorderSide(color: SibasColors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -932,7 +921,6 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
   }
 
   Future<void> _openFotoSheet() async {
-    final warna = AppStatusColors.of(p.brightness);
     final action = await showModalBottomSheet<String>(
       context: context,
       builder: (ctx) => SafeArea(
@@ -952,9 +940,9 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
             ),
             if (_hasFoto)
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.delete_outline_rounded,
-                  color: warna.badText,
+                  color: SibasColors.status.badText,
                 ),
                 title: const Text('Hapus Foto'),
                 onTap: () => Navigator.pop(ctx, 'hapus'),
@@ -1009,13 +997,12 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
   }
 
   Widget _fotoField() {
-    final p = AppPalette.of(context);
     final url = _hapusFoto
         ? null
         : ref.watch(fotoJenisSampahUrlProvider(_initialFoto));
     const placeholder = ColoredBox(
-      color: p.mintWash,
-      child: Icon(Icons.image_outlined, size: 28, color: p.muted),
+      color: SibasColors.mintWash,
+      child: Icon(Icons.image_outlined, size: 28, color: SibasColors.muted),
     );
 
     Widget preview;
@@ -1039,7 +1026,7 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: p.text,
+            color: SibasColors.text,
           ),
         ),
         const SizedBox(height: 8),
@@ -1058,8 +1045,8 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, _touch),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    foregroundColor: p.leaf,
-                    side: BorderSide(color: p.border),
+                    foregroundColor: SibasColors.leaf,
+                    side: BorderSide(color: SibasColors.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1083,13 +1070,12 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
   }
 
   Widget _handle() {
-    final p = AppPalette.of(context);
     return Center(
       child: Container(
         width: 36,
         height: 4,
         decoration: BoxDecoration(
-          color: p.border,
+          color: SibasColors.border,
           borderRadius: BorderRadius.circular(999),
         ),
       ),
@@ -1159,8 +1145,6 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
   }
 
   Widget _sheetBody() {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1179,7 +1163,7 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
           style: TextStyle(
             fontSize: 12.5,
             height: 1.4,
-            color: p.muted,
+            color: SibasColors.muted,
           ),
         ),
         const SizedBox(height: 16),
@@ -1203,17 +1187,17 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
                 SurfaceCard(
                   tone: SurfaceTone.subtle,
                   radius: 12,
-                  color: warna.rejectedBackground,
+                  color: SibasColors.status.rejectedBackground,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 12,
                   ),
                   child: Text(
                     _error!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       height: 1.4,
-                      color: warna.rejectedText,
+                      color: SibasColors.status.rejectedText,
                     ),
                   ),
                 ),

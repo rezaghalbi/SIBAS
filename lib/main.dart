@@ -9,6 +9,7 @@ import 'core/constants/colors.dart';
 import 'core/constants/theme.dart';
 import 'core/network/error_reporter.dart';
 import 'core/network/supabase_client.dart';
+import 'core/theme/sibas_colors.dart';
 import 'core/widgets/session_idle_watcher.dart';
 import 'core/router/app_router.dart';
 import 'core/widgets/offline_banner.dart';
@@ -93,15 +94,22 @@ class SibasApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final user = ref.watch(currentUserProvider).valueOrNull;
 
+    // Sumber warna untuk layar lama. Disamakan dengan themeMode di bawah agar
+    // tema Flutter dan konstanta layar tidak pernah berbeda mode.
+    final mode = ThemeMode.light;
+    SibasColors.applyMode(
+      manual: mode == ThemeMode.system
+          ? null
+          : (mode == ThemeMode.dark ? Brightness.dark : Brightness.light),
+      platformDark: MediaQuery.platformBrightnessOf(context) == Brightness.dark,
+    );
+
     return MaterialApp.router(
       title: 'SIBAS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      // Layar masih membaca AppColors hardcoded, jadi mode gelap belum utuh.
-      // Tema gelap disiapkan, tetapi baru dipasang ke sistem pada tahap 5
-      // (docs/DESIGN_SYSTEM_V2.md §11).
-      themeMode: ThemeMode.light,
+      themeMode: mode,
       routerConfig: router,
       builder: (context, child) => Column(
         children: [

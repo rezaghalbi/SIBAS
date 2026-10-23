@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../theme/app_palette.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../history/domain/models/transaction_model.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Lembar notifikasi yang diturunkan dari transaksi & penarikan terbaru.
 ///
@@ -36,16 +36,12 @@ class _NotificationSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = AppPalette.of(context);
-
     final transactions = ref.watch(recentTransactionsProvider);
     final withdrawals = ref.watch(studentWithdrawalsProvider);
 
     final items = _buildItems(
       transactions.valueOrNull ?? const <TransactionModel>[],
       withdrawals.valueOrNull ?? const <WithdrawalModel>[],
-      p,
-      AppStatusColors.of(p.brightness),
     );
     final isLoading = transactions.isLoading || withdrawals.isLoading;
 
@@ -70,7 +66,7 @@ class _NotificationSheet extends ConsumerWidget {
                 width: 42,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: p.muted.withValues(alpha: 0.35),
+                  color: SibasColors.muted.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -83,14 +79,14 @@ class _NotificationSheet extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: p.text,
+                        color: SibasColors.text,
                       ),
                     ),
                   ),
                   IconButton(
                     tooltip: 'Tutup',
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.close_rounded, size: 20, color: p.muted),
+                    icon: Icon(Icons.close_rounded, size: 20, color: SibasColors.muted),
                   ),
                 ],
               ),
@@ -130,8 +126,6 @@ class _NotificationSheet extends ConsumerWidget {
 List<_AppNotification> _buildItems(
   List<TransactionModel> transactions,
   List<WithdrawalModel> withdrawals,
-  AppPalette p,
-  AppStatusColors warna,
 ) {
   final currency = NumberFormat.currency(
     locale: 'id_ID',
@@ -148,8 +142,8 @@ List<_AppNotification> _buildItems(
       case 'PENDING':
         items.add(_AppNotification(
           icon: Icons.hourglass_top_rounded,
-          color: warna.pendingText,
-          background: warna.pendingBackground,
+          color: SibasColors.status.pendingText,
+          background: SibasColors.status.pendingBackground,
           title: 'Menunggu verifikasi di bank sampah',
           detail: detail,
           time: tx.createdAt,
@@ -160,8 +154,8 @@ List<_AppNotification> _buildItems(
         final amount = tx.finalAmount ?? 0;
         items.add(_AppNotification(
           icon: Icons.check_circle_outline_rounded,
-          color: warna.approvedText,
-          background: warna.approvedBackground,
+          color: SibasColors.status.approvedText,
+          background: SibasColors.status.approvedBackground,
           title: amount > 0
               ? 'Setoran disetujui +${currency.format(amount)}'
               : 'Setoran disetujui',
@@ -174,8 +168,8 @@ List<_AppNotification> _buildItems(
         final reason = tx.rejectionReason?.trim();
         items.add(_AppNotification(
           icon: Icons.cancel_outlined,
-          color: warna.rejectedText,
-          background: warna.rejectedBackground,
+          color: SibasColors.status.rejectedText,
+          background: SibasColors.status.rejectedBackground,
           title: 'Setoran ditolak',
           detail: (reason == null || reason.isEmpty) ? detail : reason,
           time: tx.createdAt,
@@ -185,8 +179,8 @@ List<_AppNotification> _buildItems(
       case 'EXPIRED':
         items.add(_AppNotification(
           icon: Icons.timer_off_outlined,
-          color: warna.neutralText,
-          background: p.mintWash,
+          color: SibasColors.status.neutralText,
+          background: SibasColors.mintWash,
           title: 'QR kedaluwarsa',
           detail: detail,
           time: tx.createdAt,
@@ -205,11 +199,11 @@ List<_AppNotification> _buildItems(
     items.add(_AppNotification(
       icon: isRejected ? Icons.money_off_rounded : Icons.account_balance_wallet_outlined,
       color: isRejected
-          ? warna.rejectedText
-          : (status == 'APPROVED' ? warna.approvedText : warna.pendingText),
+          ? SibasColors.status.rejectedText
+          : (status == 'APPROVED' ? SibasColors.status.approvedText : SibasColors.status.pendingText),
       background: isRejected
-          ? warna.rejectedBackground
-          : (status == 'APPROVED' ? warna.approvedBackground : warna.pendingBackground),
+          ? SibasColors.status.rejectedBackground
+          : (status == 'APPROVED' ? SibasColors.status.approvedBackground : SibasColors.status.pendingBackground),
       title: isRejected
           ? 'Penarikan $amount ditolak'
           : status == 'APPROVED'
@@ -252,10 +246,6 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
     final detail = item.detail;
 
@@ -289,7 +279,7 @@ class _NotificationTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: p.text,
+                    color: SibasColors.text,
                   ),
                 ),
                 if (detail != null && detail.isNotEmpty) ...[
@@ -298,13 +288,13 @@ class _NotificationTile extends StatelessWidget {
                     detail,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11.5, color: p.muted),
+                    style: TextStyle(fontSize: 11.5, color: SibasColors.muted),
                   ),
                 ],
                 const SizedBox(height: 4),
                 Text(
                   dateFormat.format(item.time.toLocal()),
-                  style: TextStyle(fontSize: 10.5, color: p.muted),
+                  style: TextStyle(fontSize: 10.5, color: SibasColors.muted),
                 ),
               ],
             ),
@@ -312,7 +302,7 @@ class _NotificationTile extends StatelessWidget {
           if (onTap != null)
             Padding(
               padding: EdgeInsets.only(top: 8),
-              child: Icon(Icons.chevron_right_rounded, size: 18, color: p.muted),
+              child: Icon(Icons.chevron_right_rounded, size: 18, color: SibasColors.muted),
             ),
         ],
       ),
@@ -328,22 +318,18 @@ class _EmptyNotifications extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 36),
       child: Column(
         children: [
-          Icon(Icons.notifications_off_outlined, size: 36, color: p.muted),
+          Icon(Icons.notifications_off_outlined, size: 36, color: SibasColors.muted),
           SizedBox(height: 10),
           Text(
             'Belum ada notifikasi',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
         ],

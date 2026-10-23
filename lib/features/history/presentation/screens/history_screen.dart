@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../../domain/models/transaction_model.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Provider seluruh riwayat transaksi mahasiswa (limit 100)
 final allStudentTransactionsProvider =
@@ -54,14 +54,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     final historyState = ref.watch(allStudentTransactionsProvider);
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: SafeArea(
         bottom: false,
         child: ContentWidth(
@@ -84,12 +80,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   data: _buildList,
                   loading: () => Center(
                     child: CircularProgressIndicator(
-                      color: p.leaf,
+                      color: SibasColors.leaf,
                     ),
                   ),
                   error: (error, stackTrace) => RefreshIndicator(
                     onRefresh: _refresh,
-                    color: p.leaf,
+                    color: SibasColors.leaf,
                     child: _centeredScrollable(
                       _HistoryError(
                         onRetry: () {
@@ -108,12 +104,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Widget _buildList(List<TransactionModel> transactions) {
-    final p = AppPalette.of(context);
     final filtered = transactions.where(_matchesFilter).toList();
 
     return RefreshIndicator(
       onRefresh: _refresh,
-      color: p.leaf,
+      color: SibasColors.leaf,
       child: filtered.isEmpty
           ? _centeredScrollable(
               _HistoryEmpty(
@@ -186,10 +181,6 @@ class _HistoryHead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -199,7 +190,7 @@ class _HistoryHead extends StatelessWidget {
               width: 6,
               height: 6,
               decoration: BoxDecoration(
-                color: p.leaf,
+                color: SibasColors.leaf,
                 shape: BoxShape.circle,
               ),
             ),
@@ -210,7 +201,7 @@ class _HistoryHead extends StatelessWidget {
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
-                color: p.leaf,
+                color: SibasColors.leaf,
               ),
             ),
           ],
@@ -223,7 +214,7 @@ class _HistoryHead extends StatelessWidget {
             fontWeight: FontWeight.w800,
             letterSpacing: -0.6,
             height: 1.1,
-            color: p.text,
+            color: SibasColors.text,
           ),
         ),
         const SizedBox(height: 4),
@@ -232,7 +223,7 @@ class _HistoryHead extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             height: 1.5,
-            color: p.muted,
+            color: SibasColors.muted,
           ),
         ),
       ],
@@ -286,10 +277,6 @@ class _StatusFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     return Semantics(
       button: true,
       selected: selected,
@@ -298,13 +285,13 @@ class _StatusFilterChip extends StatelessWidget {
         child: Ink(
           decoration: ShapeDecoration(
             color: selected
-                ? p.leaf
-                : p.mintWash,
+                ? SibasColors.leaf
+                : SibasColors.mintWash,
             shape: StadiumBorder(
               side: BorderSide(
                 color: selected
-                    ? p.leaf
-                    : p.border,
+                    ? SibasColors.leaf
+                    : SibasColors.border,
               ),
             ),
           ),
@@ -323,7 +310,7 @@ class _StatusFilterChip extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   letterSpacing: 0.1,
-                  color: selected ? Colors.white : p.text,
+                  color: selected ? Colors.white : SibasColors.text,
                 ),
               ),
             ),
@@ -343,10 +330,6 @@ class _HistoryEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     final isAll = filter == 'Semua';
 
     return SurfaceCard(
@@ -357,13 +340,13 @@ class _HistoryEmpty extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: p.mintWash,
+              color: SibasColors.mintWash,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
               Icons.receipt_long_rounded,
               size: 30,
-              color: p.leaf,
+              color: SibasColors.leaf,
             ),
           ),
           const SizedBox(height: 16),
@@ -374,7 +357,7 @@ class _HistoryEmpty extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.2,
-              color: p.text,
+              color: SibasColors.text,
             ),
           ),
           const SizedBox(height: 6),
@@ -387,7 +370,7 @@ class _HistoryEmpty extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               height: 1.5,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
           const SizedBox(height: 20),
@@ -396,7 +379,7 @@ class _HistoryEmpty extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () => context.go('/setor'),
               style: FilledButton.styleFrom(
-                backgroundColor: p.leaf,
+                backgroundColor: SibasColors.leaf,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -417,7 +400,7 @@ class _HistoryEmpty extends StatelessWidget {
             TextButton(
               onPressed: onResetFilter,
               style: TextButton.styleFrom(
-                foregroundColor: p.leaf,
+                foregroundColor: SibasColors.leaf,
                 minimumSize: const Size(0, 44),
               ),
               child: const Text(
@@ -440,10 +423,6 @@ class _HistoryError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
-
     return SurfaceCard(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -452,13 +431,13 @@ class _HistoryError extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: warna.rejectedBackground,
+              color: SibasColors.status.rejectedBackground,
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.cloud_off_rounded,
               size: 26,
-              color: warna.badText,
+              color: SibasColors.status.badText,
             ),
           ),
           const SizedBox(height: 14),
@@ -468,7 +447,7 @@ class _HistoryError extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: p.text,
+              color: SibasColors.text,
             ),
           ),
           const SizedBox(height: 6),
@@ -478,7 +457,7 @@ class _HistoryError extends StatelessWidget {
             style: TextStyle(
               fontSize: 12.5,
               height: 1.5,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -487,8 +466,8 @@ class _HistoryError extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: onRetry,
               style: OutlinedButton.styleFrom(
-                foregroundColor: p.leaf,
-                side: BorderSide(color: p.border),
+                foregroundColor: SibasColors.leaf,
+                side: BorderSide(color: SibasColors.border),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/saldo_hero_card.dart';
@@ -14,6 +13,7 @@ import '../../../history/domain/models/transaction_model.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 import '../../../notification/presentation/widgets/notification_sheet.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Jarak antar seksi pada skala 4 pt (§4).
 const double _sectionGap = 24;
@@ -34,7 +34,7 @@ TextStyle _sectionTitle = TextStyle(
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
   height: 1.25,
-  color: p.text,
+  color: SibasColors.text,
 );
 
 /// Angka uang, berat, dan hitungan memakai lebar digit tetap (§3).
@@ -51,9 +51,6 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
     final userState = ref.watch(currentUserProvider);
     final recentTxState = ref.watch(recentTransactionsProvider);
 
@@ -88,7 +85,7 @@ class DashboardScreen extends ConsumerWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: CustomScrollView(
         slivers: [
           // 1. Hero header, panel saldo, dan aksi setor.
@@ -134,10 +131,10 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                                 constraints: const BoxConstraints(minWidth: 16),
                                 decoration: BoxDecoration(
-                                  color: warna.pendingBackground,
+                                  color: SibasColors.status.pendingBackground,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: warna.pendingText,
+                                    color: SibasColors.status.pendingText,
                                   ),
                                 ),
                                 child: Text(
@@ -149,7 +146,7 @@ class DashboardScreen extends ConsumerWidget {
                                     fontSize: 10,
                                     height: 1.2,
                                     fontWeight: FontWeight.w800,
-                                    color: warna.pendingText,
+                                    color: SibasColors.status.pendingText,
                                     fontFeatures: _tabular,
                                   ),
                                 ),
@@ -167,8 +164,6 @@ class DashboardScreen extends ConsumerWidget {
                         minHeight: _touchTarget,
                       ),
                       onPressed: () {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
@@ -188,13 +183,13 @@ class DashboardScreen extends ConsumerWidget {
                                 child: Text(
                                   'Batal',
                                   style: TextStyle(
-                                    color: p.muted,
+                                    color: SibasColors.muted,
                                   ),
                                 ),
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: warna.badText,
+                                  backgroundColor: SibasColors.status.badText,
                                   foregroundColor: Colors.white,
                                 ),
                                 onPressed: () {
@@ -276,12 +271,12 @@ class DashboardScreen extends ConsumerWidget {
             error: (err, _) => SliverToBoxAdapter(
               child: _Section(
                 child: SurfaceCard(
-                  color: warna.rejectedBackground,
+                  color: SibasColors.status.rejectedBackground,
                   child: Text(
                     'Gagal memuat aktivitas: $err',
                     style: TextStyle(
                       fontSize: 13,
-                      color: warna.badText,
+                      color: SibasColors.status.badText,
                     ),
                   ),
                 ),
@@ -346,13 +341,9 @@ class _PendingBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
-
     return SurfaceCard(
       radius: _rowRadius,
-      color: warna.pendingBackground,
+      color: SibasColors.status.pendingBackground,
       padding: EdgeInsets.zero,
       child: Material(
         color: Colors.transparent,
@@ -377,7 +368,7 @@ class _PendingBanner extends StatelessWidget {
                   child: Icon(
                     Icons.hourglass_top_rounded,
                     size: 18,
-                    color: warna.pendingText,
+                    color: SibasColors.status.pendingText,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -387,7 +378,7 @@ class _PendingBanner extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: p.text,
+                      color: SibasColors.text,
                       fontFeatures: _tabular,
                     ),
                   ),
@@ -396,7 +387,7 @@ class _PendingBanner extends StatelessWidget {
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 20,
-                  color: p.muted,
+                  color: SibasColors.muted,
                 ),
               ],
             ),
@@ -425,10 +416,6 @@ class _ActivitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     return SurfaceCard(
       tone: SurfaceTone.subtle,
       radius: _cardRadius,
@@ -451,7 +438,7 @@ class _ActivitySection extends StatelessWidget {
                 TextButton(
                   onPressed: onSeeAll,
                   style: TextButton.styleFrom(
-                    foregroundColor: p.leaf,
+                    foregroundColor: SibasColors.leaf,
                     minimumSize: const Size(0, _touchTarget),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     textStyle: const TextStyle(
@@ -488,10 +475,6 @@ class _EmptyActivity extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
-
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 12, 8, 16),
       child: Column(
@@ -500,12 +483,12 @@ class _EmptyActivity extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: p.mintWash,
+              color: SibasColors.mintWash,
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.inventory_2_outlined,
-              color: p.leaf,
+              color: SibasColors.leaf,
               size: 30,
             ),
           ),
@@ -521,7 +504,7 @@ class _EmptyActivity extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 height: 1.5,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
           ),

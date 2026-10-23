@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../theme/app_palette.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
@@ -11,6 +10,7 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../core/theme/sibas_colors.dart';
 
 /// Lebar konten halaman pengaturan. Lebih sempit dari 1120 px (§4) agar baris
 /// teks tidak melebar di desktop dengan rail.
@@ -31,7 +31,7 @@ TextStyle _sectionTitle = TextStyle(
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
   height: 1.25,
-  color: p.text,
+  color: SibasColors.text,
 );
 
 /// Label baris sebagai metadata kecil (§3), bukan teks utama.
@@ -40,7 +40,7 @@ TextStyle _rowLabel = TextStyle(
   fontWeight: FontWeight.w600,
   letterSpacing: 0.1,
   height: 1.4,
-  color: p.muted,
+  color: SibasColors.muted,
 );
 
 /// Angka berat dan hitungan memakai lebar digit tetap (§3).
@@ -52,8 +52,6 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -70,13 +68,13 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
               'Batal',
-              style: TextStyle(color: p.muted),
+              style: TextStyle(color: SibasColors.muted),
             ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: warna.badText,
+              backgroundColor: SibasColors.status.badText,
               foregroundColor: Colors.white,
             ),
             child: const Text('Keluar'),
@@ -140,9 +138,6 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
     final userState = ref.watch(currentUserProvider);
     final user = userState.valueOrNull;
     final emailVerified = ref.watch(authRepositoryProvider).isEmailVerified;
@@ -159,7 +154,7 @@ class ProfileScreen extends ConsumerWidget {
           );
 
     return Scaffold(
-      backgroundColor: p.background,
+      backgroundColor: SibasColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -332,7 +327,7 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuTile(
                     icon: Icons.devices_other_rounded,
                     label: 'Keluar dari semua perangkat',
-                    color: warna.badText,
+                    color: SibasColors.status.badText,
                     onTap: user == null
                         ? null
                         : () => _openSignOutEverywhere(context),
@@ -340,7 +335,7 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuTile(
                     icon: Icons.no_accounts_rounded,
                     label: 'Hapus Akun',
-                    color: warna.rejectedText,
+                    color: SibasColors.status.rejectedText,
                     onTap: user == null
                         ? null
                         : () => _openDeleteAccount(context, ref),
@@ -358,9 +353,9 @@ class ProfileScreen extends ConsumerWidget {
                       ? null
                       : () => _confirmLogout(context, ref),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: warna.badText,
-                    side: const BorderSide(
-                      color: warna.badText,
+                    foregroundColor: SibasColors.status.badText,
+                    side: BorderSide(
+                      color: SibasColors.status.badText,
                       width: 1.5,
                     ),
                     minimumSize: const Size(0, 48),
@@ -395,15 +390,12 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
     final nim = (user.nim == null || user.nim!.trim().isEmpty)
         ? 'Belum diisi'
         : user.nim!;
     final statusColor = isEmailVerified
-        ? p.leaf
-        : warna.pendingText;
+        ? SibasColors.leaf
+        : SibasColors.status.pendingText;
 
     return SurfaceCard(
       radius: _cardRadius,
@@ -458,9 +450,9 @@ class _ProfileCard extends StatelessWidget {
             ),
           ),
           if (!isEmailVerified) ...[
-            const SurfaceCard(
+            SurfaceCard(
               tone: SurfaceTone.subtle,
-              color: warna.pendingBackground,
+              color: SibasColors.status.pendingBackground,
               radius: 16,
               padding: EdgeInsets.all(12),
               child: Text(
@@ -469,7 +461,7 @@ class _ProfileCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.4,
-                  color: warna.pendingText,
+                  color: SibasColors.status.pendingText,
                 ),
               ),
             ),
@@ -481,14 +473,14 @@ class _ProfileCard extends StatelessWidget {
             label: 'Total Berat Sampah',
             value: '${user.totalWeight.toStringAsFixed(1)} kg',
           ),
-          Divider(height: 24, color: p.border),
+          Divider(height: 24, color: SibasColors.border),
           Text(
             'Nama, NIM, nomor WhatsApp, dan foto bisa diubah lewat menu Edit '
             'Profil. Data lain hubungi admin bila perlu diperbarui.',
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: p.muted,
+              color: SibasColors.muted,
             ),
           ),
         ],
@@ -506,8 +498,6 @@ class _MenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final children = <Widget>[];
     for (var i = 0; i < items.length; i++) {
       if (i > 0) {
@@ -516,7 +506,7 @@ class _MenuCard extends StatelessWidget {
             height: 1,
             indent: 62,
             endIndent: 16,
-            color: p.border,
+            color: SibasColors.border,
           ),
         );
       }
@@ -545,13 +535,11 @@ class _MenuTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = p.leaf,
+    this.color = SibasColors.leaf,
   });
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     final enabled = onTap != null;
 
     return Semantics(
@@ -570,14 +558,14 @@ class _MenuTile extends StatelessWidget {
                   height: 34,
                   decoration: BoxDecoration(
                     color: enabled
-                        ? p.mintWash
-                        : p.background,
+                        ? SibasColors.mintWash
+                        : SibasColors.background,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
                     size: 18,
-                    color: enabled ? color : p.muted,
+                    color: enabled ? color : SibasColors.muted,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -591,8 +579,8 @@ class _MenuTile extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.1,
                       color: enabled
-                          ? p.text
-                          : p.muted,
+                          ? SibasColors.text
+                          : SibasColors.muted,
                     ),
                   ),
                 ),
@@ -601,8 +589,8 @@ class _MenuTile extends StatelessWidget {
                   Icons.chevron_right_rounded,
                   size: 20,
                   color: enabled
-                      ? p.muted
-                      : p.muted.withValues(alpha: 0.4),
+                      ? SibasColors.muted
+                      : SibasColors.muted.withValues(alpha: 0.4),
                 ),
               ],
             ),
@@ -621,8 +609,6 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -636,7 +622,7 @@ class _InfoRow extends StatelessWidget {
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 height: 1.4,
-                color: p.text,
+                color: SibasColors.text,
                 fontFeatures: _tabular,
               ),
             ),
@@ -655,30 +641,29 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final warna = AppStatusColors.of(p.brightness);
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         tone: SurfaceTone.subtle,
-        color: warna.rejectedBackground,
+        color: SibasColors.status.rejectedBackground,
         radius: 16,
         padding: const EdgeInsets.all(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline_rounded,
               size: 18,
-              color: warna.badText,
+              color: SibasColors.status.badText,
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   height: 1.4,
-                  color: warna.badText,
+                  color: SibasColors.status.badText,
                 ),
               ),
             ),
@@ -749,8 +734,6 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
@@ -772,7 +755,7 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
                 hintText: 'Email baru',
                 prefixIcon: Icon(
                   Icons.email_outlined,
-                  color: p.leaf,
+                  color: SibasColors.leaf,
                   size: 20,
                 ),
               ),
@@ -784,7 +767,7 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: p.muted,
+                color: SibasColors.muted,
               ),
             ),
             if (_error != null) ...[
@@ -799,7 +782,7 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
           onPressed: _saving ? null : () => Navigator.pop(context),
           child: Text(
             'Batal',
-            style: TextStyle(color: p.muted),
+            style: TextStyle(color: SibasColors.muted),
           ),
         ),
         ElevatedButton(
@@ -871,8 +854,6 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
@@ -941,7 +922,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
           onPressed: _saving ? null : () => Navigator.pop(context),
           child: Text(
             'Batal',
-            style: TextStyle(color: p.muted),
+            style: TextStyle(color: SibasColors.muted),
           ),
         ),
         ElevatedButton(
@@ -965,7 +946,6 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
     required VoidCallback onToggle,
     required String? Function(String?) validator,
   }) {
-    final p = AppPalette.of(context);
     return TextFormField(
       controller: controller,
       obscureText: obscured,
@@ -973,7 +953,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
         hintText: hint,
         prefixIcon: Icon(
           Icons.lock_outline_rounded,
-          color: p.leaf,
+          color: SibasColors.leaf,
           size: 20,
         ),
         suffixIcon: IconButton(
@@ -981,7 +961,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
             obscured
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
-            color: p.muted,
+            color: SibasColors.muted,
             size: 20,
           ),
           tooltip: obscured ? 'Lihat kata sandi' : 'Sembunyikan kata sandi',
@@ -1026,9 +1006,6 @@ class _SignOutEverywhereDialogState
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
@@ -1044,13 +1021,13 @@ class _SignOutEverywhereDialogState
           onPressed: _busy ? null : () => Navigator.pop(context),
           child: Text(
             'Batal',
-            style: TextStyle(color: p.muted),
+            style: TextStyle(color: SibasColors.muted),
           ),
         ),
         ElevatedButton(
           onPressed: _busy ? null : _confirm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: warna.badText,
+            backgroundColor: SibasColors.status.badText,
             foregroundColor: Colors.white,
           ),
           child: _busy
@@ -1112,19 +1089,17 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
   }
 
   Widget _poin(String teks) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 6, right: 8),
             child: Icon(
               Icons.circle,
               size: 5,
-              color: warna.rejectedText,
+              color: SibasColors.status.rejectedText,
             ),
           ),
           Expanded(
@@ -1133,7 +1108,7 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.45,
-                color: p.text,
+                color: SibasColors.text,
               ),
             ),
           ),
@@ -1144,9 +1119,6 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
@@ -1199,15 +1171,15 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
           onPressed: _busy ? null : () => Navigator.pop(context),
           child: Text(
             'Batal',
-            style: TextStyle(color: p.muted),
+            style: TextStyle(color: SibasColors.muted),
           ),
         ),
         ElevatedButton(
           onPressed: (_busy || !_siap) ? null : _confirm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: warna.rejectedText,
+            backgroundColor: SibasColors.status.rejectedText,
             foregroundColor: Colors.white,
-            disabledBackgroundColor: warna.rejectedText.withValues(
+            disabledBackgroundColor: SibasColors.status.rejectedText.withValues(
               alpha: 0.35,
             ),
             disabledForegroundColor: Colors.white.withValues(alpha: 0.75),
@@ -1244,15 +1216,12 @@ class _MessageBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = AppPalette.of(context);
-    final warna = AppStatusColors.of(p.brightness);
-
-    final accent = isError ? warna.badText : p.leaf;
+    final accent = isError ? SibasColors.status.badText : SibasColors.leaf;
 
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
-        color: isError ? warna.rejectedBackground : null,
+        color: isError ? SibasColors.status.rejectedBackground : null,
         radius: _cardRadius,
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -1262,8 +1231,8 @@ class _MessageBox extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: isError
-                    ? warna.badText.withValues(alpha: 0.10)
-                    : p.mintWash,
+                    ? SibasColors.status.badText.withValues(alpha: 0.10)
+                    : SibasColors.mintWash,
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 22, color: accent),
@@ -1276,7 +1245,7 @@ class _MessageBox extends StatelessWidget {
                 fontSize: 13,
                 height: 1.45,
                 fontWeight: FontWeight.w600,
-                color: isError ? warna.badText : p.muted,
+                color: isError ? SibasColors.status.badText : SibasColors.muted,
               ),
             ),
             if (onRetry != null) ...[
@@ -1286,7 +1255,7 @@ class _MessageBox extends StatelessWidget {
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Coba Lagi'),
                 style: TextButton.styleFrom(
-                  foregroundColor: warna.badText,
+                  foregroundColor: SibasColors.status.badText,
                   minimumSize: const Size(0, _touchTarget),
                 ),
               ),
@@ -1368,14 +1337,13 @@ String _pesanGantiSandi(Object error) {
 }
 
 void _snack(BuildContext context, String message) {
-    final p = AppPalette.of(context);
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: p.primary,
+        backgroundColor: SibasColors.primary,
       ),
     );
 }

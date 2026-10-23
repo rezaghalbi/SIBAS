@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../theme/app_palette.dart';
 import 'glass_panel.dart';
+import '../theme/sibas_colors.dart';
 
 /// Panel saldo di dalam hero (§10.8): kaca tone `hero` dengan teks hero.
 ///
@@ -23,10 +24,6 @@ class SaldoHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-
-
-
     final palette = AppPalette.of(context);
     final ink = palette.heroInk;
     final muted = palette.heroMuted;
@@ -161,7 +158,7 @@ class SaldoHeroCard extends StatelessWidget {
                   onPressed: onSetorPressed,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: palette.primary,
+                    foregroundColor: SibasColors.primary,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
