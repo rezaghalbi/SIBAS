@@ -8,7 +8,7 @@ import '../../../history/domain/models/transaction_model.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Lembar notifikasi yang diturunkan dari transaksi & penarikan terbaru.
 ///

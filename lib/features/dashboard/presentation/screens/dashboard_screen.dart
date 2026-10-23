@@ -13,7 +13,7 @@ import '../../../history/domain/models/transaction_model.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 import '../../../notification/presentation/widgets/notification_sheet.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Jarak antar seksi pada skala 4 pt (§4).
 const double _sectionGap = 24;

@@ -13,7 +13,7 @@ import '../../../verification/presentation/providers/verification_provider.dart'
 import '../../../verification/presentation/widgets/verification_bottom_sheet.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Target sentuh minimum (§1, §4).
 const double _touchTarget = 44;

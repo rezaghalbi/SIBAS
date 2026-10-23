@@ -12,7 +12,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Angka uang, berat, dan tanggal memakai tabular figures (§3).
 const List<FontFeature> _tabularFigures = [FontFeature.tabularFigures()];

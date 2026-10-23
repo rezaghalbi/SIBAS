@@ -10,7 +10,7 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/validasi_profil.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Edit data akun: foto, nama, NIM, dan nomor WhatsApp. Email hanya baca dan
 /// diubah lewat menu Ubah Email di layar Profil.

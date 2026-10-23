@@ -10,7 +10,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../../bank_location/domain/models/bank_location_model.dart';
 import '../../../bank_location/presentation/providers/bank_location_provider.dart';
 import '../providers/deposit_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 class QrDisplayScreen extends ConsumerStatefulWidget {
   final String transactionId;

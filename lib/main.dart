@@ -9,11 +9,11 @@ import 'core/constants/colors.dart';
 import 'core/constants/theme.dart';
 import 'core/network/error_reporter.dart';
 import 'core/network/supabase_client.dart';
-import 'core/theme/sibas_colors.dart';
 import 'core/widgets/session_idle_watcher.dart';
 import 'core/router/app_router.dart';
 import 'core/widgets/offline_banner.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
+import 'core/theme/sibas_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

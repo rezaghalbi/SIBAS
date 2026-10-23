@@ -7,7 +7,7 @@ import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../providers/app_settings_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Kontak resmi unit bank sampah. Isi hanya setelah admin menetapkan nilainya;
 /// jangan mengarang nomor telepon/email. String kosong otomatis tampil

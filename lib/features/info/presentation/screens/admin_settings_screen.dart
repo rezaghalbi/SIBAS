@@ -9,7 +9,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../domain/models/app_settings_model.dart';
 import '../../domain/validasi_pengaturan.dart';
 import '../providers/app_settings_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Target sentuh minimum (§4).
 const double _touch = 44;

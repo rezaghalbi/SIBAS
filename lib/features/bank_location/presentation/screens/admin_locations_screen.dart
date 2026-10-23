@@ -8,7 +8,7 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../domain/models/bank_location_model.dart';
 import '../providers/bank_location_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Target sentuh minimum (§4).
 const double _touch = 44;

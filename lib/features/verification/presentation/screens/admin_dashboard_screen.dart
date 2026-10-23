@@ -9,7 +9,7 @@ import '../../../info/presentation/providers/app_settings_provider.dart';
 import '../../../students/presentation/providers/student_provider.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Halaman Dashboard Utama Petugas Admin
 class AdminDashboardScreen extends ConsumerStatefulWidget {

@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/theme.dart';
 import '../providers/withdrawal_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 const String _genericError =
     'Pengajuan gagal dikirim. Periksa koneksi lalu coba lagi.';

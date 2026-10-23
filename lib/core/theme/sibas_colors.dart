@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'app_palette.dart';
-import '../theme/sibas_colors.dart';
 
 /// Warna yang mengikuti tema aktif untuk kode lama.
 ///

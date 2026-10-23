@@ -12,7 +12,7 @@ import '../../../bank_location/presentation/providers/bank_location_provider.dar
 import '../../../trash_type/presentation/providers/trash_type_provider.dart';
 import '../../domain/models/waste_category_model.dart';
 import '../providers/deposit_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
 TextStyle _sectionTitle = TextStyle(

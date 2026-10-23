@@ -10,7 +10,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../domain/models/student_model.dart';
 import '../../domain/student_filter.dart';
 import '../providers/student_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Target sentuh minimum (§4).
 const double _touch = 44;

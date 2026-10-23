@@ -15,7 +15,7 @@ import '../../../bank_location/presentation/providers/bank_location_provider.dar
 import '../../domain/models/withdrawal_model.dart';
 import '../providers/withdrawal_provider.dart';
 import '../widgets/withdraw_qr_sheet.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 final _currency = NumberFormat.currency(
   locale: 'id_ID',

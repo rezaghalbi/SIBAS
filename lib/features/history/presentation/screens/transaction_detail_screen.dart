@@ -10,7 +10,7 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../providers/transaction_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Lebar kolom baca detail di desktop (§8).
 const double _contentMaxWidth = 720;

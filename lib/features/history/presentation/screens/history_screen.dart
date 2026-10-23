@@ -7,7 +7,7 @@ import '../../../../core/widgets/tx_list_item.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../../domain/models/transaction_model.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Provider seluruh riwayat transaksi mahasiswa (limit 100)
 final allStudentTransactionsProvider =

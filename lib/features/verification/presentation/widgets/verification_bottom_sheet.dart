@@ -5,7 +5,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../bank_location/presentation/providers/bank_location_provider.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 import '../providers/verification_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Teks lokasi dari payload; string kosong dianggap tidak ada.
 String? _teksLokasi(Object? nilai) {

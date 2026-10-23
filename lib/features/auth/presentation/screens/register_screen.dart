@@ -5,7 +5,7 @@ import '../../../../core/widgets/glass_panel.dart';
 import '../../../profile/domain/validasi_profil.dart';
 import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});

@@ -10,7 +10,7 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Lebar konten halaman pengaturan. Lebih sempit dari 1120 px (§4) agar baris
 /// teks tidak melebar di desktop dengan rail.

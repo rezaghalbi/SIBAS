@@ -13,7 +13,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 final _currency = NumberFormat.currency(
   locale: 'id_ID',

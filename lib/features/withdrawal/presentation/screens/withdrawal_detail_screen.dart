@@ -12,7 +12,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/withdrawal_provider.dart';
 import '../widgets/withdraw_qr_sheet.dart';
-import '../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Lebar isi detail: cukup untuk dua kolom label–nilai di desktop.
 const double _maxContentWidth = 720;
