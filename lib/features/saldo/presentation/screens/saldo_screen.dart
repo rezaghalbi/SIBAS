@@ -8,6 +8,7 @@ import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
@@ -449,13 +450,8 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -558,14 +554,9 @@ class _WithdrawalTile extends StatelessWidget {
     final reason = withdrawal.rejectionReason;
     final hasReason = reason != null && reason.isNotEmpty;
 
-    return Container(
+    return SurfaceCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -614,23 +605,24 @@ class _WithdrawalTile extends StatelessWidget {
                 StatusBadge(status: withdrawal.status),
                 if (hasReason) ...[
                   const SizedBox(height: 10),
-                  Container(
+                  SizedBox(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
+                    child: SurfaceCard(
+                      tone: SurfaceTone.subtle,
                       color: AppColors.statusRejectedBg,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'Alasan: $reason',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        height: 1.4,
-                        color: AppColors.danger,
-                        fontWeight: FontWeight.w600,
+                      radius: 16,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        'Alasan: $reason',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: AppColors.danger,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -649,13 +641,8 @@ class _EmptyWithdrawals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
       child: Column(
         children: [
           Container(
@@ -757,13 +744,10 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
+      color: AppColors.statusRejectedBg,
+      radius: 16,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

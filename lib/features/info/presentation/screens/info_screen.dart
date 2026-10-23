@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../providers/app_settings_provider.dart';
 
 /// Kontak resmi unit bank sampah. Isi hanya setelah admin menetapkan nilainya;
@@ -55,8 +56,8 @@ const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
 
 /// Pusat informasi statis: kontak admin, jam layanan, dan alur pengaduan.
 ///
-/// Tanpa kaca sama sekali (§7.1): tidak ada lapisan mengambang di layar ini,
-/// jadi seluruh kartu memakai permukaan solid agar data mudah dibaca.
+/// Hanya `SurfaceCard` (kaca statis, tanpa blur): tidak ada lapisan
+/// mengambang di layar ini, jadi kartu tidak menambah `BackdropFilter`.
 class InfoScreen extends ConsumerWidget {
   const InfoScreen({super.key});
 
@@ -227,19 +228,12 @@ class _SettingsNotice extends StatelessWidget {
     final isError = !isLoading;
     final accent = isError ? AppColors.danger : AppColors.primaryMain;
 
-    return Container(
+    return SurfaceCard(
+      color: isError
+          ? AppColors.statusRejectedBg
+          : AppColors.mintSoftBackground,
+      radius: 16,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
-      decoration: BoxDecoration(
-        color: isError
-            ? AppColors.statusRejectedBg
-            : AppColors.mintSoftBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isError
-              ? AppColors.danger.withValues(alpha: 0.24)
-              : AppColors.mintAccent,
-        ),
-      ),
       child: Row(
         children: [
           if (isLoading)
@@ -297,14 +291,9 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
+      radius: _cardRadius,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(_cardRadius),
-        border: Border.all(color: AppColors.borderLine),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -462,14 +451,10 @@ class _ComplaintFormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
+      color: AppColors.mintSoftBackground,
+      radius: _cardRadius,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.mintSoftBackground,
-        borderRadius: BorderRadius.circular(_cardRadius),
-        border: Border.all(color: AppColors.mintAccent),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

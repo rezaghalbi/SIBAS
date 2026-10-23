@@ -10,6 +10,7 @@ import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
@@ -696,13 +697,12 @@ class _HintCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
+      // Panel pratinjau kamera: tetap gelap agar teks putih terbaca.
+      tone: SurfaceTone.subtle,
+      radius: 16,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-      ),
+      color: Colors.black.withValues(alpha: 0.72),
       child: Column(
         children: [
           Text(
@@ -794,13 +794,11 @@ class _ProcessingOverlay extends StatelessWidget {
     return ColoredBox(
       color: Colors.black.withValues(alpha: 0.62),
       child: Center(
-        child: Container(
+        child: SurfaceCard(
+          tone: SurfaceTone.subtle,
+          radius: 16,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-          ),
+          color: Colors.black.withValues(alpha: 0.72),
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -957,13 +955,11 @@ class _WithdrawalConfirmSheetState
                   ],
                 ),
                 const SizedBox(height: 4),
-                Container(
+                SurfaceCard(
+                  tone: SurfaceTone.subtle,
+                  radius: 16,
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.mintSoftBackground,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.borderLine),
-                  ),
+                  color: AppColors.mintSoftBackground,
                   child: Row(
                     children: [
                       Container(
@@ -1052,15 +1048,11 @@ class _WithdrawalConfirmSheetState
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Container(
+                  SurfaceCard(
+                    tone: SurfaceTone.subtle,
+                    radius: 16,
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.statusRejectedBg,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.danger.withValues(alpha: 0.35),
-                      ),
-                    ),
+                    color: AppColors.statusRejectedBg,
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

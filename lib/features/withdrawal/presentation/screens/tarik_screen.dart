@@ -10,6 +10,7 @@ import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../domain/models/withdrawal_model.dart';
 import '../providers/withdrawal_provider.dart';
 import '../widgets/withdraw_qr_sheet.dart';
@@ -37,14 +38,11 @@ const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
 /// Lebar kolom konten. Form nominal tidak perlu selebar halaman (§8).
 const double _contentMaxWidth = 640;
 
-/// Kartu konten solid; kaca hanya untuk hero saldo (§7.1).
-BoxDecoration _cardDecoration() {
-  return BoxDecoration(
-    color: AppColors.cardSurface,
-    borderRadius: BorderRadius.circular(20),
-    border: Border.all(color: AppColors.borderLine),
-  );
-}
+/// Radius kartu konten (r-20), panel status (r-16), dan catatan kecil
+/// di dalam kartu (r-12) sesuai §4.
+const double _cardRadius = 20;
+const double _panelRadius = 16;
+const double _noteRadius = 12;
 
 /// Pengajuan pencairan saldo tabungan sampah beserta riwayat penarikannya.
 class TarikScreen extends ConsumerStatefulWidget {
@@ -244,9 +242,9 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
     required bool balanceReady,
     required bool isSubmitting,
   }) {
-    return Container(
+    return SurfaceCard(
+      radius: _cardRadius,
       padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(),
       child: Form(
         key: _formKey,
         child: Column(
@@ -337,12 +335,10 @@ class _BalanceHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
+      radius: _noteRadius,
+      color: AppColors.mintSoftBackground,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.mintSoftBackground,
-        borderRadius: BorderRadius.circular(12),
-      ),
       child: Row(
         children: [
           const Icon(
@@ -506,107 +502,108 @@ class _WithdrawalTile extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: AppColors.cardSurface,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: AppColors.borderLine),
-        ),
-        child: InkWell(
-          onTap: () => context.push('/withdrawal/${withdrawal.id}'),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.mintSoftBackground,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.payments_rounded,
-                        color: AppColors.primaryMain,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _currency.format(withdrawal.amount),
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              fontFeatures: _tabular,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _shortDate.format(withdrawal.createdAt),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: AppColors.textMuted,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                StatusBadge(status: withdrawal.status),
-                if (withdrawal.isPending &&
-                    (withdrawal.qrToken?.isNotEmpty ?? false)) ...[
-                  const SizedBox(height: 4),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => showWithdrawQrSheet(
-                        context,
-                        token: withdrawal.qrToken!,
-                        amount: withdrawal.amount,
-                        status: withdrawal.status,
-                      ),
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(0, 44),
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        foregroundColor: AppColors.primaryMain,
-                        textStyle: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+      child: SurfaceCard(
+        radius: _cardRadius,
+        padding: EdgeInsets.zero,
+        child: Material(
+          color: Colors.transparent,
+          clipBehavior: Clip.antiAlias,
+          borderRadius: BorderRadius.circular(_cardRadius),
+          child: InkWell(
+            onTap: () => context.push('/withdrawal/${withdrawal.id}'),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.mintSoftBackground,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.payments_rounded,
+                          color: AppColors.primaryMain,
+                          size: 22,
                         ),
                       ),
-                      icon: const Icon(Icons.qr_code_rounded, size: 18),
-                      label: const Text('Tampilkan QR'),
-                    ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _currency.format(withdrawal.amount),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                fontFeatures: _tabular,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _shortDate.format(withdrawal.createdAt),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: AppColors.textMuted,
+                      ),
+                    ],
                   ),
-                ],
-                if (reason != null && reason.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Alasan: $reason',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.danger,
+                  const SizedBox(height: 12),
+                  StatusBadge(status: withdrawal.status),
+                  if (withdrawal.isPending &&
+                      (withdrawal.qrToken?.isNotEmpty ?? false)) ...[
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => showWithdrawQrSheet(
+                          context,
+                          token: withdrawal.qrToken!,
+                          amount: withdrawal.amount,
+                          status: withdrawal.status,
+                        ),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(0, 44),
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          foregroundColor: AppColors.primaryMain,
+                          textStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        icon: const Icon(Icons.qr_code_rounded, size: 18),
+                        label: const Text('Tampilkan QR'),
+                      ),
                     ),
-                  ),
+                  ],
+                  if (reason != null && reason.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Alasan: $reason',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.danger,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
@@ -620,10 +617,10 @@ class _EmptyHistory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      decoration: _cardDecoration(),
-      child: const Text(
+    return const SurfaceCard(
+      radius: _cardRadius,
+      padding: EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      child: Text(
         'Belum ada pengajuan penarikan.',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 13, color: AppColors.textMuted),
@@ -639,13 +636,10 @@ class _HistoryError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
+      radius: _panelRadius,
+      color: AppColors.statusRejectedBg,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -679,14 +673,10 @@ class _ErrorNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
+      radius: _noteRadius,
+      color: AppColors.statusRejectedBg,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

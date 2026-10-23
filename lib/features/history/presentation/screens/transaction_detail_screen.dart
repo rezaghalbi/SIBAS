@@ -9,6 +9,7 @@ import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../providers/transaction_provider.dart';
 
 /// Lebar kolom baca detail di desktop (§8).
@@ -408,21 +409,18 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: _sectionTitle),
-          const SizedBox(height: 16),
-          child,
-        ],
+      child: SurfaceCard(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: _sectionTitle),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
       ),
     );
   }
@@ -574,8 +572,9 @@ class _PhotoSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Section(
       title: 'Bukti Foto',
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+      child: SurfaceCard(
+        tone: SurfaceTone.subtle,
+        radius: 16,
         child: AspectRatio(
           aspectRatio: 4 / 3,
           child: Image.network(
@@ -652,14 +651,19 @@ class _AuditTimeline extends StatelessWidget {
                 color: AppColors.textMuted,
               ),
             )
-          : Column(
-              children: [
-                for (var i = 0; i < entries.length; i++)
-                  _AuditRow(
-                    entry: entries[i],
-                    isLast: i == entries.length - 1,
-                  ),
-              ],
+          : SurfaceCard(
+              tone: SurfaceTone.subtle,
+              radius: 16,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var i = 0; i < entries.length; i++)
+                    _AuditRow(
+                      entry: entries[i],
+                      isLast: i == entries.length - 1,
+                    ),
+                ],
+              ),
             ),
     );
   }
@@ -771,44 +775,44 @@ class _NoteBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      child: SurfaceCard(
+        tone: SurfaceTone.subtle,
+        radius: 16,
+        padding: const EdgeInsets.all(16),
         color: AppColors.statusRejectedBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: AppColors.danger),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.danger,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20, color: AppColors.danger),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.danger,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    height: 1.45,
-                    color: AppColors.danger,
+                  const SizedBox(height: 4),
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      height: 1.45,
+                      color: AppColors.danger,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -820,43 +824,40 @@ class _LoadingPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return const SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: const Column(
-        children: [
-          SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2.4),
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Memuat detail transaksi',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.2,
-              color: AppColors.textPrimary,
+      child: SurfaceCard(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
             ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'Mengambil rincian setoran beserta riwayat prosesnya.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12.5,
-              height: 1.5,
-              color: AppColors.textMuted,
+            SizedBox(height: 16),
+            Text(
+              'Memuat detail transaksi',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+                color: AppColors.textPrimary,
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 4),
+            Text(
+              'Mengambil rincian setoran beserta riwayat prosesnya.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -897,70 +898,67 @@ class _StatePanel extends StatelessWidget {
     final badge =
         danger ? AppColors.statusRejectedBg : AppColors.mintSoftBackground;
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: badge,
-              borderRadius: BorderRadius.circular(20),
+      child: SurfaceCard(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: badge,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(icon, size: 26, color: accent),
             ),
-            child: Icon(icon, size: 26, color: accent),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.2,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12.5,
-              height: 1.5,
-              color: AppColors.textMuted,
-            ),
-          ),
-          if (action != null) ...[
             const SizedBox(height: 16),
-            SizedBox(
-              height: 44,
-              child: OutlinedButton.icon(
-                onPressed: action!.onPressed,
-                icon: Icon(action!.icon, size: 18),
-                label: Text(action!.label),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primaryDark,
-                  side: const BorderSide(color: AppColors.borderLine),
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: AppColors.textMuted,
+              ),
+            ),
+            if (action != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 44,
+                child: OutlinedButton.icon(
+                  onPressed: action!.onPressed,
+                  icon: Icon(action!.icon, size: 18),
+                  label: Text(action!.label),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryDark,
+                    side: const BorderSide(color: AppColors.borderLine),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

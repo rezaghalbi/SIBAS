@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../info/presentation/providers/app_settings_provider.dart';
 import '../../../students/presentation/providers/student_provider.dart';
@@ -97,11 +97,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   child: const Icon(Icons.logout_rounded, color: Colors.white, size: 20),
                 ),
               ),
+              // Panel di dalam hero memakai token hero, bukan `SurfaceCard`:
+              // `color` pada `SurfaceCard` memaksa alfa `.88` di ujung gradien
+              // sehingga putih `.14` berubah menjadi putih hampir pekat dan
+              // teks putih kehilangan kontras.
               bottomContent: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.heroCardSurface,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.heroCardBorder),
                 ),
                 child: Row(
@@ -220,13 +224,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
             sliver: SliverToBoxAdapter(
-              child: GlassPanel(
-                radius: 18,
+              child: SurfaceCard(
                 child: Material(
                   color: Colors.transparent,
                   child: ListTile(
                     onTap: () => context.push('/admin/trash-types'),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     leading: Container(
                       width: 36,
                       height: 36,
@@ -308,11 +313,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               data: (txList) {
                 if (txList.isEmpty) {
                   return SliverToBoxAdapter(
-                    child: Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(color: AppColors.cardSurface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.borderLine)),
-                      child: const Center(
-                        child: Text('Belum ada transaksi yang sesuai kriteria pencarian.', style: TextStyle(color: AppColors.textMuted)),
+                    child: const SurfaceCard(
+                      padding: EdgeInsets.all(32),
+                      child: Center(
+                        child: Text(
+                          'Belum ada transaksi yang sesuai kriteria '
+                          'pencarian.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.textMuted),
+                        ),
                       ),
                     ),
                   );
@@ -334,13 +343,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       final id = item['id'] as String?;
                       final canOpen = id != null && id.isNotEmpty;
 
-                      return Container(
+                      return SurfaceCard(
                         margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardSurface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderLine),
-                        ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(14),
                           onTap: canOpen
@@ -427,22 +431,18 @@ class _DashboardShortcutTile extends StatelessWidget {
   final Color iconBackground;
   final VoidCallback onTap;
 
-  static const BorderRadius _radius = BorderRadius.all(Radius.circular(20));
+  static const double _radius = 20;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: _radius,
-      child: Ink(
-        decoration: BoxDecoration(
-          color: AppColors.cardSurface,
-          borderRadius: _radius,
-          border: Border.all(color: AppColors.borderLine),
-        ),
+    return SurfaceCard(
+      radius: _radius,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(_radius),
         child: InkWell(
           onTap: onTap,
-          borderRadius: _radius,
+          borderRadius: BorderRadius.circular(_radius),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             child: Column(

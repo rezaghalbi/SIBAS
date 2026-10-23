@@ -8,6 +8,7 @@ import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -396,13 +397,9 @@ class _ProfileCard extends StatelessWidget {
         ? AppColors.primaryMain
         : AppColors.statusPendingText;
 
-    return Container(
+    return SurfaceCard(
+      radius: _cardRadius,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(_cardRadius),
-        border: Border.all(color: AppColors.borderLine),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -453,16 +450,12 @@ class _ProfileCard extends StatelessWidget {
             ),
           ),
           if (!isEmailVerified) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.statusPendingBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.statusPendingText.withValues(alpha: 0.35),
-                ),
-              ),
-              child: const Text(
+            const SurfaceCard(
+              tone: SurfaceTone.subtle,
+              color: AppColors.statusPendingBg,
+              radius: 16,
+              padding: EdgeInsets.all(12),
+              child: Text(
                 'Verifikasi lewat tautan di kotak masuk email Anda. Bila tidak '
                 'menerima email, minta admin mengirim ulang.',
                 style: TextStyle(
@@ -496,8 +489,8 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
-/// Daftar aksi sebagai satu kartu solid. Kaca hanya untuk lapisan mengambang
-/// (§7.1), jadi grup menu tidak memakai `GlassPanel`.
+/// Daftar aksi sebagai satu kartu konten (`SurfaceCard`). Kaca hanya untuk
+/// lapisan mengambang (§7.1), jadi grup menu tidak memakai `GlassPanel`.
 class _MenuCard extends StatelessWidget {
   final List<Widget> items;
 
@@ -520,13 +513,8 @@ class _MenuCard extends StatelessWidget {
       children.add(items[i]);
     }
 
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(_cardRadius),
-        border: Border.all(color: AppColors.borderLine),
-      ),
+    return SurfaceCard(
+      radius: _cardRadius,
       child: Material(
         color: Colors.transparent,
         child: Column(mainAxisSize: MainAxisSize.min, children: children),
@@ -653,34 +641,34 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
+      child: SurfaceCard(
+        tone: SurfaceTone.subtle,
         color: AppColors.statusRejectedBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.error_outline_rounded,
-            size: 18,
-            color: AppColors.danger,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.4,
-                color: AppColors.danger,
+        radius: 16,
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 18,
+              color: AppColors.danger,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.4,
+                  color: AppColors.danger,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1212,7 +1200,7 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
   }
 }
 
-/// Kotak pesan untuk state kosong dan galat: kartu solid tanpa blur (§7.1).
+/// Kotak pesan untuk state kosong dan galat: kartu statis tanpa blur (§7.1).
 class _MessageBox extends StatelessWidget {
   final IconData icon;
   final String text;
@@ -1230,80 +1218,73 @@ class _MessageBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = isError ? AppColors.danger : AppColors.primaryMain;
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isError ? AppColors.statusRejectedBg : AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(_cardRadius),
-        border: Border.all(
-          color: isError
-              ? AppColors.danger.withValues(alpha: 0.24)
-              : AppColors.borderLine,
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: isError
-                  ? AppColors.danger.withValues(alpha: 0.10)
-                  : AppColors.mintSoftBackground,
-              shape: BoxShape.circle,
+      child: SurfaceCard(
+        color: isError ? AppColors.statusRejectedBg : null,
+        radius: _cardRadius,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isError
+                    ? AppColors.danger.withValues(alpha: 0.10)
+                    : AppColors.mintSoftBackground,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 22, color: accent),
             ),
-            child: Icon(icon, size: 22, color: accent),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.45,
-              fontWeight: FontWeight.w600,
-              color: isError ? AppColors.danger : AppColors.textMuted,
-            ),
-          ),
-          if (onRetry != null) ...[
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Coba Lagi'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.danger,
-                minimumSize: const Size(0, _touchTarget),
+            const SizedBox(height: 12),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                fontWeight: FontWeight.w600,
+                color: isError ? AppColors.danger : AppColors.textMuted,
               ),
             ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Coba Lagi'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  minimumSize: const Size(0, _touchTarget),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
-/// Placeholder saat data akun dimuat: satu kartu solid setinggi konten agar
-/// halaman tidak meloncat saat data datang.
+/// Placeholder saat data akun dimuat: satu kartu setinggi konten agar halaman
+/// tidak meloncat saat data datang.
 class _LoadingCard extends StatelessWidget {
   const _LoadingCard();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(_cardRadius),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: const Center(
-        child: SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(strokeWidth: 2.4),
+      child: const SurfaceCard(
+        radius: _cardRadius,
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.4),
+          ),
         ),
       ),
     );

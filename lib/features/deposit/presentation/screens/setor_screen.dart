@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/content_width.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../trash_type/presentation/providers/trash_type_provider.dart';
 import '../../domain/models/waste_category_model.dart';
 import '../providers/deposit_provider.dart';
@@ -22,15 +23,9 @@ const TextStyle _sectionTitle = TextStyle(
 /// Uang dan berat selalu tabular agar kolom tidak bergeser (§3).
 const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
 
-/// Kartu konten solid. Kaca hanya untuk lapisan mengambang (§7.1), jadi
-/// panel kategori dan ringkasan tidak memakai `GlassPanel`.
-BoxDecoration _cardDecoration() {
-  return BoxDecoration(
-    color: AppColors.cardSurface,
-    borderRadius: BorderRadius.circular(20),
-    border: Border.all(color: AppColors.borderLine),
-  );
-}
+/// Radius kartu konten (r-20) dan panel di dalamnya (r-16) sesuai §4.
+const double _cardRadius = 20;
+const double _innerRadius = 16;
 
 class SetorScreen extends ConsumerStatefulWidget {
   const SetorScreen({super.key});
@@ -254,9 +249,8 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
   Widget _buildCategoryCard(
     AsyncValue<List<WasteCategoryModel>> categoriesState,
   ) {
-    return Container(
+    return SurfaceCard(
       padding: const EdgeInsets.all(12),
-      decoration: _cardDecoration(),
       child: categoriesState.when(
         data: (categories) {
           if (categories.isEmpty) {
@@ -321,9 +315,8 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
   }
 
   Widget _buildWeightCard() {
-    return Container(
+    return SurfaceCard(
       padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
       child: TextFormField(
         controller: _weightController,
         style: const TextStyle(fontSize: 16, fontFeatures: _tabular),
@@ -387,14 +380,11 @@ class _InfoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.mintSoftBackground,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.mintAccent),
-      ),
-      child: const Row(
+    return const SurfaceCard(
+      radius: _innerRadius,
+      color: AppColors.mintSoftBackground,
+      padding: EdgeInsets.all(16),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
@@ -441,21 +431,18 @@ class _CategoryTile extends StatelessWidget {
     return Semantics(
       button: true,
       selected: isSelected,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryMain.withValues(alpha: 0.10)
-              : AppColors.background,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryMain : AppColors.borderLine,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
+      child: SurfaceCard(
+        radius: _innerRadius,
+        tone: SurfaceTone.subtle,
+        // Tile terpilih ditandai tint, centang, dan warna teks. Border tetap
+        // 1 px netral dari `SurfaceCard` agar seragam dengan panel lain.
+        color: isSelected
+            ? AppColors.primaryMain.withValues(alpha: 0.14)
+            : null,
+        padding: EdgeInsets.zero,
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(_innerRadius),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
@@ -541,9 +528,9 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
+      radius: _cardRadius,
       padding: const EdgeInsets.all(20),
-      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

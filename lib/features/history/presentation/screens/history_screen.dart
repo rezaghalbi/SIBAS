@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/content_width.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/transaction_provider.dart';
@@ -331,13 +332,8 @@ class _HistoryEmpty extends StatelessWidget {
   Widget build(BuildContext context) {
     final isAll = filter == 'Semua';
 
-    return Container(
+    return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
       child: Column(
         children: [
           Container(
@@ -427,13 +423,8 @@ class _HistoryError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
       child: Column(
         children: [
           Container(

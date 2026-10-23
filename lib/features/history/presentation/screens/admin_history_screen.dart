@@ -5,6 +5,7 @@ import '../../../../core/constants/colors.dart';
 import '../../../../core/utils/status_helper.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../verification/data/csv_export.dart';
 import '../../../verification/data/csv_download_stub.dart'
@@ -466,14 +467,12 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
           ),
         ),
         if (reason.isNotEmpty)
-          Container(
-            width: double.infinity,
+          SurfaceCard(
             margin: const EdgeInsets.only(bottom: 12),
+            tone: SurfaceTone.subtle,
+            radius: 16,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.statusRejectedBg,
-              borderRadius: BorderRadius.circular(12),
-            ),
+            color: AppColors.statusRejectedBg,
             child: Text(
               'Alasan ditolak: $reason',
               style: const TextStyle(
@@ -630,65 +629,62 @@ class _StateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = actionLabel;
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.mintSoftBackground,
-              borderRadius: BorderRadius.circular(20),
+      child: SurfaceCard(
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        child: Column(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.mintSoftBackground,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(icon, size: 30, color: AppColors.primaryMain),
             ),
-            child: Icon(icon, size: 30, color: AppColors.primaryMain),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: _sectionTitle,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12.5,
-              height: 1.5,
-              color: AppColors.textMuted,
-            ),
-          ),
-          if (label != null && onAction != null) ...[
             const SizedBox(height: 16),
-            SizedBox(
-              height: _touchTarget,
-              child: OutlinedButton.icon(
-                onPressed: onAction,
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: Text(label),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primaryMain,
-                  side: const BorderSide(color: AppColors.borderLine),
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: _sectionTitle,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: AppColors.textMuted,
+              ),
+            ),
+            if (label != null && onAction != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                height: _touchTarget,
+                child: OutlinedButton.icon(
+                  onPressed: onAction,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text(label),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryMain,
+                    side: const BorderSide(color: AppColors.borderLine),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -700,27 +696,24 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return const SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: const Column(
-        children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(strokeWidth: 2.5),
-          ),
-          SizedBox(height: 12),
-          Text(
-            'Memuat riwayat...',
-            style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
-          ),
-        ],
+      child: SurfaceCard(
+        padding: EdgeInsets.all(32),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Memuat riwayat...',
+              style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+            ),
+          ],
+        ),
       ),
     );
   }

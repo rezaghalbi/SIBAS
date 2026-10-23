@@ -6,6 +6,7 @@ import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/saldo_hero_card.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../deposit/presentation/providers/deposit_provider.dart';
@@ -39,21 +40,12 @@ const TextStyle _sectionTitle = TextStyle(
 /// Angka uang, berat, dan hitungan memakai lebar digit tetap (§3).
 const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
 
-/// Kartu konten solid. Kaca hanya untuk lapisan mengambang (§7.1), jadi
-/// panel pengajuan dan aktivitas tidak memakai `GlassPanel`.
-BoxDecoration _cardDecoration({Color? color, double radius = _cardRadius}) {
-  return BoxDecoration(
-    color: color ?? AppColors.cardSurface,
-    borderRadius: BorderRadius.circular(radius),
-    border: Border.all(color: AppColors.borderLine),
-  );
-}
-
 /// Halaman Dashboard Utama Mahasiswa dengan tampilan SIBAS Glass 2.0.
 ///
 /// Sesuai §7.1, kaca hanya dipakai lapisan mengambang: satu-satunya
 /// `BackdropFilter` di layar ini berasal dari panel saldo di dalam hero.
-/// Kartu konten memakai permukaan solid agar data mudah dibaca.
+/// Kartu konten memakai `SurfaceCard` (kaca statis, tanpa blur) agar satu
+/// bahasa dengan layar lain.
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
@@ -264,7 +256,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
             loading: () => const SliverToBoxAdapter(
               child: _Section(
-                child: _SolidCard(
+                child: SurfaceCard(
                   padding: EdgeInsets.symmetric(vertical: 32),
                   child: Center(
                     child: SizedBox(
@@ -278,7 +270,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
             error: (err, _) => SliverToBoxAdapter(
               child: _Section(
-                child: _SolidCard(
+                child: SurfaceCard(
                   color: AppColors.statusRejectedBg,
                   child: Text(
                     'Gagal memuat aktivitas: $err',
@@ -336,29 +328,11 @@ class _WidthLimit extends StatelessWidget {
   }
 }
 
-/// Kartu konten solid: border tipis, tanpa blur dan tanpa bayangan (§5).
-class _SolidCard extends StatelessWidget {
-  const _SolidCard({
-    required this.child,
-    this.padding = const EdgeInsets.all(16),
-    this.color,
-  });
-
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: _cardDecoration(color: color),
-      child: child,
-    );
-  }
-}
-
 /// Baris ringkas menuju riwayat saat ada pengajuan menunggu.
+///
+/// Panel status memakai `SurfaceCard` berwarna `statusPendingBg` supaya
+/// border, highlight, dan sudutnya mengikuti resep yang sama dengan kartu
+/// konten lain.
 class _PendingBanner extends StatelessWidget {
   const _PendingBanner({required this.count, required this.onTap});
 
@@ -367,8 +341,10 @@ class _PendingBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: _cardDecoration(radius: _rowRadius),
+    return SurfaceCard(
+      radius: _rowRadius,
+      color: AppColors.statusPendingBg,
+      padding: EdgeInsets.zero,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(_rowRadius),
@@ -384,7 +360,9 @@ class _PendingBanner extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: AppColors.statusPendingBg,
+                    // Chip ikon di atas panel amber: putih tipis agar ikon
+                    // tetap terbaca tanpa warna baru.
+                    color: Colors.white.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -420,7 +398,11 @@ class _PendingBanner extends StatelessWidget {
   }
 }
 
-/// Judul seksi dan daftar transaksi terakhir di dalam satu kartu solid.
+/// Judul seksi dan daftar transaksi terakhir dalam satu panel pengelompok.
+///
+/// Baris transaksi (`TxListItem`) sudah berupa kartu solid, jadi panel
+/// pembungkusnya memakai tone `subtle`: tidak ada kartu di dalam kartu yang
+/// bertumpuk putih.
 class _ActivitySection extends StatelessWidget {
   const _ActivitySection({
     required this.items,
@@ -434,7 +416,9 @@ class _ActivitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SolidCard(
+    return SurfaceCard(
+      tone: SurfaceTone.subtle,
+      radius: _cardRadius,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
