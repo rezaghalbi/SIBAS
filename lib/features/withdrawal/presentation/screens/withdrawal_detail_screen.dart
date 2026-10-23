@@ -133,6 +133,22 @@ DateTime? _date(dynamic value) =>
 
 Map? _map(dynamic value) => value is Map ? value : null;
 
+/// Angka dari JSON bisa `num` atau string (PostgREST `numeric`).
+double? _angka(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
+  return null;
+}
+
+/// Koordinat 6 desimal, mis. `-7.797068, 110.370529`. Null bila tidak
+/// lengkap, supaya baris tidak menampilkan "null".
+String? _koordinat(Map? lokasi) {
+  final lat = _angka(lokasi?['latitude']);
+  final lng = _angka(lokasi?['longitude']);
+  if (lat == null || lng == null) return null;
+  return '${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}';
+}
+
 String _statusLabel(String status) => switch (status.toUpperCase()) {
       'APPROVED' => 'Disetujui',
       'REJECTED' => 'Ditolak',
@@ -241,6 +257,7 @@ class _DetailBody extends StatelessWidget {
     final verifierName = _text(verifikator?['full_name']);
     final lokasiNama = _text(lokasi?['name']);
     final lokasiAlamat = _text(lokasi?['address']);
+    final lokasiKoordinat = _koordinat(lokasi);
 
     final verifierLabel = switch (status.toUpperCase()) {
       'APPROVED' => 'Disetujui oleh',
@@ -297,7 +314,11 @@ class _DetailBody extends StatelessWidget {
                   isLast: lokasiNama == null,
                 ),
               if (lokasiNama != null)
-                _LocationRow(nama: lokasiNama, alamat: lokasiAlamat),
+                _LocationRow(
+                  nama: lokasiNama,
+                  alamat: lokasiAlamat,
+                  koordinat: lokasiKoordinat,
+                ),
             ],
           ),
         ),
@@ -517,11 +538,13 @@ class _InfoRow extends StatelessWidget {
 }
 
 /// Lokasi pengambilan; hanya dirender bila `detail_penarikan` membawanya.
+/// Koordinat ditampilkan sebagai teks biasa, bukan peta.
 class _LocationRow extends StatelessWidget {
   final String nama;
   final String? alamat;
+  final String? koordinat;
 
-  const _LocationRow({required this.nama, this.alamat});
+  const _LocationRow({required this.nama, this.alamat, this.koordinat});
 
   @override
   Widget build(BuildContext context) {
@@ -574,6 +597,18 @@ class _LocationRow extends StatelessWidget {
                           fontSize: 12,
                           height: 1.4,
                           color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                    if (koordinat != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Koordinat $koordinat',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: AppColors.textMuted,
+                          fontFeatures: _numbers,
                         ),
                       ),
                     ],

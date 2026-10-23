@@ -240,6 +240,12 @@ class _DetailBody extends StatelessWidget {
     final mahasiswa = row['mahasiswa'];
     final studentName = mahasiswa is Map ? _text(mahasiswa['full_name']) : null;
     final studentNim = mahasiswa is Map ? _text(mahasiswa['nim']) : null;
+    // Objek `location` berasal dari RPC `detail_transaksi`; data lama bisa
+    // null sehingga baris lokasi tidak dirender sama sekali.
+    final lokasi = row['location'];
+    final lokasiMap = lokasi is Map ? lokasi : null;
+    final lokasiNama = _text(lokasiMap?['name']);
+    final lokasiAlamat = _text(lokasiMap?['address']);
     final rejectionReason = _text(row['rejection_reason']);
     final audits = row['audits'];
     // QR hanya relevan selama menunggu verifikasi; kedaluwarsa tetap boleh
@@ -312,8 +318,15 @@ class _DetailBody extends StatelessWidget {
                 numbers: true,
                 emphasis: finalAmount != null,
                 muted: finalAmount == null,
-                isLast: true,
+                isLast: lokasiNama == null,
               ),
+              if (lokasiNama != null)
+                _InfoRow(
+                  label: 'Lokasi',
+                  value: lokasiNama,
+                  secondary: lokasiAlamat,
+                  isLast: true,
+                ),
             ],
           ),
         ),
@@ -499,6 +512,9 @@ class _StudentBlock extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
+
+  /// Baris kedua yang lebih redup, mis. alamat di bawah nama lokasi.
+  final String? secondary;
   final bool numbers;
   final bool mono;
   final bool muted;
@@ -508,6 +524,7 @@ class _InfoRow extends StatelessWidget {
   const _InfoRow({
     required this.label,
     required this.value,
+    this.secondary,
     this.numbers = false,
     this.mono = false,
     this.muted = false,
@@ -542,18 +559,35 @@ class _InfoRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 13.5,
-                height: 1.4,
-                fontFamily: mono ? 'monospace' : null,
-                letterSpacing: mono ? 0.2 : 0,
-                fontWeight: muted ? FontWeight.w500 : FontWeight.w700,
-                color: valueColor,
-                fontFeatures: numbers ? _tabularFigures : null,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.4,
+                    fontFamily: mono ? 'monospace' : null,
+                    letterSpacing: mono ? 0.2 : 0,
+                    fontWeight: muted ? FontWeight.w500 : FontWeight.w700,
+                    color: valueColor,
+                    fontFeatures: numbers ? _tabularFigures : null,
+                  ),
+                ),
+                if (secondary != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    secondary!,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],

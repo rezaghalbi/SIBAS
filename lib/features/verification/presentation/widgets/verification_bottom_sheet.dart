@@ -3,8 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../bank_location/presentation/providers/bank_location_provider.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 import '../providers/verification_provider.dart';
+
+/// Teks lokasi dari payload; string kosong dianggap tidak ada.
+String? _teksLokasi(Object? nilai) {
+  final teks = nilai?.toString().trim();
+  return (teks == null || teks.isEmpty) ? null : teks;
+}
 
 /// Modal Bottom Sheet untuk memvalidasi transaksi via RPC Supabase
 class VerificationBottomSheet extends ConsumerStatefulWidget {
@@ -168,6 +175,21 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
     final submittedWeight = (widget.transactionData['weight'] as num?)?.toDouble() ?? 0.0;
     final txId = (widget.transactionData['id'] as String?) ?? '';
 
+    // Lokasi: objek `location` dari RPC, atau `location_id` pada baris daftar.
+    // Null berarti data lama / payload tanpa lokasi, baris tidak dirender.
+    final lokasiPayload = widget.transactionData['location'];
+    final lokasiMap = lokasiPayload is Map ? lokasiPayload : null;
+    final lokasiId = _teksLokasi(widget.transactionData['location_id']);
+    final daftarLokasi = ref.watch(bankLocationsProvider).valueOrNull;
+    String? lokasiNama = _teksLokasi(lokasiMap?['name']);
+    if (lokasiNama == null && lokasiId != null && daftarLokasi != null) {
+      for (final lokasi in daftarLokasi) {
+        if (lokasi.id != lokasiId) continue;
+        lokasiNama = _teksLokasi(lokasi.name);
+        break;
+      }
+    }
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -248,6 +270,47 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
               ),
             ),
             const SizedBox(height: 16),
+
+            // Lokasi setoran hanya tampil bila payload memuatnya.
+            if (lokasiNama != null) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.place_outlined,
+                    size: 18,
+                    color: AppColors.primaryMain,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Lokasi Setoran',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            height: 1.3,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          lokasiNama,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            height: 1.4,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // ID Transaksi
             Text(
