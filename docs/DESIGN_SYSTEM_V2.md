@@ -520,6 +520,7 @@ Daftarkan untuk semua platform. Hapus `CupertinoPageTransitionsBuilder` setelah 
 | 0 | Baseline screenshot 360/768/1280, light/dark | — | Simpan bukti |
 | 1 | Meta web: viewport, theme-color media, safe area | `web/index.html` | CI `Analyze & Test` |
 | 2 | Token + `AppPalette` + dark theme; `ThemeMode` dipegang `light` sampai tahap 5 | `core/theme/app_palette.dart`, `theme.dart`, `main.dart` | Light tidak berubah perilaku |
+| 2b | Sakelar tema (Terang/Gelap/Sistem) + `SibasColors` untuk layar lama | `theme_mode_controller.dart`, `profile_screen.dart` | Mode gelap dicek di preview |
 | 3 | `GlassPanel` tone + hero saldo | `glass_panel.dart`, hero | Maks. 2 blur/layar |
 | 4 | `AdaptiveShell` + rail + sheet Tarik | `app_router.dart`, nav | 900 px, deep link |
 | 5 | Layar: dashboard, setor, riwayat, profil | `features/*/presentation` | 360/768/1280 |
@@ -533,8 +534,8 @@ Satu tahap = satu PR. Jangan campur refactor tema dengan perubahan perilaku form
 
 | Gap | Bukti | Dampak |
 |---|---|---|
-| Belum ada palet dark | `lib/core/constants/colors.dart` hanya light | Dark mode tidak bisa dikirim |
-| Hanya tema light | `AppTheme.lightTheme`; `main.dart` tanpa `darkTheme`/`themeMode` | Tidak ada mode sistem |
+| ~~Belum ada palet dark~~ | Selesai: `AppPalette` + `SibasColors` | — |
+| ~~Hanya tema light~~ | Selesai: `darkTheme` + `themeModeProvider` | — |
 | `GlassPanel` tanpa tone | `glass_panel.dart` hanya `tint` + `isDark` | Nav/sheet rawan kontras |
 | Hero lama hardcoded putih, full-bleed | `hero_header.dart` | Tidak cocok dengan hero inset |
 | Nav bawah saja | `app_bottom_nav.dart` | Desktop tanpa rail |
@@ -544,7 +545,7 @@ Satu tahap = satu PR. Jangan campur refactor tema dengan perubahan perilaku form
 
 Keputusan yang perlu disetujui:
 
-1. **Penyimpanan tema manual**: tambah `shared_preferences`, pakai storage yang sudah ada, atau kirim `ThemeMode.system` dulu tanpa pilihan manual.
+1. ~~Penyimpanan tema manual~~ — **diputuskan**: `shared_preferences` lewat `themeModeProvider`, pilihan Terang/Gelap/Sistem di Profil.
 2. **Model hero**: pertahankan hero inset seperti prototipe (mengganti `HeroHeader` full-bleed) atau hero tetap menempel atas.
 3. **Font**: system SF di web saja, atau Plus Jakarta Sans di semua platform. Ini memengaruhi rasa Apple vs konsistensi merek.
 4. **Ambang tint kaca**: setujui `.20 → .06` dan perbarui `AGENTS.md` dari `.15 → .05`.

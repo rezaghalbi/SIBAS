@@ -1,5 +1,40 @@
 # LOG PROGRESS
 
+## 2026-10-23 — Lokasi bank sampah, bahasa visual kaca, dan mode gelap
+
+**Lokasi bank sampah**
+- Migration `20261034000000` **diterapkan ke remote** `urhgqecrmyxzutvfowhm`:
+  tabel `bank_locations`, kolom `location_id` pada `transactions`/`withdrawals`
+  (backfill ke lokasi default), RLS, serta RPC `get_locations`,
+  `simpan_lokasi`, `hapus_lokasi`. Verifikasi SQL: 1 lokasi, 0 transaksi dan
+  0 penarikan tanpa lokasi.
+- `create_deposit`/`create_withdrawal` menerima `p_location_id` (null → lokasi
+  aktif pertama, nonaktif ditolak) dan mencatat nama lokasi di audit.
+  `detail_transaksi`, `detail_penarikan`, `tarik_by_qr` mengembalikan
+  `location`.
+- Flutter: pemilih lokasi wajib di setor dan tarik, layar `/admin/locations`,
+  pintasan dashboard, lokasi di QR/detail/pratinjau verifikasi, kolom `Lokasi`
+  di CSV, dan embed `location:bank_locations(...)` pada query daftar.
+
+**Bahasa visual kaca**
+- `SurfaceCard` (tone `card`/`subtle`) untuk semua kartu konten; `GlassPanel`
+  hanya hero, nav, dan sheet. Semua border 1.0 px. AGENTS, skill, dan
+  `DESIGN_SYSTEM_V2.md` §7 diselaraskan.
+
+**Mode gelap**
+- `SibasColors` menggantikan `AppColors` di layar, sheet, dan widget bersama.
+- `themeModeProvider` + `shared_preferences`; kartu Tampilan (Terang/Gelap/
+  Sistem) di Profil; `main.dart` meneruskan mode ke tema dan `SibasColors`.
+- `Analyze & Test` `39913848869` hijau, `Build + Vercel` `39913848864` hijau
+  (`991280d`). Preview
+  `https://sibas-97gu0auh2-rezaghalbis-projects.vercel.app`.
+
+**Catatan**
+- Verifikasi visual mode gelap masih manual di preview.
+- Subagent tidak bisa dipakai (saldo provider), pekerjaan migrasi dikerjakan
+  langsung dengan skrip terverifikasi CI.
+
+
 ## 2026-10-23 — Glass 2.0 tahap 5 batch 1: layar mahasiswa
 
 **Layar** (semua tetap `AppColors`, mode gelap belum diaktifkan)
