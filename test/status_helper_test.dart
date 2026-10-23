@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sibas/core/constants/colors.dart';
+import 'package:sibas/core/theme/app_palette.dart';
 import 'package:sibas/core/utils/status_helper.dart';
 
 void main() {
@@ -55,24 +55,24 @@ void main() {
     test('warna mengikuti palet status', () {
       expect(
         TransactionStatusHelper.getStatusColor('PENDING'),
-        AppColors.statusPending,
+        AppStatusColors.light.pendingText,
       );
       expect(
         TransactionStatusHelper.getStatusColor('APPROVED'),
-        AppColors.statusApproved,
+        AppStatusColors.light.approvedText,
       );
       expect(
         TransactionStatusHelper.getStatusColor('REJECTED'),
-        AppColors.statusRejected,
+        AppStatusColors.light.rejectedText,
       );
       expect(
         TransactionStatusHelper.getStatusColor('EXPIRED'),
-        AppColors.statusExpired,
+        AppStatusColors.light.neutralText,
       );
       // null ikut pending
       expect(
         TransactionStatusHelper.getStatusColor(null),
-        AppColors.statusPending,
+        AppStatusColors.light.pendingText,
       );
     });
   });
