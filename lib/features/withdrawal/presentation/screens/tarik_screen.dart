@@ -1,3 +1,5 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/network/api_guard.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -20,6 +23,30 @@ final _currency = NumberFormat.currency(
 );
 
 final _shortDate = DateFormat('dd MMM yyyy', 'id_ID');
+
+/// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
+const TextStyle _sectionTitle = TextStyle(
+  fontSize: 15.5,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -0.2,
+  height: 1.25,
+  color: AppColors.textPrimary,
+);
+
+/// Uang dan berat selalu tabular agar kolom tidak bergeser (§3).
+const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
+
+/// Lebar kolom konten. Form nominal tidak perlu selebar halaman (§8).
+const double _contentMaxWidth = 640;
+
+/// Kartu konten solid; kaca hanya untuk hero saldo (§7.1).
+BoxDecoration _cardDecoration() {
+  return BoxDecoration(
+    color: AppColors.cardSurface,
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: AppColors.borderLine),
+  );
+}
 
 /// Pengajuan pencairan saldo tabungan sampah beserta riwayat penarikannya.
 class TarikScreen extends ConsumerStatefulWidget {
@@ -121,153 +148,44 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
-            child: HeroHeader(
-              title: 'Tarik Dana',
-              subtitle: 'Pencairan saldo tabungan sampah',
-              trailing: const _BackButton(),
-              bottomContent: _BalancePanel(
-                state: balanceState,
-                balance: balance,
-                onRetry: () => ref.invalidate(availableBalanceProvider),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.cardSurface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.borderLine),
+            // Hero ikut kolom 640 px agar tepinya sejajar dengan kartu form.
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: _contentMaxWidth,
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Ajukan Penarikan',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Masukkan nominal yang ingin ditarik.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _amountController,
-                        enabled: !isSubmitting,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _submit(),
-                        onChanged: (_) {
-                          if (_error != null) setState(() => _error = null);
-                        },
-                        validator: _validateAmount,
-                        decoration: const InputDecoration(
-                          labelText: 'Nominal Penarikan',
-                          prefixText: 'Rp ',
-                          hintText: 'Contoh: 50000',
-                        ),
-                      ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 12),
-                        _ErrorNote(message: _error!),
-                      ],
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: ElevatedButton(
-                              onPressed: (isSubmitting || !balanceReady)
-                                  ? null
-                                  : _submit,
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
-                                  horizontal: 8,
-                                ),
-                              ),
-                              child: isSubmitting
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Ajukan Penarikan',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(fontSize: 13),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            flex: 2,
-                            child: OutlinedButton(
-                              onPressed: (isSubmitting ||
-                                      !balanceReady ||
-                                      balance <= 0)
-                                  ? null
-                                  : () => _fillAll(balance),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 13,
-                                  horizontal: 8,
-                                ),
-                              ),
-                              child: const Text(
-                                'Tarik Semua',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 13),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Pengajuan diperiksa admin sebelum dana dicairkan.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
+                child: HeroHeader(
+                  title: 'Tarik Dana',
+                  subtitle: 'Pencairan saldo tabungan sampah',
+                  trailing: const _BackButton(),
+                  bottomContent: _BalancePanel(
+                    state: balanceState,
+                    balance: balance,
+                    onRetry: () => ref.invalidate(availableBalanceProvider),
                   ),
                 ),
               ),
             ),
           ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
-              child: Text(
-                'Riwayat Penarikan',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+          SliverToBoxAdapter(
+            child: ContentWidth(
+              maxWidth: _contentMaxWidth,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: _buildFormCard(
+                  balance: balance,
+                  balanceReady: balanceReady,
+                  isSubmitting: isSubmitting,
                 ),
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(
+            child: ContentWidth(
+              maxWidth: _contentMaxWidth,
+              child: Padding(
+                padding: EdgeInsets.only(top: 24, bottom: 12),
+                child: Text('Riwayat Penarikan', style: _sectionTitle),
               ),
             ),
           ),
@@ -282,29 +200,172 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
             ],
             error: (_, __) => [
               SliverToBoxAdapter(
-                child: _HistoryError(
-                  onRetry: () => ref.invalidate(studentWithdrawalsProvider),
+                child: ContentWidth(
+                  maxWidth: _contentMaxWidth,
+                  child: _HistoryError(
+                    onRetry: () => ref.invalidate(studentWithdrawalsProvider),
+                  ),
                 ),
               ),
             ],
             data: (items) => items.isEmpty
                 ? [
-                    const SliverToBoxAdapter(child: _EmptyHistory()),
+                    const SliverToBoxAdapter(
+                      child: ContentWidth(
+                        maxWidth: _contentMaxWidth,
+                        child: _EmptyHistory(),
+                      ),
+                    ),
                   ]
                 : [
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) =>
-                              _WithdrawalTile(withdrawal: items[index]),
-                          childCount: items.length,
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => ContentWidth(
+                          maxWidth: _contentMaxWidth,
+                          child: _WithdrawalTile(
+                            withdrawal: items[index],
+                          ),
                         ),
+                        childCount: items.length,
                       ),
                     ),
                   ],
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 32 + MediaQuery.paddingOf(context).bottom,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormCard({
+    required double balance,
+    required bool balanceReady,
+    required bool isSubmitting,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: _cardDecoration(),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Ajukan Penarikan', style: _sectionTitle),
+            const SizedBox(height: 4),
+            const Text(
+              'Masukkan nominal yang ingin ditarik.',
+              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            ),
+            if (balanceReady) ...[
+              const SizedBox(height: 12),
+              _BalanceHint(balance: balance),
+            ],
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _amountController,
+              enabled: !isSubmitting,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              textInputAction: TextInputAction.done,
+              style: const TextStyle(fontSize: 16, fontFeatures: _tabular),
+              onFieldSubmitted: (_) => _submit(),
+              onChanged: (_) {
+                if (_error != null) setState(() => _error = null);
+              },
+              validator: _validateAmount,
+              decoration: const InputDecoration(
+                labelText: 'Nominal Penarikan',
+                prefixText: 'Rp ',
+                hintText: 'Contoh: 50000',
+              ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              _ErrorNote(message: _error!),
+            ],
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: (isSubmitting || !balanceReady) ? null : _submit,
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Ajukan Penarikan'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                onPressed: (isSubmitting || !balanceReady || balance <= 0)
+                    ? null
+                    : () => _fillAll(balance),
+                child: const Text('Tarik Semua'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Pengajuan diperiksa admin sebelum dana dicairkan.',
+              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Saldo tersedia tepat di atas field, agar tetap terbaca saat hero
+/// sudah tergulir ke atas.
+class _BalanceHint extends StatelessWidget {
+  final double balance;
+
+  const _BalanceHint({required this.balance});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.mintSoftBackground,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 16,
+            color: AppColors.primaryDark,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Saldo tersedia: ${_currency.format(balance)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                fontFeatures: _tabular,
+                color: AppColors.primaryDark,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -328,6 +389,8 @@ class _BalancePanel extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: GlassPanel(
+        // Panel ini memang menutupi gradien hero, jadi tetap kaca (§7.1).
+        tone: GlassTone.hero,
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,7 +452,7 @@ class _BalancePanel extends StatelessWidget {
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 0),
+                      minimumSize: const Size(0, 44),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     icon: const Icon(Icons.refresh_rounded, size: 16),
@@ -414,6 +477,7 @@ class _BalancePanel extends StatelessWidget {
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
+                    fontFeatures: _tabular,
                   ),
                 ),
               ),
@@ -448,7 +512,7 @@ class _WithdrawalTile extends StatelessWidget {
         color: AppColors.cardSurface,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: AppColors.borderLine),
         ),
         child: InkWell(
@@ -465,7 +529,7 @@ class _WithdrawalTile extends StatelessWidget {
                       height: 44,
                       decoration: BoxDecoration(
                         color: AppColors.mintSoftBackground,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
                         Icons.payments_rounded,
@@ -483,6 +547,7 @@ class _WithdrawalTile extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
+                              fontFeatures: _tabular,
                               color: AppColors.textPrimary,
                             ),
                           ),
@@ -519,7 +584,7 @@ class _WithdrawalTile extends StatelessWidget {
                         status: withdrawal.status,
                       ),
                       style: TextButton.styleFrom(
-                        minimumSize: const Size(0, 40),
+                        minimumSize: const Size(0, 44),
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         foregroundColor: AppColors.primaryMain,
                         textStyle: const TextStyle(
@@ -558,17 +623,12 @@ class _EmptyHistory extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderLine),
-      ),
+      decoration: _cardDecoration(),
       child: const Text(
         'Belum ada pengajuan penarikan.',
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+        style: TextStyle(fontSize: 13, color: AppColors.textMuted),
       ),
     );
   }
@@ -582,7 +642,6 @@ class _HistoryError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.statusRejectedBg,
