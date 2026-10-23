@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../utils/status_helper.dart';
 import 'status_badge.dart';
 
@@ -59,6 +59,8 @@ class TxListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
     final currencyFormat = NumberFormat.currency(
       locale: 'id_ID',
@@ -75,9 +77,9 @@ class TxListItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.cardSurface,
+        color: p.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine, width: 1.0),
+        border: Border.all(color: p.border, width: 1.0),
       ),
       child: Material(
         color: Colors.transparent,
@@ -97,12 +99,12 @@ class TxListItem extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: AppColors.mintSoftBackground,
+                        color: p.mintWash,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
                         _getCategoryIcon(categoryName),
-                        color: AppColors.primaryMain,
+                        color: p.leaf,
                         size: 24,
                       ),
                     ),
@@ -115,10 +117,10 @@ class TxListItem extends StatelessWidget {
                         children: [
                           Text(
                             categoryName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: p.text,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -127,10 +129,10 @@ class TxListItem extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               'NIM: $nim',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textMuted,
+                                color: p.muted,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -139,18 +141,18 @@ class TxListItem extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             dateFormat.format(createdAt),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textMuted,
+                              color: p.muted,
                             ),
                           ),
                           if (verifiedAt != null) ...[
                             const SizedBox(height: 2),
                             Text(
                               'Diverifikasi ${dateFormat.format(verifiedAt!)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.textMuted,
+                                color: p.muted,
                               ),
                             ),
                           ],
@@ -177,10 +179,10 @@ class TxListItem extends StatelessWidget {
                             children: [
                               Text(
                                 '${weightKg.toStringAsFixed(1)} kg',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
+                                  color: p.text,
                                   fontFeatures: nominal,
                                 ),
                               ),
@@ -191,10 +193,10 @@ class TxListItem extends StatelessWidget {
                                     '• ${currencyFormat.format(amountRp)}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.primaryMain,
+                                      color: p.leaf,
                                       fontFeatures: nominal,
                                     ),
                                   ),
@@ -221,7 +223,7 @@ class TxListItem extends StatelessWidget {
                       icon: const Icon(Icons.qr_code_2_rounded, size: 18),
                       label: const Text('Tampilkan QR'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryMain,
+                        foregroundColor: p.leaf,
                         minimumSize: const Size(0, 40),
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -230,7 +232,7 @@ class TxListItem extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                         side: BorderSide(
-                          color: AppColors.primaryMain.withValues(alpha: 0.45),
+                          color: p.leaf.withValues(alpha: 0.45),
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

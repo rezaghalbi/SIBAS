@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -18,17 +18,17 @@ const double _touch = 44;
 const double _maxContentWidth = 1120;
 
 /// Field 16 px agar Safari iOS tidak memperbesar halaman (§9).
-const TextStyle _fieldText = TextStyle(
+TextStyle _fieldText = TextStyle(
   fontSize: 16,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Pengaturan global aplikasi: masa berlaku QR dan kontak admin.
@@ -74,11 +74,13 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final state = ref.watch(appSettingsProvider);
     final inset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -164,6 +166,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
   /// CTA 48 px; di mobile mengisi lebar form, di desktop dibatasi 280 px.
   Widget _tombolSimpan() {
+    final p = AppPalette.of(context);
     return Align(
       alignment: Alignment.centerLeft,
       child: ConstrainedBox(
@@ -173,10 +176,10 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
           child: FilledButton(
             onPressed: _menyimpan ? null : _simpan,
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primaryMain,
+              backgroundColor: p.leaf,
               foregroundColor: Colors.white,
               disabledBackgroundColor:
-                  AppColors.primaryMain.withValues(alpha: 0.5),
+                  p.leaf.withValues(alpha: 0.5),
               disabledForegroundColor: Colors.white,
               elevation: 0,
               minimumSize: const Size(0, 48),
@@ -206,6 +209,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _kartuTtl() {
+    final p = AppPalette.of(context);
     return SurfaceCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -213,12 +217,12 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         children: [
           _labelSeksi(Icons.timer_outlined, 'Masa Berlaku QR'),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Batas waktu satu QR setoran sebelum kedaluwarsa.',
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -244,6 +248,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _kartuKontak() {
+    final p = AppPalette.of(context);
     return SurfaceCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -251,12 +256,12 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         children: [
           _labelSeksi(Icons.support_agent_rounded, 'Kontak Admin'),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Ditampilkan ke mahasiswa saat butuh bantuan.',
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -302,7 +307,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          const SurfaceCard(
+          SurfaceCard(
             tone: SurfaceTone.subtle,
             radius: 12,
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -312,7 +317,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 Icon(
                   Icons.info_outline_rounded,
                   size: 16,
-                  color: AppColors.primaryMain,
+                  color: p.leaf,
                 ),
                 SizedBox(width: 8),
                 Expanded(
@@ -323,7 +328,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                     style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                     ),
                   ),
                 ),
@@ -336,16 +341,17 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _labelSeksi(IconData icon, String teks) {
+    final p = AppPalette.of(context);
     return Row(
       children: [
         Container(
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: AppColors.mintSoftBackground,
+            color: p.mintWash,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 17, color: AppColors.primaryMain),
+          child: Icon(icon, size: 17, color: p.leaf),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -361,13 +367,14 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _pesanBanner() {
+    final warna = AppStatusColors.of(p.brightness);
     final sukses = _pesanSukses;
     final ink = sukses
-        ? AppColors.statusApprovedText
-        : AppColors.statusRejectedText;
+        ? warna.approvedText
+        : warna.rejectedText;
     final surface = sukses
-        ? AppColors.statusApprovedBg
-        : AppColors.statusRejectedBg;
+        ? warna.approvedBackground
+        : warna.rejectedBackground;
 
     return SurfaceCard(
       tone: SurfaceTone.subtle,
@@ -408,6 +415,8 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   }
 
   Widget _kartuGalat(Object error) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       child: Column(
@@ -416,33 +425,33 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.statusRejectedBg,
+              color: warna.rejectedBackground,
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
               Icons.cloud_off_rounded,
               size: 26,
-              color: AppColors.danger,
+              color: warna.badText,
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'Gagal memuat pengaturan',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             pesanKesalahan(error),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -454,8 +463,8 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               label: const Text('Coba Lagi'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, _touch),
-                foregroundColor: AppColors.primaryMain,
-                side: const BorderSide(color: AppColors.borderLine),
+                foregroundColor: p.leaf,
+                side: BorderSide(color: p.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

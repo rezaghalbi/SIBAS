@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
@@ -30,6 +30,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     final userState = ref.watch(currentUserProvider);
     final metricsState = ref.watch(adminMetricsProvider);
     final txListState = ref.watch(adminTransactionsProvider);
@@ -58,7 +61,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         : 'Total ${metrics.totalWeightKg.toStringAsFixed(1)} kg';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: CustomScrollView(
         slivers: [
           // 1. Hero Header
@@ -68,6 +71,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               subtitle: 'Panel Validasi & Pengelolaan Bank Sampah',
               trailing: IconButton(
                 onPressed: () {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
                   showDialog(
                     context: context,
                     builder: (ctx) => AlertDialog(
@@ -77,10 +82,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Batal', style: TextStyle(color: AppColors.textMuted)),
+                          child: Text('Batal', style: TextStyle(color: p.muted)),
                         ),
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
+                          style: ElevatedButton.styleFrom(backgroundColor: warna.badText, foregroundColor: Colors.white),
                           onPressed: () {
                             Navigator.pop(ctx);
                             ref.read(currentUserProvider.notifier).logout();
@@ -104,9 +109,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               bottomContent: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.heroCardSurface,
+                  color: p.glassTop,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.heroCardBorder),
+                  border: Border.all(color: p.glassBorder),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -122,7 +127,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       onPressed: () => context.push('/admin/scan'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: AppColors.primaryDark,
+                        foregroundColor: p.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
@@ -140,22 +145,22 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             sliver: SliverToBoxAdapter(
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Ringkasan',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                        color: p.text,
                       ),
                     ),
                   ),
                   Text(
                     weightLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDark,
+                      color: p.primary,
                       fontFeatures: [FontFeature.tabularFigures()],
                     ),
                   ),
@@ -165,6 +170,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           ),
           SliverLayoutBuilder(
             builder: (context, constraints) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
               // 360 px → 2 kolom; desktop → tepat 4 kolom selebar konten, tanpa
               // slot kosong saat lebar jendela berubah.
               final columns = constraints.crossAxisExtent < 700 ? 2 : 4;
@@ -186,32 +193,32 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       title: 'Menunggu Validasi',
                       value: pendingLabel,
                       icon: Icons.pending_actions_rounded,
-                      iconColor: AppColors.statusPendingText,
-                      iconBackground: AppColors.statusPendingBg,
+                      iconColor: warna.pendingText,
+                      iconBackground: warna.pendingBackground,
                       onTap: () => context.push('/admin/submissions'),
                     ),
                     _DashboardShortcutTile(
                       title: 'Riwayat Transaksi',
                       value: historyLabel,
                       icon: Icons.history_rounded,
-                      iconColor: AppColors.statusApprovedText,
-                      iconBackground: AppColors.statusApprovedBg,
+                      iconColor: warna.approvedText,
+                      iconBackground: warna.approvedBackground,
                       onTap: () => context.push('/admin/history'),
                     ),
                     _DashboardShortcutTile(
                       title: 'Data Mahasiswa',
                       value: studentsLabel,
                       icon: Icons.groups_rounded,
-                      iconColor: AppColors.primaryMain,
-                      iconBackground: AppColors.mintSoftBackground,
+                      iconColor: p.leaf,
+                      iconBackground: p.mintWash,
                       onTap: () => context.push('/admin/students'),
                     ),
                     _DashboardShortcutTile(
                       title: 'Pengaturan',
                       value: settingsLabel,
                       icon: Icons.tune_rounded,
-                      iconColor: AppColors.textMuted,
-                      iconBackground: AppColors.mintSoftBackground,
+                      iconColor: p.muted,
+                      iconBackground: p.mintWash,
                       onTap: () => context.push('/admin/settings'),
                     ),
                   ]),
@@ -236,20 +243,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.mintSoftBackground,
+                        color: p.mintWash,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.category_rounded, size: 18, color: AppColors.primaryMain),
+                      child: Icon(Icons.category_rounded, size: 18, color: p.leaf),
                     ),
-                    title: const Text(
+                    title: Text(
                       'Kelola Jenis Sampah',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: p.text),
                     ),
-                    subtitle: const Text(
+                    subtitle: Text(
                       'Atur kategori dan tarif per kg',
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                      style: TextStyle(fontSize: 12, color: p.muted),
                     ),
-                    trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textMuted),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 20, color: p.muted),
                   ),
                 ),
               ),
@@ -272,34 +279,34 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.mintSoftBackground,
+                        color: p.mintWash,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.location_on_rounded,
                         size: 18,
-                        color: AppColors.primaryMain,
+                        color: p.leaf,
                       ),
                     ),
-                    title: const Text(
+                    title: Text(
                       'Lokasi Bank Sampah',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: p.text,
                       ),
                     ),
-                    subtitle: const Text(
+                    subtitle: Text(
                       'Atur titik setor dan tarik sampah',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textMuted,
+                        color: p.muted,
                       ),
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                     ),
                   ),
                 ),
@@ -314,21 +321,21 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.cardSurface,
+                  color: p.surface,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.borderLine),
+                  border: Border.all(color: p.border),
                 ),
                 child: TextField(
                   controller: _searchController,
                   onChanged: (val) {
                     ref.read(adminFilterProvider.notifier).update((f) => f.copyWith(query: val));
                   },
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     hintText: 'Cari Nama Mahasiswa, NIM, atau ID Transaksi...',
-                    prefixIcon: Icon(Icons.search_rounded, color: AppColors.primaryMain),
+                    prefixIcon: Icon(Icons.search_rounded, color: p.leaf),
                   ),
                 ),
               ),
@@ -342,9 +349,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Daftar Penyetoran Mahasiswa', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                  Text('Daftar Penyetoran Mahasiswa', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: p.text)),
                   IconButton(
-                    icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryMain),
+                    icon: Icon(Icons.refresh_rounded, color: p.leaf),
                     onPressed: () {
                       ref.invalidate(adminMetricsProvider);
                       ref.invalidate(adminTransactionsProvider);
@@ -362,16 +369,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: txListState.when(
               data: (txList) {
+    final p = AppPalette.of(context);
                 if (txList.isEmpty) {
                   return SliverToBoxAdapter(
-                    child: const SurfaceCard(
+                    child: SurfaceCard(
                       padding: EdgeInsets.all(32),
                       child: Center(
                         child: Text(
                           'Belum ada transaksi yang sesuai kriteria '
                           'pencarian.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.textMuted),
+                          style: TextStyle(color: p.muted),
                         ),
                       ),
                     ),
@@ -381,6 +389,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
+    final p = AppPalette.of(context);
                       final item = txList[index];
                       final profile = item['profiles'] as Map<String, dynamic>?;
                       final category = item['trash_types'] as Map<String, dynamic>?;
@@ -401,9 +410,9 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                           onTap: canOpen
                               ? () => context.push('/transaction/$id')
                               : null,
-                          leading: const CircleAvatar(
-                            backgroundColor: AppColors.mintSoftBackground,
-                            child: Icon(Icons.recycling_rounded, color: AppColors.primaryMain),
+                          leading: CircleAvatar(
+                            backgroundColor: p.mintWash,
+                            child: Icon(Icons.recycling_rounded, color: p.leaf),
                           ),
                           title: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -418,15 +427,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-                              Text('NIM: $nim • $catName', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                              Text('NIM: $nim • $catName', style: TextStyle(fontSize: 12, color: p.muted)),
                               const SizedBox(height: 2),
-                              Text('Berat Pengajuan: ${weight.toStringAsFixed(1)} kg', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+                              Text('Berat Pengajuan: ${weight.toStringAsFixed(1)} kg', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: p.primary)),
                             ],
                           ),
                           trailing: isPending
                               ? ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryMain,
+                                    backgroundColor: p.leaf,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
@@ -443,7 +452,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                   },
                                   child: const Text('Validasi'),
                                 )
-                              : const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                              : Icon(Icons.chevron_right_rounded, color: p.muted),
                         ),
                       );
                     },
@@ -486,6 +495,8 @@ class _DashboardShortcutTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return SurfaceCard(
       radius: _radius,
       child: Material(
@@ -512,10 +523,10 @@ class _DashboardShortcutTile extends StatelessWidget {
                       child: Icon(icon, size: 18, color: iconColor),
                     ),
                     const Spacer(),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
                       size: 18,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                     ),
                   ],
                 ),
@@ -524,10 +535,10 @@ class _DashboardShortcutTile extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -539,10 +550,10 @@ class _DashboardShortcutTile extends StatelessWidget {
                   child: Text(
                     value,
                     maxLines: 1,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: p.text,
                       fontFeatures: [FontFeature.tabularFigures()],
                     ),
                   ),

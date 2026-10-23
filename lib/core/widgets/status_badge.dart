@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../constants/colors.dart';
 
-/// Chip status dengan visual presisi sesuai prototype .antigravity/design_system.md
-/// - Menunggu Verifikasi: Text #B45309, BG #FEF3C7
-/// - Disetujui / Diterima: Text #15803D, BG #DCFCE7
-/// - Ditolak / Kedaluwarsa: Text #B91C1C, BG #FEE2E2
+import '../theme/app_palette.dart';
+
+/// Chip status yang mengikuti tema light/dark (§2.3).
+///
+/// - Menunggu Verifikasi: `pending`
+/// - Disetujui / Diterima: `approved`
+/// - Ditolak / Kedaluwarsa: `rejected`
 class StatusBadge extends StatelessWidget {
   final String status;
   final String? customLabel;
@@ -17,6 +19,10 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final palette = AppPalette.of(context);
+    final colors = AppStatusColors.of(palette.brightness);
+
     Color textColor;
     Color bgColor;
     String label;
@@ -27,30 +33,30 @@ class StatusBadge extends StatelessWidget {
       case 'APPROVED':
       case 'DITERIMA':
       case 'DISETUJUI':
-        textColor = AppColors.statusApprovedText;
-        bgColor = AppColors.statusApprovedBg;
+        textColor = colors.approvedText;
+        bgColor = colors.approvedBackground;
         label = customLabel ?? 'Disetujui';
         break;
 
       case 'REJECTED':
       case 'DITOLAK':
-        textColor = AppColors.statusRejectedText;
-        bgColor = AppColors.statusRejectedBg;
+        textColor = colors.rejectedText;
+        bgColor = colors.rejectedBackground;
         label = customLabel ?? 'Ditolak';
         break;
 
       case 'EXPIRED':
       case 'KEDALUWARSA':
-        textColor = AppColors.statusRejectedText;
-        bgColor = AppColors.statusRejectedBg;
+        textColor = colors.rejectedText;
+        bgColor = colors.rejectedBackground;
         label = customLabel ?? 'Kedaluwarsa';
         break;
 
       case 'PENDING':
       case 'MENUNGGU':
       default:
-        textColor = AppColors.statusPendingText;
-        bgColor = AppColors.statusPendingBg;
+        textColor = colors.pendingText;
+        bgColor = colors.pendingBackground;
         label = customLabel ?? 'Menunggu Verifikasi';
         break;
     }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/utils/status_helper.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -19,11 +19,11 @@ import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 const double _touchTarget = 44;
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Riwayat seluruh penyetoran (semua status) untuk Admin,
@@ -150,12 +150,14 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final txState = ref.watch(adminTransactionsProvider);
     final filter = ref.watch(adminFilterProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -322,9 +324,9 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
       constraints: const BoxConstraints(minHeight: 52),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.cardSurface,
+        color: p.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLine),
+        border: Border.all(color: p.border),
       ),
       child: TextField(
         controller: _searchController,
@@ -335,10 +337,10 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
               );
         },
         // 16 px agar Safari iOS tidak memperbesar halaman (§9).
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: p.text,
         ),
         decoration: InputDecoration(
           border: InputBorder.none,
@@ -348,13 +350,13 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
           hintText: 'Cari nama, NIM, atau kode',
           hintMaxLines: 1,
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             fontSize: 15,
-            color: AppColors.textMuted,
+            color: p.muted,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search_rounded,
-            color: AppColors.primaryMain,
+            color: p.leaf,
             size: 20,
           ),
           prefixIconConstraints: const BoxConstraints(
@@ -364,10 +366,10 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
           suffixIcon: showClear
               ? IconButton(
                   tooltip: 'Hapus pencarian',
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
                     size: 18,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                   onPressed: _clearQuery,
                 )
@@ -380,6 +382,8 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
   /// Satu baris riwayat: `TxListItem` (kolom kanan tidak terpotong) dengan
   /// catatan nama mahasiswa dan aksi validasi di bawahnya.
   Widget _historyRow(Map<String, dynamic> item) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     final profile = item['profiles'] as Map<String, dynamic>?;
     final category = item['trash_types'] as Map<String, dynamic>?;
     final name = (profile?['full_name'] as String?) ?? 'Mahasiswa';
@@ -415,10 +419,10 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
           padding: const EdgeInsets.only(bottom: 12),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.person_outline_rounded,
                 size: 14,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -426,10 +430,10 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                 ),
               ),
@@ -449,8 +453,8 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                     icon: const Icon(Icons.fact_check_outlined, size: 16),
                     label: const Text('Validasi'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryMain,
-                      side: const BorderSide(color: AppColors.borderLine),
+                      foregroundColor: p.leaf,
+                      side: BorderSide(color: p.border),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -472,13 +476,13 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
             tone: SurfaceTone.subtle,
             radius: 16,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            color: AppColors.statusRejectedBg,
+            color: warna.rejectedBackground,
             child: Text(
               'Alasan ditolak: $reason',
               style: const TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: AppColors.statusRejectedText,
+                color: warna.rejectedText,
               ),
             ),
           ),
@@ -520,6 +524,8 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Semantics(
       button: true,
       selected: selected,
@@ -528,13 +534,13 @@ class _FilterChip extends StatelessWidget {
         child: Ink(
           decoration: ShapeDecoration(
             color: selected
-                ? AppColors.primaryMain
-                : AppColors.mintSoftBackground,
+                ? p.leaf
+                : p.mintWash,
             shape: StadiumBorder(
               side: BorderSide(
                 color: selected
-                    ? AppColors.primaryMain
-                    : AppColors.borderLine,
+                    ? p.leaf
+                    : p.border,
               ),
             ),
           ),
@@ -552,7 +558,7 @@ class _FilterChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected ? Colors.white : AppColors.textPrimary,
+                  color: selected ? Colors.white : p.text,
                 ),
               ),
             ),
@@ -627,6 +633,8 @@ class _StateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final label = actionLabel;
 
     return SizedBox(
@@ -639,10 +647,10 @@ class _StateCard extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: AppColors.mintSoftBackground,
+                color: p.mintWash,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(icon, size: 30, color: AppColors.primaryMain),
+              child: Icon(icon, size: 30, color: p.leaf),
             ),
             const SizedBox(height: 16),
             Text(
@@ -654,10 +662,10 @@ class _StateCard extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
             if (label != null && onAction != null) ...[
@@ -669,8 +677,8 @@ class _StateCard extends StatelessWidget {
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: Text(label),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryMain,
-                    side: const BorderSide(color: AppColors.borderLine),
+                    foregroundColor: p.leaf,
+                    side: BorderSide(color: p.border),
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -696,7 +704,9 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    final p = AppPalette.of(context);
+
+    return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         padding: EdgeInsets.all(32),
@@ -710,7 +720,7 @@ class _LoadingCard extends StatelessWidget {
             SizedBox(height: 12),
             Text(
               'Memuat riwayat...',
-              style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 12.5, color: p.muted),
             ),
           ],
         ),

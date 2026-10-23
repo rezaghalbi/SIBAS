@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/saldo_hero_card.dart';
@@ -29,12 +29,12 @@ const double _rowRadius = 16;
 const double _touchTarget = 44;
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
   height: 1.25,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Angka uang, berat, dan hitungan memakai lebar digit tetap (§3).
@@ -51,6 +51,9 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     final userState = ref.watch(currentUserProvider);
     final recentTxState = ref.watch(recentTransactionsProvider);
 
@@ -85,7 +88,7 @@ class DashboardScreen extends ConsumerWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: CustomScrollView(
         slivers: [
           // 1. Hero header, panel saldo, dan aksi setor.
@@ -131,10 +134,10 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                                 constraints: const BoxConstraints(minWidth: 16),
                                 decoration: BoxDecoration(
-                                  color: AppColors.statusPendingBg,
+                                  color: warna.pendingBackground,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: AppColors.statusPendingText,
+                                    color: warna.pendingText,
                                   ),
                                 ),
                                 child: Text(
@@ -142,11 +145,11 @@ class DashboardScreen extends ConsumerWidget {
                                       ? '9+'
                                       : '$notificationCount',
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 10,
                                     height: 1.2,
                                     fontWeight: FontWeight.w800,
-                                    color: AppColors.statusPendingText,
+                                    color: warna.pendingText,
                                     fontFeatures: _tabular,
                                   ),
                                 ),
@@ -164,6 +167,8 @@ class DashboardScreen extends ConsumerWidget {
                         minHeight: _touchTarget,
                       ),
                       onPressed: () {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
@@ -180,16 +185,16 @@ class DashboardScreen extends ConsumerWidget {
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx),
-                                child: const Text(
+                                child: Text(
                                   'Batal',
                                   style: TextStyle(
-                                    color: AppColors.textMuted,
+                                    color: p.muted,
                                   ),
                                 ),
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.danger,
+                                  backgroundColor: warna.badText,
                                   foregroundColor: Colors.white,
                                 ),
                                 onPressed: () {
@@ -271,12 +276,12 @@ class DashboardScreen extends ConsumerWidget {
             error: (err, _) => SliverToBoxAdapter(
               child: _Section(
                 child: SurfaceCard(
-                  color: AppColors.statusRejectedBg,
+                  color: warna.rejectedBackground,
                   child: Text(
                     'Gagal memuat aktivitas: $err',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.danger,
+                      color: warna.badText,
                     ),
                   ),
                 ),
@@ -341,9 +346,13 @@ class _PendingBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
+
     return SurfaceCard(
       radius: _rowRadius,
-      color: AppColors.statusPendingBg,
+      color: warna.pendingBackground,
       padding: EdgeInsets.zero,
       child: Material(
         color: Colors.transparent,
@@ -365,29 +374,29 @@ class _PendingBanner extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.hourglass_top_rounded,
                     size: 18,
-                    color: AppColors.statusPendingText,
+                    color: warna.pendingText,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     '$count pengajuan menunggu verifikasi',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: p.text,
                       fontFeatures: _tabular,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
                   size: 20,
-                  color: AppColors.textMuted,
+                  color: p.muted,
                 ),
               ],
             ),
@@ -416,6 +425,10 @@ class _ActivitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     return SurfaceCard(
       tone: SurfaceTone.subtle,
       radius: _cardRadius,
@@ -438,7 +451,7 @@ class _ActivitySection extends StatelessWidget {
                 TextButton(
                   onPressed: onSeeAll,
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryMain,
+                    foregroundColor: p.leaf,
                     minimumSize: const Size(0, _touchTarget),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     textStyle: const TextStyle(
@@ -475,6 +488,10 @@ class _EmptyActivity extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 12, 8, 16),
       child: Column(
@@ -482,13 +499,13 @@ class _EmptyActivity extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: const BoxDecoration(
-              color: AppColors.mintSoftBackground,
+            decoration: BoxDecoration(
+              color: p.mintWash,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.inventory_2_outlined,
-              color: AppColors.primaryMain,
+              color: p.leaf,
               size: 30,
             ),
           ),
@@ -497,14 +514,14 @@ class _EmptyActivity extends StatelessWidget {
           const SizedBox(height: 4),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 300),
-            child: const Text(
+            child: Text(
               'Kumpulkan sampah daur ulang Anda dan mulailah setor untuk '
               'tabungan lingkungan.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
           ),

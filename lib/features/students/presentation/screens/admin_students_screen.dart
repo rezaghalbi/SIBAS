@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
@@ -27,11 +27,11 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Daftar akun mahasiswa untuk admin (baca saja).
@@ -75,13 +75,15 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final state = ref.watch(studentsProvider);
     final inset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: RefreshIndicator(
-        color: AppColors.primaryMain,
+        color: p.leaf,
         onRefresh: _muatUlang,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -135,6 +137,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
 
   /// Kolom pencarian: field 16 px di atas panel kaca statis.
   Widget _kolomCari() {
+    final p = AppPalette.of(context);
     return SurfaceCard(
       tone: SurfaceTone.subtle,
       radius: 16,
@@ -142,18 +145,18 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
         controller: _cari,
         onChanged: (value) => setState(() => _query = value),
         textInputAction: TextInputAction.search,
-        style: const TextStyle(fontSize: 16, color: AppColors.textPrimary),
+        style: TextStyle(fontSize: 16, color: p.text),
         decoration: InputDecoration(
           hintText: 'Cari nama, NIM, email, atau WA',
           hintMaxLines: 1,
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             fontSize: 15,
-            color: AppColors.textMuted,
+            color: p.muted,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search_rounded,
             size: 20,
-            color: AppColors.primaryMain,
+            color: p.leaf,
           ),
           prefixIconConstraints: const BoxConstraints(
             minWidth: _touch,
@@ -167,10 +170,10 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                     _cari.clear();
                     setState(() => _query = '');
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
                     size: 18,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                 ),
           filled: false,
@@ -185,6 +188,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
   }
 
   List<Widget> _isi(AsyncValue<List<StudentModel>> state) {
+    final p = AppPalette.of(context);
     return state.when<List<Widget>>(
       loading: () => [_stateSliver(_loadingCard())],
       error: (error, _) => [
@@ -199,8 +203,8 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
               label: const Text('Coba Lagi'),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, _touch),
-                foregroundColor: AppColors.primaryMain,
-                side: const BorderSide(color: AppColors.borderLine),
+                foregroundColor: p.leaf,
+                side: BorderSide(color: p.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -210,6 +214,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
         ),
       ],
       data: (semua) {
+    final p = AppPalette.of(context);
         final data = saringMahasiswa(semua, _query);
         if (data.isEmpty) {
           return [
@@ -246,10 +251,10 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                     ),
                     Text(
                       '${data.length} akun',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        color: p.muted,
                         fontFeatures: _numbers,
                       ),
                     ),
@@ -287,6 +292,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
   }
 
   Widget _kartuMahasiswa(StudentModel m) {
+    final p = AppPalette.of(context);
     final nim = (m.nim ?? '').trim();
 
     return SurfaceCard(
@@ -332,9 +338,9 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                             nim.isEmpty ? 'NIM belum diisi' : 'NIM $nim',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textMuted,
+                              color: p.muted,
                               fontFeatures: _numbers,
                             ),
                           ),
@@ -342,10 +348,10 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                     ),
                   ],
                 ),
@@ -363,7 +369,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                         child: _statistik(
                           'Saldo',
                           _currency.format(m.balance),
-                          AppColors.primaryDark,
+                          p.primary,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -371,7 +377,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                         child: _statistik(
                           'Total berat',
                           '${_berat.format(m.totalWeight)} kg',
-                          AppColors.textPrimary,
+                          p.text,
                         ),
                       ),
                     ],
@@ -386,12 +392,13 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
   }
 
   Widget _statistik(String label, String nilai, Color warna) {
+    final p = AppPalette.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11, color: p.muted),
         ),
         const SizedBox(height: 2),
         Text(
@@ -413,23 +420,24 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
     final huruf = nama.trim().isEmpty ? '?' : nama.trim()[0].toUpperCase();
     return CircleAvatar(
       radius: radius,
-      backgroundColor: AppColors.mintSoftBackground,
+      backgroundColor: p.mintWash,
       child: Text(
         huruf,
         style: TextStyle(
           fontSize: radius * 0.85,
           fontWeight: FontWeight.w800,
-          color: AppColors.primaryDark,
+          color: p.primary,
         ),
       ),
     );
   }
 
   Widget _badgeTerhapus() {
+    final warna = AppStatusColors.of(p.brightness);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
+        color: warna.rejectedBackground,
         borderRadius: BorderRadius.circular(8),
       ),
       child: const Text(
@@ -437,20 +445,21 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
         style: TextStyle(
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
-          color: AppColors.statusRejectedText,
+          color: warna.rejectedText,
         ),
       ),
     );
   }
 
   Widget _badgeStatus(StudentModel m) {
+    final warna = AppStatusColors.of(p.brightness);
     final aktif = m.deletedAt == null;
     final ink = aktif
-        ? AppColors.statusApprovedText
-        : AppColors.statusRejectedText;
+        ? warna.approvedText
+        : warna.rejectedText;
     final surface = aktif
-        ? AppColors.statusApprovedBg
-        : AppColors.statusRejectedBg;
+        ? warna.approvedBackground
+        : warna.rejectedBackground;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -483,29 +492,29 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.mintSoftBackground,
+              color: p.mintWash,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, size: 26, color: AppColors.primaryMain),
+            child: Icon(icon, size: 26, color: p.leaf),
           ),
           const SizedBox(height: 14),
           Text(
             judul,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             pesan,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           if (aksi != null) ...[const SizedBox(height: 16), aksi],
@@ -515,7 +524,8 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
   }
 
   Widget _loadingCard() {
-    return const SurfaceCard(
+    final p = AppPalette.of(context);
+    return SurfaceCard(
       padding: EdgeInsets.all(28),
       child: Column(
         children: [
@@ -527,7 +537,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
           SizedBox(height: 12),
           Text(
             'Memuat data mahasiswa...',
-            style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 12.5, color: p.muted),
           ),
         ],
       ),
@@ -535,16 +545,18 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
   }
 
   Future<void> _bukaDetail(StudentModel m) {
+    final p = AppPalette.of(context);
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.textPrimary.withValues(alpha: 0.36),
+      barrierColor: p.text.withValues(alpha: 0.36),
       builder: (ctx) => _detailSheet(ctx, m),
     );
   }
 
   Widget _detailSheet(BuildContext ctx, StudentModel m) {
+    final p = AppPalette.of(context);
     final insets = MediaQuery.viewInsetsOf(ctx);
     final height = MediaQuery.sizeOf(ctx).height - insets.bottom;
     final maxHeight = height * 0.9;
@@ -579,7 +591,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                           width: 36,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: AppColors.borderLine,
+                            color: p.border,
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ),
@@ -604,9 +616,9 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                                   _nilaiAtauStrip(m.email),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12.5,
-                                    color: AppColors.textMuted,
+                                    color: p.muted,
                                   ),
                                 ),
                               ],
@@ -661,7 +673,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                         child: FilledButton(
                           onPressed: () => Navigator.pop(ctx),
                           style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.primaryMain,
+                            backgroundColor: p.leaf,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             minimumSize: const Size(0, 48),
@@ -684,6 +696,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
   }
 
   Widget _ringkasan(String label, String nilai) {
+    final p = AppPalette.of(context);
     return SurfaceCard(
       tone: SurfaceTone.subtle,
       radius: 12,
@@ -693,17 +706,17 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: p.muted),
           ),
           const SizedBox(height: 2),
           Text(
             nilai,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: p.text,
               fontFeatures: _numbers,
             ),
           ),
@@ -713,6 +726,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
   }
 
   Widget _barisDetail(String label, String nilai) {
+    final p = AppPalette.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -722,19 +736,19 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
           ),
           Expanded(
             child: Text(
               nilai,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: p.text,
                 fontFeatures: _numbers,
               ),
             ),

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
@@ -70,6 +70,10 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
+
     final txDetail = ref.watch(transactionDetailProvider(widget.transactionId));
     // Dipakai sebagai cadangan nama lokasi; nilainya cache dari pemilih lokasi
     // di layar setor, jadi tidak menambah beban berarti.
@@ -78,10 +82,10 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
             const <BankLocationModel>[];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       appBar: AppBar(
         title: const Text('Kode QR Transaksi'),
-        backgroundColor: AppColors.primaryMain,
+        backgroundColor: p.leaf,
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
@@ -91,6 +95,8 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
       body: SafeArea(
         child: txDetail.when(
           data: (tx) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
             _ensureCountdown(tx?.qrExpiresAt);
             final namaLokasi = _namaLokasi(
               tx?.locationName,
@@ -119,11 +125,11 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: isExpired
-                                ? AppColors.statusRejectedBg
-                                : AppColors.mintSoftBackground,
+                                ? warna.rejectedBackground
+                                : p.mintWash,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: isExpired ? AppColors.danger : AppColors.mintAccent,
+                              color: isExpired ? warna.badText : p.mint,
                             ),
                           ),
                           child: Row(
@@ -132,7 +138,7 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                               Icon(
                                 Icons.timer_outlined,
                                 size: 18,
-                                color: isExpired ? AppColors.danger : AppColors.primaryDark,
+                                color: isExpired ? warna.badText : p.primary,
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -140,7 +146,7 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: isExpired ? AppColors.danger : AppColors.primaryDark,
+                                  color: isExpired ? warna.badText : p.primary,
                                 ),
                               ),
                             ],
@@ -157,19 +163,19 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: AppColors.mintAccent, width: 2),
+                                border: Border.all(color: p.mint, width: 2),
                               ),
                               child: QrImageView(
                                 data: tx?.qrToken ?? widget.transactionId,
                                 version: QrVersions.auto,
                                 size: 220,
-                                eyeStyle: const QrEyeStyle(
+                                eyeStyle: QrEyeStyle(
                                   eyeShape: QrEyeShape.square,
-                                  color: AppColors.primaryDark,
+                                  color: p.primary,
                                 ),
-                                dataModuleStyle: const QrDataModuleStyle(
+                                dataModuleStyle: QrDataModuleStyle(
                                   dataModuleShape: QrDataModuleShape.square,
-                                  color: AppColors.primaryMain,
+                                  color: p.leaf,
                                 ),
                               ),
                             ),
@@ -191,8 +197,8 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                                       decoration: BoxDecoration(
                                         border: Border.all(
                                           color: isApproved
-                                              ? AppColors.statusApprovedText
-                                              : AppColors.statusRejectedText,
+                                              ? warna.approvedText
+                                              : warna.rejectedText,
                                           width: 3,
                                         ),
                                         borderRadius: BorderRadius.circular(10),
@@ -205,8 +211,8 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                                                 : 'KEDALUWARSA',
                                         style: TextStyle(
                                           color: isApproved
-                                              ? AppColors.statusApprovedText
-                                              : AppColors.statusRejectedText,
+                                              ? warna.approvedText
+                                              : warna.rejectedText,
                                           fontSize: 20,
                                           fontWeight: FontWeight.w900,
                                           letterSpacing: 2,
@@ -223,10 +229,10 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                         // Kode transaksi (bukan UUID internal)
                         Text(
                           tx?.txCode ?? 'ID: ${widget.transactionId}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontFamily: 'monospace',
-                            color: AppColors.textMuted,
+                            color: p.muted,
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -242,16 +248,16 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Informasi Penyetoran',
                           style: TextStyle(
                             fontSize: 15.5,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.2,
-                            color: AppColors.textPrimary,
+                            color: p.text,
                           ),
                         ),
-                        const Divider(height: 20, color: AppColors.borderLine),
+                        Divider(height: 20, color: p.border),
                         _InfoRow(
                           label: 'Jenis Sampah',
                           value: tx?.categoryName ?? 'Sampah Daur Ulang',
@@ -341,6 +347,10 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
       child: Row(
@@ -348,8 +358,8 @@ class _InfoRow extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textMuted,
+            style: TextStyle(
+              color: p.muted,
               fontSize: 12.5,
               height: 1.4,
             ),
@@ -364,8 +374,8 @@ class _InfoRow extends StatelessWidget {
                 height: 1.4,
                 fontWeight: FontWeight.w700,
                 color: emphasis
-                    ? AppColors.primaryMain
-                    : AppColors.textPrimary,
+                    ? p.leaf
+                    : p.text,
                 fontFeatures:
                     numbers ? const [FontFeature.tabularFigures()] : null,
               ),

@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
@@ -77,8 +77,9 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   }
 
   void _showError(String message) {
+    final warna = AppStatusColors.of(p.brightness);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.danger),
+      SnackBar(content: Text(message), backgroundColor: warna.badText),
     );
   }
 
@@ -98,6 +99,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   /// Satu-satunya kaca di layar ini; `tint: Colors.black` menahan kontras
   /// teks putih di atas pratinjau kamera (§7.2).
   Widget _cameraErrorPanel() {
+    final p = AppPalette.of(context);
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: _panelMaxWidth),
@@ -119,10 +121,10 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                       color: Colors.white.withValues(alpha: 0.18),
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.no_photography_outlined,
                     size: 26,
-                    color: AppColors.mintAccent,
+                    color: p.mint,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -176,6 +178,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   }
 
   Future<void> _processTransactionId(String txId) async {
+    final warna = AppStatusColors.of(p.brightness);
     final cleanId = txId.trim();
     if (cleanId.isEmpty || _isProcessing) return;
 
@@ -191,7 +194,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
           const SnackBar(
             content: Text(
                 'ID Transaksi tidak ditemukan atau format QR tidak valid.'),
-            backgroundColor: AppColors.danger,
+            backgroundColor: warna.badText,
           ),
         );
         setState(() => _isProcessing = false);
@@ -213,7 +216,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
           SnackBar(
             content: Text(
                 'Transaksi tidak dapat diproses. Periksa koneksi lalu coba lagi.'),
-            backgroundColor: AppColors.danger,
+            backgroundColor: warna.badText,
           ),
         );
       }
@@ -262,9 +265,9 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
 
       _approvedToken = token;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Penarikan disetujui.'),
-          backgroundColor: AppColors.primaryMain,
+          backgroundColor: p.leaf,
         ),
       );
     } catch (error) {
@@ -276,6 +279,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
 
   /// Fallback Pemindaian QR menggunakan Unggah File Gambar (Aturan PRD)
   Future<void> _pickImageFallback() async {
+    final warna = AppStatusColors.of(p.brightness);
     try {
       final XFile? image =
           await _imagePicker.pickImage(source: ImageSource.gallery);
@@ -296,7 +300,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
           SnackBar(
             content: Text(
                 'Gagal membuka galeri. Periksa izin penyimpanan lalu coba lagi.'),
-            backgroundColor: AppColors.danger,
+            backgroundColor: warna.badText,
           ),
         );
       }
@@ -309,18 +313,18 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.cardSurface,
+        backgroundColor: p.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
         contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
         actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
         title: Text(
           isWithdrawal ? 'Input Token QR Penarikan' : 'Input Kode QR',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.2,
-            color: AppColors.textPrimary,
+            color: p.text,
           ),
         ),
         content: Column(
@@ -334,48 +338,48 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                           'pada layar mahasiswa:'
                       : 'Masukkan kode QR (bukan UUID transaksi) yang tampil pada '
                           'layar mahasiswa:'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _uuidInputController,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.2,
-                color: AppColors.textPrimary,
+                color: p.text,
               ),
               decoration: InputDecoration(
                 hintText: isWithdrawal
                     ? 'Tempel token QR penarikan'
                     : 'Contoh: f7296dec17934e57a0dc79bb057da1ab',
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w400,
-                  color: AppColors.textMuted,
+                  color: p.muted,
                 ),
                 filled: true,
-                fillColor: AppColors.mintSoftBackground,
+                fillColor: p.mintWash,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 16,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.borderLine),
+                  borderSide: BorderSide(color: p.border),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.borderLine),
+                  borderSide: BorderSide(color: p.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: AppColors.primaryMain,
+                  borderSide: BorderSide(
+                    color: p.leaf,
                     width: 1.4,
                   ),
                 ),
@@ -389,7 +393,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
             child: TextButton(
               onPressed: () => Navigator.pop(ctx),
               style: TextButton.styleFrom(
-                foregroundColor: AppColors.textMuted,
+                foregroundColor: p.muted,
                 textStyle: const TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
@@ -406,7 +410,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                 _processRawValue(_uuidInputController.text);
               },
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primaryMain,
+                backgroundColor: p.leaf,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -427,6 +431,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   }
 
   Widget _modeSelector(double gutter) {
+    final p = AppPalette.of(context);
     return Container(
       color: Colors.black,
       padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 12),
@@ -461,8 +466,9 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                 ),
               ),
               backgroundColor: WidgetStateProperty.resolveWith((states) {
+    final p = AppPalette.of(context);
                 return states.contains(WidgetState.selected)
-                    ? AppColors.primaryMain
+                    ? p.leaf
                     : Colors.black.withValues(alpha: 0.6);
               }),
               foregroundColor: const WidgetStatePropertyAll(Colors.white),
@@ -477,6 +483,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   }
 
   Widget _bottomActions() {
+    final p = AppPalette.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -491,7 +498,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                 icon: Icons.photo_library_outlined,
                 label: 'Unggah Gambar',
                 background: Colors.white,
-                foreground: AppColors.primaryDark,
+                foreground: p.primary,
                 onPressed: _isProcessing ? null : _pickImageFallback,
               ),
             ),
@@ -501,7 +508,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
               child: _ActionButton(
                 icon: Icons.keyboard_outlined,
                 label: _isWithdrawal ? 'Ketik Token QR' : 'Ketik Kode QR',
-                background: AppColors.primaryMain,
+                background: p.leaf,
                 foreground: Colors.white,
                 onPressed:
                     _isProcessing ? null : () => _showManualInputDialog(),
@@ -515,6 +522,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final gutter = ContentWidth.gutterFor(MediaQuery.sizeOf(context).width);
 
     return Scaffold(
@@ -559,7 +568,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                 MobileScanner(
                   controller: _scannerController,
                   errorBuilder: (context, error, child) => _cameraErrorPanel(),
-                  placeholderBuilder: (context, child) => const Center(
+                  placeholderBuilder: (context, child) => Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -568,7 +577,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                           height: 26,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.4,
-                            color: AppColors.mintAccent,
+                            color: p.mint,
                           ),
                         ),
                         SizedBox(height: 12),
@@ -664,6 +673,8 @@ class _ScanFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final side = (constraints.maxHeight * 0.34).clamp(160.0, 260.0).toDouble();
 
     return Padding(
@@ -673,7 +684,7 @@ class _ScanFrame extends StatelessWidget {
           width: side,
           height: side,
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.accent, width: 3),
+            border: Border.all(color: p.lime, width: 3),
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
@@ -791,6 +802,8 @@ class _ProcessingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return ColoredBox(
       color: Colors.black.withValues(alpha: 0.62),
       child: Center(
@@ -799,7 +812,7 @@ class _ProcessingOverlay extends StatelessWidget {
           radius: 16,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
           color: Colors.black.withValues(alpha: 0.72),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
@@ -807,7 +820,7 @@ class _ProcessingOverlay extends StatelessWidget {
                 height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: AppColors.mintAccent,
+                  color: p.mint,
                 ),
               ),
               SizedBox(width: 12),
@@ -899,6 +912,9 @@ class _WithdrawalConfirmSheetState
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     final mahasiswa = widget.data['mahasiswa'];
     final student = mahasiswa is Map ? mahasiswa : null;
     final String name = student?['full_name']?.toString().trim() ?? '';
@@ -924,7 +940,7 @@ class _WithdrawalConfirmSheetState
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.borderLine,
+                      color: p.border,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -932,14 +948,14 @@ class _WithdrawalConfirmSheetState
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Konfirmasi Penarikan',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.3,
-                          color: AppColors.textPrimary,
+                          color: p.text,
                         ),
                       ),
                     ),
@@ -947,9 +963,9 @@ class _WithdrawalConfirmSheetState
                       tooltip: 'Tutup',
                       onPressed:
                           _busy ? null : () => Navigator.of(context).pop(),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.close_rounded,
-                        color: AppColors.textMuted,
+                        color: p.muted,
                       ),
                     ),
                   ],
@@ -959,7 +975,7 @@ class _WithdrawalConfirmSheetState
                   tone: SurfaceTone.subtle,
                   radius: 16,
                   padding: const EdgeInsets.all(16),
-                  color: AppColors.mintSoftBackground,
+                  color: p.mintWash,
                   child: Row(
                     children: [
                       Container(
@@ -967,7 +983,7 @@ class _WithdrawalConfirmSheetState
                         height: 44,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryMain,
+                          color: p.leaf,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -985,20 +1001,20 @@ class _WithdrawalConfirmSheetState
                               name.isEmpty ? 'Mahasiswa' : name,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14.5,
                                 height: 1.3,
-                                color: AppColors.textPrimary,
+                                color: p.text,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               'NIM ${nim.isEmpty ? '-' : nim}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12.5,
                                 height: 1.4,
-                                color: AppColors.textMuted,
+                                color: p.muted,
                                 fontFeatures: [FontFeature.tabularFigures()],
                               ),
                             ),
@@ -1009,24 +1025,24 @@ class _WithdrawalConfirmSheetState
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Nominal Penarikan',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.3,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _currency.format(_amount),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.8,
                     height: 1.1,
-                    color: AppColors.textPrimary,
+                    color: p.text,
                     fontFeatures: [FontFeature.tabularFigures()],
                   ),
                 ),
@@ -1038,12 +1054,12 @@ class _WithdrawalConfirmSheetState
                   ),
                 ],
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   'Saldo mahasiswa berkurang setelah penarikan disetujui.',
                   style: TextStyle(
                     fontSize: 12.5,
                     height: 1.5,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                 ),
                 if (_error != null) ...[
@@ -1052,14 +1068,14 @@ class _WithdrawalConfirmSheetState
                     tone: SurfaceTone.subtle,
                     radius: 16,
                     padding: const EdgeInsets.all(12),
-                    color: AppColors.statusRejectedBg,
+                    color: warna.rejectedBackground,
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(
                           Icons.error_outline_rounded,
                           size: 18,
-                          color: AppColors.danger,
+                          color: warna.badText,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -1069,7 +1085,7 @@ class _WithdrawalConfirmSheetState
                               fontSize: 13,
                               height: 1.45,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.danger,
+                              color: warna.badText,
                             ),
                           ),
                         ),

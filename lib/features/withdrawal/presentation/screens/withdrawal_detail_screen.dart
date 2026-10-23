@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/colors.dart';
 import '../../../../core/network/api_guard.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -32,12 +32,12 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-const TextStyle _sectionTitle = TextStyle(
-  fontSize: 15.5,
-  fontWeight: FontWeight.w700,
-  letterSpacing: -0.2,
-  color: AppColors.textPrimary,
-);
+TextStyle _sectionTitle(AppPalette p) => TextStyle(
+      fontSize: 15.5,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.2,
+      color: p.text,
+    );
 
 final _currency = NumberFormat.currency(
   locale: 'id_ID',
@@ -56,6 +56,9 @@ class WithdrawalDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = AppPalette.of(context);
+
+
     final detailState = ref.watch(withdrawalDetailProvider(withdrawalId));
     final row = detailState.valueOrNull;
     final isAdmin =
@@ -63,7 +66,7 @@ class WithdrawalDetailScreen extends ConsumerWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -157,11 +160,12 @@ String _statusLabel(String status) => switch (status.toUpperCase()) {
       _ => 'Status diperbarui',
     };
 
-Color _statusColor(String status) => switch (status.toUpperCase()) {
-      'APPROVED' => AppColors.statusApprovedText,
-      'REJECTED' => AppColors.statusRejectedText,
-      'EXPIRED' => AppColors.statusExpired,
-      _ => AppColors.statusPendingText,
+Color _statusColor(String status, AppStatusColors s) =>
+    switch (status.toUpperCase()) {
+      'APPROVED' => s.approvedText,
+      'REJECTED' => s.rejectedText,
+      'EXPIRED' => s.neutralText,
+      _ => s.pendingText,
     };
 
 /// Inisial pengaju: maksimal dua huruf.
@@ -240,6 +244,8 @@ class _DetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 
     final status = _text(row['status']) ?? 'PENDING';
@@ -336,9 +342,9 @@ class _DetailBody extends StatelessWidget {
               icon: const Icon(Icons.qr_code_2_rounded, size: 18),
               label: const Text('Tampilkan QR Penarikan'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryDark,
+                foregroundColor: p.primary,
                 minimumSize: const Size(0, _action),
-                side: const BorderSide(color: AppColors.borderLine),
+                side: BorderSide(color: p.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -388,7 +394,7 @@ class _Section extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: _sectionTitle),
+            Text(title, style: _sectionTitle(p)),
             const SizedBox(height: 16),
             child,
           ],
@@ -407,6 +413,9 @@ class _StudentBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -415,17 +424,17 @@ class _StudentBlock extends StatelessWidget {
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AppColors.mintSoftBackground,
+            color: p.mintWash,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderLine),
+            border: Border.all(color: p.border),
           ),
           child: Text(
             _initials(name),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.4,
-              color: AppColors.primaryDark,
+              color: p.primary,
             ),
           ),
         ),
@@ -438,20 +447,20 @@ class _StudentBlock extends StatelessWidget {
                 name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w700,
                   height: 1.3,
-                  color: AppColors.textPrimary,
+                  color: p.text,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 nim == null ? 'NIM belum terisi' : 'NIM $nim',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   height: 1.4,
-                  color: AppColors.textMuted,
+                  color: p.muted,
                   fontFeatures: _numbers,
                 ),
               ),
@@ -483,6 +492,9 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
       child: Row(
@@ -492,10 +504,10 @@ class _InfoRow extends StatelessWidget {
             width: _labelWidth,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.4,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
           ),
@@ -510,9 +522,7 @@ class _InfoRow extends StatelessWidget {
                     fontSize: 13.5,
                     height: 1.4,
                     fontWeight: FontWeight.w700,
-                    color: emphasis
-                        ? AppColors.primaryDark
-                        : AppColors.textPrimary,
+                    color: emphasis ? p.primary : p.text,
                     fontFeatures: numbers ? _numbers : null,
                   ),
                 ),
@@ -520,10 +530,10 @@ class _InfoRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     secondary!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       height: 1.4,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                       fontFeatures: _numbers,
                     ),
                   ),
@@ -548,17 +558,19 @@ class _LocationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(
+        SizedBox(
           width: _labelWidth,
           child: Text(
             'Lokasi',
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
         ),
@@ -567,12 +579,12 @@ class _LocationRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 2),
                 child: Icon(
                   Icons.place_outlined,
                   size: 15,
-                  color: AppColors.primaryMain,
+                  color: p.leaf,
                 ),
               ),
               const SizedBox(width: 8),
@@ -582,21 +594,21 @@ class _LocationRow extends StatelessWidget {
                   children: [
                     Text(
                       nama,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13.5,
                         height: 1.4,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: p.text,
                       ),
                     ),
                     if (alamat != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         alamat!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           height: 1.4,
-                          color: AppColors.textMuted,
+                          color: p.muted,
                         ),
                       ),
                     ],
@@ -604,10 +616,10 @@ class _LocationRow extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         'Koordinat $koordinat',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           height: 1.4,
-                          color: AppColors.textMuted,
+                          color: p.muted,
                           fontFeatures: _numbers,
                         ),
                       ),
@@ -631,15 +643,17 @@ class _Timeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return _Section(
       title: 'Riwayat Proses',
       child: audits.isEmpty
-          ? const Text(
+          ? Text(
               'Belum ada catatan proses.',
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             )
           : SurfaceCard(
@@ -668,6 +682,8 @@ class _TimelineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final status = _text(audit['to_status']) ?? '';
     final color = _statusColor(status);
     final note = _text(audit['note']);
@@ -697,7 +713,7 @@ class _TimelineItem extends StatelessWidget {
                   child: Container(
                     width: 2,
                     margin: const EdgeInsets.symmetric(vertical: 3),
-                    color: AppColors.borderLine,
+                    color: p.border,
                   ),
                 ),
             ],
@@ -722,20 +738,20 @@ class _TimelineItem extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       note,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
                         height: 1.45,
-                        color: AppColors.textPrimary,
+                        color: p.text,
                       ),
                     ),
                   ],
                   const SizedBox(height: 3),
                   Text(
                     meta,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                       fontFeatures: _numbers,
                     ),
                   ),
@@ -794,6 +810,7 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
   }
 
   Future<void> _approve() async {
+    final p = AppPalette.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -810,14 +827,14 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
             onPressed: () => Navigator.of(dialogContext).pop(false),
             style: TextButton.styleFrom(
               minimumSize: const Size(0, _touch),
-              foregroundColor: AppColors.textMuted,
+              foregroundColor: p.muted,
             ),
             child: const Text('Batal'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primaryMain,
+              backgroundColor: p.leaf,
               foregroundColor: Colors.white,
               minimumSize: const Size(0, _touch),
               shape: RoundedRectangleBorder(
@@ -856,6 +873,9 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
@@ -865,12 +885,12 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
           children: [
             const Text('Tindakan Admin', style: _sectionTitle),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Periksa pengajuan sebelum menyetujui atau menolak.',
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.4,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
             const SizedBox(height: 16),
@@ -879,7 +899,7 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
               icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
               label: const Text('Setujui'),
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primaryMain,
+                backgroundColor: p.leaf,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 minimumSize: const Size(0, _action),
@@ -898,9 +918,9 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
               icon: const Icon(Icons.cancel_outlined, size: 18),
               label: const Text('Tolak'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.danger,
+                foregroundColor: warna.badText,
                 minimumSize: const Size(0, _action),
-                side: const BorderSide(color: AppColors.danger),
+                side: const BorderSide(color: warna.badText),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -912,7 +932,7 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
             ),
             if (_busy) ...[
               const SizedBox(height: 12),
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(
@@ -925,7 +945,7 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
                     'Memproses...',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                     ),
                   ),
                 ],
@@ -966,6 +986,9 @@ class _RejectDialogState extends State<_RejectDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -975,12 +998,12 @@ class _RejectDialogState extends State<_RejectDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Tulis alasan agar mahasiswa tahu mengapa pengajuan ditolak.',
             style: TextStyle(
               fontSize: 13,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 12),
@@ -1003,14 +1026,14 @@ class _RejectDialogState extends State<_RejectDialog> {
           onPressed: () => Navigator.of(context).pop(),
           style: TextButton.styleFrom(
             minimumSize: const Size(0, _touch),
-            foregroundColor: AppColors.textMuted,
+            foregroundColor: p.muted,
           ),
           child: const Text('Batal'),
         ),
         FilledButton(
           onPressed: _submit,
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.danger,
+            backgroundColor: warna.badText,
             foregroundColor: Colors.white,
             minimumSize: const Size(0, _touch),
             shape: RoundedRectangleBorder(
@@ -1037,17 +1060,18 @@ class _NoteBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warna = AppStatusColors.of(p.brightness);
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         tone: SurfaceTone.subtle,
         radius: 16,
         padding: const EdgeInsets.all(16),
-        color: AppColors.statusRejectedBg,
+        color: warna.rejectedBackground,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 20, color: AppColors.danger),
+            Icon(icon, size: 20, color: warna.badText),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1058,7 +1082,7 @@ class _NoteBox extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.danger,
+                      color: warna.badText,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -1067,7 +1091,7 @@ class _NoteBox extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
-                      color: AppColors.danger,
+                      color: warna.badText,
                     ),
                   ),
                 ],
@@ -1086,7 +1110,9 @@ class _LoadingPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    final p = AppPalette.of(context);
+
+    return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -1105,7 +1131,7 @@ class _LoadingPanel extends StatelessWidget {
                 fontSize: 14.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: AppColors.textPrimary,
+                color: p.text,
               ),
             ),
             SizedBox(height: 4),
@@ -1115,7 +1141,7 @@ class _LoadingPanel extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
           ],
@@ -1133,6 +1159,9 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
@@ -1143,34 +1172,34 @@ class _ErrorBox extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppColors.statusRejectedBg,
+                color: warna.rejectedBackground,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
                 Icons.cloud_off_rounded,
                 size: 26,
-                color: AppColors.danger,
+                color: warna.badText,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Detail penarikan gagal dimuat',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: AppColors.textPrimary,
+                color: p.text,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
             const SizedBox(height: 16),
@@ -1179,9 +1208,9 @@ class _ErrorBox extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Coba Lagi'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryDark,
+                foregroundColor: p.primary,
                 minimumSize: const Size(0, _touch),
-                side: const BorderSide(color: AppColors.borderLine),
+                side: BorderSide(color: p.border),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1204,6 +1233,8 @@ class _NotFoundBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
@@ -1214,34 +1245,34 @@ class _NotFoundBox extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppColors.mintSoftBackground,
+                color: p.mintWash,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.search_off_rounded,
                 size: 26,
-                color: AppColors.primaryDark,
+                color: p.primary,
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Penarikan tidak ditemukan',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: AppColors.textPrimary,
+                color: p.text,
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Data pengajuan ini tidak tersedia atau sudah dihapus.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
             const SizedBox(height: 16),
@@ -1256,9 +1287,9 @@ class _NotFoundBox extends StatelessWidget {
               icon: const Icon(Icons.arrow_back_rounded, size: 18),
               label: const Text('Kembali'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryDark,
+                foregroundColor: p.primary,
                 minimumSize: const Size(0, _touch),
-                side: const BorderSide(color: AppColors.borderLine),
+                side: BorderSide(color: p.border),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../network/api_guard.dart';
 
 /// Bar tipis di atas layar saat permintaan terakhir gagal karena jaringan.
@@ -9,6 +9,8 @@ class OfflineBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warna = AppStatusColors.of(p.brightness);
+
     return ValueListenableBuilder<bool>(
       valueListenable: offlineNotifier,
       builder: (context, offline, _) {
@@ -19,16 +21,16 @@ class OfflineBanner extends StatelessWidget {
           child: Container(
             height: 28,
             width: double.infinity,
-            color: AppColors.statusPendingBg,
+            color: warna.pendingBackground,
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: const Text(
+            child: Text(
               'Tidak ada koneksi — data mungkin tidak terbaru',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.statusPendingText,
+                color: warna.pendingText,
                 fontWeight: FontWeight.w600,
               ),
             ),

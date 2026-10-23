@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
@@ -22,24 +22,24 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Field 16 px agar Safari iOS tidak memperbesar halaman (§9).
-const TextStyle _fieldText = TextStyle(
+TextStyle _fieldText = TextStyle(
   fontSize: 16,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Tombol batal di sheet form: garis tipis, tinggi 48 px.
 final ButtonStyle _batalStyle = OutlinedButton.styleFrom(
   minimumSize: const Size(0, 48),
-  foregroundColor: AppColors.textMuted,
-  side: const BorderSide(color: AppColors.borderLine),
+  foregroundColor: p.muted,
+  side: BorderSide(color: p.border),
   shape: RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(12),
   ),
@@ -48,7 +48,7 @@ final ButtonStyle _batalStyle = OutlinedButton.styleFrom(
 
 /// Tombol simpan: hijau, tinggi 48 px.
 final ButtonStyle _simpanStyle = FilledButton.styleFrom(
-  backgroundColor: AppColors.primaryMain,
+  backgroundColor: p.leaf,
   foregroundColor: Colors.white,
   elevation: 0,
   minimumSize: const Size(0, 48),
@@ -77,14 +77,16 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final state = ref.watch(bankLocationsProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _busyId == null ? () => _openForm() : null,
-        backgroundColor: AppColors.primaryMain,
+        backgroundColor: p.leaf,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_location_alt_rounded),
         label: const Text('Tambah Lokasi'),
@@ -102,6 +104,7 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
 
   /// Hero memakai gutter sendiri; dibatasi lebar agar sejajar kartu isi.
   Widget _hero(AsyncValue<List<BankLocationModel>> state) {
+    final p = AppPalette.of(context);
     final semua = state.valueOrNull;
     final aktif = semua == null
         ? '—'
@@ -137,7 +140,7 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
               Container(
                 width: 1,
                 height: 32,
-                color: AppColors.heroCardBorder,
+                color: p.glassBorder,
               ),
               const SizedBox(width: 16),
               Expanded(child: _heroStat('Total lokasi', total)),
@@ -204,6 +207,7 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
   }
 
   Widget _sectionHeader(int jumlah) {
+    final p = AppPalette.of(context);
     return ContentWidth(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0, 24, 0, 8),
@@ -219,10 +223,10 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
             ),
             Text(
               '$jumlah lokasi',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textMuted,
+                color: p.muted,
                 fontFeatures: _numbers,
               ),
             ),
@@ -230,10 +234,10 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
             IconButton(
               tooltip: 'Muat ulang',
               onPressed: () => ref.invalidate(bankLocationsProvider),
-              icon: const Icon(
+              icon: Icon(
                 Icons.refresh_rounded,
                 size: 18,
-                color: AppColors.primaryMain,
+                color: p.leaf,
               ),
               style: IconButton.styleFrom(
                 minimumSize: const Size(_touch, _touch),
@@ -265,6 +269,8 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
   /// Satu lokasi. Seluruh permukaan kartu membuka form ubah; tombol Ubah dan
   /// Hapus tetap target sentuh terpisah 44 px.
   Widget _itemCard(BankLocationModel lokasi) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     final busy = _busyId == lokasi.id;
 
     return SurfaceCard(
@@ -298,10 +304,10 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
                             lokasi.address,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12.5,
                               height: 1.35,
-                              color: AppColors.textMuted,
+                              color: p.muted,
                             ),
                           ),
                         ],
@@ -315,10 +321,10 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.my_location_rounded,
                         size: 14,
-                        color: AppColors.primaryMain,
+                        color: p.leaf,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -326,10 +332,10 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
                           lokasi.koordinatLabel,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primaryDark,
+                            color: p.primary,
                             fontFeatures: _numbers,
                           ),
                         ),
@@ -347,11 +353,11 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         'Memproses…',
                         style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textMuted,
+                          color: p.muted,
                         ),
                       ),
                     ],
@@ -361,10 +367,10 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
                       icon: const Icon(Icons.edit_outlined, size: 18),
                       label: const Text('Ubah'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryMain,
+                        foregroundColor: p.leaf,
                         minimumSize: const Size(0, _touch),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        side: const BorderSide(color: AppColors.borderLine),
+                        side: BorderSide(color: p.border),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -381,8 +387,8 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
                       icon: const Icon(Icons.delete_outline_rounded, size: 20),
                       style: IconButton.styleFrom(
                         minimumSize: const Size(_touch, _touch),
-                        backgroundColor: AppColors.statusRejectedBg,
-                        foregroundColor: AppColors.danger,
+                        backgroundColor: warna.rejectedBackground,
+                        foregroundColor: warna.badText,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -401,10 +407,12 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
   /// Pil status 44 px. Titik 5–6 px menemani teks agar status tidak
   /// disampaikan lewat warna saja (§2).
   Widget _statusChip(bool aktif) {
-    final ink = aktif ? AppColors.statusApprovedText : AppColors.textMuted;
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+    final ink = aktif ? warna.approvedText : p.muted;
     final surface = aktif
-        ? AppColors.statusApprovedBg
-        : AppColors.statusExpired.withValues(alpha: 0.12);
+        ? warna.approvedBackground
+        : warna.neutralText.withValues(alpha: 0.12);
 
     return Container(
       height: _touch,
@@ -441,11 +449,12 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
   }
 
   Future<void> _openForm([BankLocationModel? initial]) async {
+    final p = AppPalette.of(context);
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.textPrimary.withValues(alpha: 0.36),
+      barrierColor: p.text.withValues(alpha: 0.36),
       builder: (_) => _LocationFormSheet(initial: initial),
     );
     if (saved != true || !mounted) return;
@@ -507,10 +516,10 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
         ),
         content: Text(
           message,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             height: 1.45,
-            color: AppColors.textMuted,
+            color: p.muted,
           ),
         ),
         actions: [
@@ -518,13 +527,13 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
             onPressed: () => Navigator.pop(ctx, false),
             style: TextButton.styleFrom(
               minimumSize: const Size(0, _touch),
-              foregroundColor: AppColors.textMuted,
+              foregroundColor: p.muted,
             ),
             child: const Text('Batal'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.danger,
+              backgroundColor: warna.badText,
               foregroundColor: Colors.white,
               minimumSize: const Size(0, _touch),
               shape: RoundedRectangleBorder(
@@ -545,12 +554,13 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.danger : AppColors.primaryDark,
+        backgroundColor: isError ? warna.badText : p.primary,
       ),
     );
   }
 
   Widget _emptyCard() {
+    final p = AppPalette.of(context);
     return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       child: Column(
@@ -559,40 +569,40 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.mintSoftBackground,
+              color: p.mintWash,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.location_on_rounded,
               size: 26,
-              color: AppColors.primaryMain,
+              color: p.leaf,
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'Belum ada lokasi bank sampah',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Tambahkan lokasi agar mahasiswa bisa memilih titik setor.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: () => _openForm(),
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primaryMain,
+              backgroundColor: p.leaf,
               foregroundColor: Colors.white,
               elevation: 0,
               minimumSize: const Size(0, _touch),
@@ -613,7 +623,8 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
   }
 
   Widget _loadingCard() {
-    return const SurfaceCard(
+    final p = AppPalette.of(context);
+    return SurfaceCard(
       padding: EdgeInsets.all(28),
       child: Column(
         children: [
@@ -626,7 +637,7 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
           Text(
             'Memuat lokasi bank sampah...',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 12.5, color: p.muted),
           ),
         ],
       ),
@@ -642,33 +653,33 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.statusRejectedBg,
+              color: warna.rejectedBackground,
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
               Icons.cloud_off_rounded,
               size: 26,
-              color: AppColors.danger,
+              color: warna.badText,
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'Gagal memuat lokasi',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Periksa koneksi Anda, lalu muat ulang daftar.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -678,8 +689,8 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
             label: const Text('Coba Lagi'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(0, _touch),
-              foregroundColor: AppColors.primaryMain,
-              side: const BorderSide(color: AppColors.borderLine),
+              foregroundColor: p.leaf,
+              side: BorderSide(color: p.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -723,11 +734,11 @@ InputDecoration _dekorasi({
     labelText: label,
     hintText: hint,
     counterText: '',
-    border: garis(AppColors.borderLine),
-    enabledBorder: garis(AppColors.borderLine),
-    focusedBorder: garis(AppColors.primaryMain),
-    errorBorder: garis(AppColors.danger),
-    focusedErrorBorder: garis(AppColors.danger),
+    border: garis(p.border),
+    enabledBorder: garis(p.border),
+    focusedBorder: garis(p.leaf),
+    errorBorder: garis(warna.badText),
+    focusedErrorBorder: garis(warna.badText),
   );
 }
 
@@ -912,19 +923,20 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
 
   /// Sakelar aktif sebagai panel `subtle` di dalam sheet.
   Widget _aktifSwitch() {
+    final p = AppPalette.of(context);
     return SurfaceCard(
       tone: SurfaceTone.subtle,
       radius: 16,
       padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.visibility_rounded,
             size: 18,
-            color: AppColors.primaryMain,
+            color: p.leaf,
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -933,7 +945,7 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: p.text,
                   ),
                 ),
                 SizedBox(height: 2),
@@ -942,7 +954,7 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
                   style: TextStyle(
                     fontSize: 11.5,
                     height: 1.35,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                 ),
               ],
@@ -960,24 +972,25 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
   }
 
   Widget _koordinatGroup() {
+    final p = AppPalette.of(context);
     const petunjuk = Text(
       'Isi latitude dan longitude bersamaan, atau kosongkan keduanya.',
       style: TextStyle(
         fontSize: 11.5,
         height: 1.35,
-        color: AppColors.textMuted,
+        color: p.muted,
       ),
     );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'Koordinat (opsional)',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: p.text,
           ),
         ),
         const SizedBox(height: 4),
@@ -1013,12 +1026,13 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
   }
 
   Widget _handle() {
+    final p = AppPalette.of(context);
     return Center(
       child: Container(
         width: 36,
         height: 4,
         decoration: BoxDecoration(
-          color: AppColors.borderLine,
+          color: p.border,
           borderRadius: BorderRadius.circular(999),
         ),
       ),
@@ -1026,6 +1040,8 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
   }
 
   Widget _sheetBody() {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1034,11 +1050,11 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
         const SizedBox(height: 12),
         Text(
           _isEdit ? 'Ubah Lokasi' : 'Tambah Lokasi',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 21,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
-            color: AppColors.textPrimary,
+            color: p.text,
           ),
         ),
         const SizedBox(height: 4),
@@ -1046,10 +1062,10 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
           _isEdit
               ? 'Perubahan langsung dipakai pada pengajuan berikutnya.'
               : 'Lokasi baru langsung bisa dipilih mahasiswa.',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             height: 1.4,
-            color: AppColors.textMuted,
+            color: p.muted,
           ),
         ),
         const SizedBox(height: 16),
@@ -1071,14 +1087,14 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
                 SurfaceCard(
                   tone: SurfaceTone.subtle,
                   radius: 16,
-                  color: AppColors.statusRejectedBg,
+                  color: warna.rejectedBackground,
                   padding: const EdgeInsets.all(12),
                   child: Text(
                     _error!,
                     style: const TextStyle(
                       fontSize: 12.5,
                       height: 1.4,
-                      color: AppColors.statusRejectedText,
+                      color: warna.rejectedText,
                     ),
                   ),
                 ),

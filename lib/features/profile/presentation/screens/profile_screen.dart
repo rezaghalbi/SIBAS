@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
@@ -26,21 +26,21 @@ const double _cardRadius = 20;
 const double _touchTarget = 44;
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
   height: 1.25,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Label baris sebagai metadata kecil (§3), bukan teks utama.
-const TextStyle _rowLabel = TextStyle(
+TextStyle _rowLabel = TextStyle(
   fontSize: 12,
   fontWeight: FontWeight.w600,
   letterSpacing: 0.1,
   height: 1.4,
-  color: AppColors.textMuted,
+  color: p.muted,
 );
 
 /// Angka berat dan hitungan memakai lebar digit tetap (§3).
@@ -52,6 +52,8 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -66,15 +68,15 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
+            child: Text(
               'Batal',
-              style: TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: p.muted),
             ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
+              backgroundColor: warna.badText,
               foregroundColor: Colors.white,
             ),
             child: const Text('Keluar'),
@@ -138,6 +140,9 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     final userState = ref.watch(currentUserProvider);
     final user = userState.valueOrNull;
     final emailVerified = ref.watch(authRepositoryProvider).isEmailVerified;
@@ -154,7 +159,7 @@ class ProfileScreen extends ConsumerWidget {
           );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -327,7 +332,7 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuTile(
                     icon: Icons.devices_other_rounded,
                     label: 'Keluar dari semua perangkat',
-                    color: AppColors.danger,
+                    color: warna.badText,
                     onTap: user == null
                         ? null
                         : () => _openSignOutEverywhere(context),
@@ -335,7 +340,7 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuTile(
                     icon: Icons.no_accounts_rounded,
                     label: 'Hapus Akun',
-                    color: AppColors.statusRejected,
+                    color: warna.rejectedText,
                     onTap: user == null
                         ? null
                         : () => _openDeleteAccount(context, ref),
@@ -353,9 +358,9 @@ class ProfileScreen extends ConsumerWidget {
                       ? null
                       : () => _confirmLogout(context, ref),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.danger,
+                    foregroundColor: warna.badText,
                     side: const BorderSide(
-                      color: AppColors.danger,
+                      color: warna.badText,
                       width: 1.5,
                     ),
                     minimumSize: const Size(0, 48),
@@ -390,12 +395,15 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     final nim = (user.nim == null || user.nim!.trim().isEmpty)
         ? 'Belum diisi'
         : user.nim!;
     final statusColor = isEmailVerified
-        ? AppColors.primaryMain
-        : AppColors.statusPendingText;
+        ? p.leaf
+        : warna.pendingText;
 
     return SurfaceCard(
       radius: _cardRadius,
@@ -452,7 +460,7 @@ class _ProfileCard extends StatelessWidget {
           if (!isEmailVerified) ...[
             const SurfaceCard(
               tone: SurfaceTone.subtle,
-              color: AppColors.statusPendingBg,
+              color: warna.pendingBackground,
               radius: 16,
               padding: EdgeInsets.all(12),
               child: Text(
@@ -461,7 +469,7 @@ class _ProfileCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.4,
-                  color: AppColors.statusPendingText,
+                  color: warna.pendingText,
                 ),
               ),
             ),
@@ -473,14 +481,14 @@ class _ProfileCard extends StatelessWidget {
             label: 'Total Berat Sampah',
             value: '${user.totalWeight.toStringAsFixed(1)} kg',
           ),
-          const Divider(height: 24, color: AppColors.borderLine),
-          const Text(
+          Divider(height: 24, color: p.border),
+          Text(
             'Nama, NIM, nomor WhatsApp, dan foto bisa diubah lewat menu Edit '
             'Profil. Data lain hubungi admin bila perlu diperbarui.',
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
         ],
@@ -498,15 +506,17 @@ class _MenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final children = <Widget>[];
     for (var i = 0; i < items.length; i++) {
       if (i > 0) {
         children.add(
-          const Divider(
+          Divider(
             height: 1,
             indent: 62,
             endIndent: 16,
-            color: AppColors.borderLine,
+            color: p.border,
           ),
         );
       }
@@ -531,15 +541,17 @@ class _MenuTile extends StatelessWidget {
   final VoidCallback? onTap;
   final Color color;
 
-  const _MenuTile({
+  _MenuTile({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = AppColors.primaryMain,
+    this.color = p.leaf,
   });
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final enabled = onTap != null;
 
     return Semantics(
@@ -558,14 +570,14 @@ class _MenuTile extends StatelessWidget {
                   height: 34,
                   decoration: BoxDecoration(
                     color: enabled
-                        ? AppColors.mintSoftBackground
-                        : AppColors.background,
+                        ? p.mintWash
+                        : p.background,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
                     size: 18,
-                    color: enabled ? color : AppColors.textMuted,
+                    color: enabled ? color : p.muted,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -579,8 +591,8 @@ class _MenuTile extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       letterSpacing: -0.1,
                       color: enabled
-                          ? AppColors.textPrimary
-                          : AppColors.textMuted,
+                          ? p.text
+                          : p.muted,
                     ),
                   ),
                 ),
@@ -589,8 +601,8 @@ class _MenuTile extends StatelessWidget {
                   Icons.chevron_right_rounded,
                   size: 20,
                   color: enabled
-                      ? AppColors.textMuted
-                      : AppColors.textMuted.withValues(alpha: 0.4),
+                      ? p.muted
+                      : p.muted.withValues(alpha: 0.4),
                 ),
               ],
             ),
@@ -609,6 +621,8 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -618,11 +632,11 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 height: 1.4,
-                color: AppColors.textPrimary,
+                color: p.text,
                 fontFeatures: _tabular,
               ),
             ),
@@ -641,11 +655,12 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warna = AppStatusColors.of(p.brightness);
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         tone: SurfaceTone.subtle,
-        color: AppColors.statusRejectedBg,
+        color: warna.rejectedBackground,
         radius: 16,
         padding: const EdgeInsets.all(12),
         child: Row(
@@ -654,7 +669,7 @@ class _ErrorBanner extends StatelessWidget {
             const Icon(
               Icons.error_outline_rounded,
               size: 18,
-              color: AppColors.danger,
+              color: warna.badText,
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -663,7 +678,7 @@ class _ErrorBanner extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   height: 1.4,
-                  color: AppColors.danger,
+                  color: warna.badText,
                 ),
               ),
             ),
@@ -734,6 +749,8 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
@@ -751,23 +768,23 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Email baru',
                 prefixIcon: Icon(
                   Icons.email_outlined,
-                  color: AppColors.primaryMain,
+                  color: p.leaf,
                   size: 20,
                 ),
               ),
               validator: _validate,
             ),
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Email lama tetap aktif sampai tautan konfirmasi diklik.',
               style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
             if (_error != null) ...[
@@ -780,9 +797,9 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: p.muted),
           ),
         ),
         ElevatedButton(
@@ -854,6 +871,8 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
@@ -920,9 +939,9 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: p.muted),
           ),
         ),
         ElevatedButton(
@@ -946,14 +965,15 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
     required VoidCallback onToggle,
     required String? Function(String?) validator,
   }) {
+    final p = AppPalette.of(context);
     return TextFormField(
       controller: controller,
       obscureText: obscured,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.lock_outline_rounded,
-          color: AppColors.primaryMain,
+          color: p.leaf,
           size: 20,
         ),
         suffixIcon: IconButton(
@@ -961,7 +981,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
             obscured
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
-            color: AppColors.textMuted,
+            color: p.muted,
             size: 20,
           ),
           tooltip: obscured ? 'Lihat kata sandi' : 'Sembunyikan kata sandi',
@@ -1006,6 +1026,9 @@ class _SignOutEverywhereDialogState
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
@@ -1019,15 +1042,15 @@ class _SignOutEverywhereDialogState
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: p.muted),
           ),
         ),
         ElevatedButton(
           onPressed: _busy ? null : _confirm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.danger,
+            backgroundColor: warna.badText,
             foregroundColor: Colors.white,
           ),
           child: _busy
@@ -1089,6 +1112,8 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
   }
 
   Widget _poin(String teks) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -1099,16 +1124,16 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
             child: Icon(
               Icons.circle,
               size: 5,
-              color: AppColors.statusRejected,
+              color: warna.rejectedText,
             ),
           ),
           Expanded(
             child: Text(
               teks,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 height: 1.45,
-                color: AppColors.textPrimary,
+                color: p.text,
               ),
             ),
           ),
@@ -1119,6 +1144,9 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
@@ -1169,17 +1197,17 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: p.muted),
           ),
         ),
         ElevatedButton(
           onPressed: (_busy || !_siap) ? null : _confirm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.statusRejected,
+            backgroundColor: warna.rejectedText,
             foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.statusRejected.withValues(
+            disabledBackgroundColor: warna.rejectedText.withValues(
               alpha: 0.35,
             ),
             disabledForegroundColor: Colors.white.withValues(alpha: 0.75),
@@ -1216,12 +1244,15 @@ class _MessageBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isError ? AppColors.danger : AppColors.primaryMain;
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
+    final accent = isError ? warna.badText : p.leaf;
 
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
-        color: isError ? AppColors.statusRejectedBg : null,
+        color: isError ? warna.rejectedBackground : null,
         radius: _cardRadius,
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -1231,8 +1262,8 @@ class _MessageBox extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: isError
-                    ? AppColors.danger.withValues(alpha: 0.10)
-                    : AppColors.mintSoftBackground,
+                    ? warna.badText.withValues(alpha: 0.10)
+                    : p.mintWash,
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 22, color: accent),
@@ -1245,7 +1276,7 @@ class _MessageBox extends StatelessWidget {
                 fontSize: 13,
                 height: 1.45,
                 fontWeight: FontWeight.w600,
-                color: isError ? AppColors.danger : AppColors.textMuted,
+                color: isError ? warna.badText : p.muted,
               ),
             ),
             if (onRetry != null) ...[
@@ -1255,7 +1286,7 @@ class _MessageBox extends StatelessWidget {
                 icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Coba Lagi'),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.danger,
+                  foregroundColor: warna.badText,
                   minimumSize: const Size(0, _touchTarget),
                 ),
               ),
@@ -1337,13 +1368,14 @@ String _pesanGantiSandi(Object error) {
 }
 
 void _snack(BuildContext context, String message) {
+    final p = AppPalette.of(context);
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: p.primary,
       ),
     );
 }

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/utils/status_helper.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
@@ -27,11 +27,11 @@ final _dateTime = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 const List<FontFeature> _tabularFigures = [FontFeature.tabularFigures()];
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Rincian satu transaksi setoran: nominal, status, waktu, dan verifikator.
@@ -45,13 +45,15 @@ class TransactionDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = AppPalette.of(context);
+
     final provider = transactionDetailRpcProvider(transactionId);
     final detailState = ref.watch(provider);
     final row = detailState.valueOrNull;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -224,6 +226,8 @@ class _DetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final categoryName = _text(row['trash_name']) ?? 'Sampah Daur Ulang';
 
     final weight = _num(row['weight']) ?? 0;
@@ -267,8 +271,8 @@ class _DetailBody extends StatelessWidget {
               icon: const Icon(Icons.qr_code_2_rounded, size: 18),
               label: const Text('Tampilkan QR Setoran'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryDark,
-                side: const BorderSide(color: AppColors.borderLine),
+                foregroundColor: p.primary,
+                side: BorderSide(color: p.border),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -395,8 +399,8 @@ class _DetailBody extends StatelessWidget {
           child: OutlinedButton(
             onPressed: () => _goBack(context),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primaryDark,
-              side: const BorderSide(color: AppColors.borderLine),
+              foregroundColor: p.primary,
+              side: BorderSide(color: p.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -448,6 +452,8 @@ class _StudentBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final displayName = name ?? 'Tidak diketahui';
 
     return Row(
@@ -458,17 +464,17 @@ class _StudentBlock extends StatelessWidget {
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AppColors.mintSoftBackground,
+            color: p.mintWash,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderLine),
+            border: Border.all(color: p.border),
           ),
           child: Text(
             _initials(displayName),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.4,
-              color: AppColors.primaryDark,
+              color: p.primary,
             ),
           ),
         ),
@@ -486,17 +492,17 @@ class _StudentBlock extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   height: 1.3,
                   color: name == null
-                      ? AppColors.textMuted
-                      : AppColors.textPrimary,
+                      ? p.muted
+                      : p.text,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 nim == null ? 'NIM belum terisi' : 'NIM $nim',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   height: 1.4,
-                  color: AppColors.textMuted,
+                  color: p.muted,
                   fontFeatures: _tabularFigures,
                 ),
               ),
@@ -534,11 +540,13 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color valueColor = AppColors.textPrimary;
+    final p = AppPalette.of(context);
+
+    Color valueColor = p.text;
     if (muted) {
-      valueColor = AppColors.textMuted;
+      valueColor = p.muted;
     } else if (emphasis) {
-      valueColor = AppColors.primaryDark;
+      valueColor = p.primary;
     }
 
     return Padding(
@@ -550,10 +558,10 @@ class _InfoRow extends StatelessWidget {
             width: 124,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.4,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
           ),
@@ -580,10 +588,10 @@ class _InfoRow extends StatelessWidget {
                   Text(
                     secondary!,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       height: 1.4,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                     ),
                   ),
                 ],
@@ -604,6 +612,8 @@ class _PhotoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return _Section(
       title: 'Bukti Foto',
       child: SurfaceCard(
@@ -616,22 +626,22 @@ class _PhotoSection extends StatelessWidget {
             fit: BoxFit.cover,
             semanticLabel: 'Bukti foto setoran',
             errorBuilder: (context, error, stackTrace) => Container(
-              color: AppColors.mintSoftBackground,
+              color: p.mintWash,
               alignment: Alignment.center,
-              child: const Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.broken_image_outlined,
                     size: 28,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Foto tidak dapat dimuat',
                     style: TextStyle(
                       fontSize: 12.5,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                     ),
                   ),
                 ],
@@ -666,6 +676,8 @@ class _AuditTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final entries = audits.whereType<Map>().toList()
       ..sort((a, b) {
         final left = _date(a['created_at']);
@@ -677,12 +689,12 @@ class _AuditTimeline extends StatelessWidget {
     return _Section(
       title: 'Riwayat Proses',
       child: entries.isEmpty
-          ? const Text(
+          ? Text(
               'Belum ada riwayat proses.',
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             )
           : SurfaceCard(
@@ -714,6 +726,8 @@ class _AuditRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final toStatus = entry['to_status']?.toString();
     final color = TransactionStatusHelper.getStatusColor(toStatus);
     final note = _text(entry['note']);
@@ -744,7 +758,7 @@ class _AuditRow extends StatelessWidget {
                   child: Container(
                     width: 2,
                     margin: const EdgeInsets.symmetric(vertical: 3),
-                    color: AppColors.borderLine,
+                    color: p.border,
                   ),
                 ),
             ],
@@ -769,20 +783,20 @@ class _AuditRow extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       note,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
                         height: 1.45,
-                        color: AppColors.textPrimary,
+                        color: p.text,
                       ),
                     ),
                   ],
                   const SizedBox(height: 3),
                   Text(
                     meta,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11.5,
                       height: 1.4,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                       fontFeatures: _tabularFigures,
                     ),
                   ),
@@ -809,17 +823,18 @@ class _NoteBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warna = AppStatusColors.of(p.brightness);
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         tone: SurfaceTone.subtle,
         radius: 16,
         padding: const EdgeInsets.all(16),
-        color: AppColors.statusRejectedBg,
+        color: warna.rejectedBackground,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 20, color: AppColors.danger),
+            Icon(icon, size: 20, color: warna.badText),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -830,7 +845,7 @@ class _NoteBox extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.danger,
+                      color: warna.badText,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -839,7 +854,7 @@ class _NoteBox extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12.5,
                       height: 1.45,
-                      color: AppColors.danger,
+                      color: warna.badText,
                     ),
                   ),
                 ],
@@ -858,7 +873,9 @@ class _LoadingPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    final p = AppPalette.of(context);
+
+    return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -877,7 +894,7 @@ class _LoadingPanel extends StatelessWidget {
                 fontSize: 14.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: AppColors.textPrimary,
+                color: p.text,
               ),
             ),
             SizedBox(height: 4),
@@ -887,7 +904,7 @@ class _LoadingPanel extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
           ],
@@ -928,9 +945,12 @@ class _StatePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = danger ? AppColors.danger : AppColors.primaryDark;
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
+    final accent = danger ? warna.badText : p.primary;
     final badge =
-        danger ? AppColors.statusRejectedBg : AppColors.mintSoftBackground;
+        danger ? warna.rejectedBackground : p.mintWash;
 
     return SizedBox(
       width: double.infinity,
@@ -951,21 +971,21 @@ class _StatePanel extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
-                color: AppColors.textPrimary,
+                color: p.text,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
             if (action != null) ...[
@@ -977,8 +997,8 @@ class _StatePanel extends StatelessWidget {
                   icon: Icon(action!.icon, size: 18),
                   label: Text(action!.label),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryDark,
-                    side: const BorderSide(color: AppColors.borderLine),
+                    foregroundColor: p.primary,
+                    side: BorderSide(color: p.border),
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),

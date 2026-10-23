@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/tx_list_item.dart';
@@ -54,10 +54,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     final historyState = ref.watch(allStudentTransactionsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: SafeArea(
         bottom: false,
         child: ContentWidth(
@@ -78,14 +82,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               Expanded(
                 child: historyState.when(
                   data: _buildList,
-                  loading: () => const Center(
+                  loading: () => Center(
                     child: CircularProgressIndicator(
-                      color: AppColors.primaryMain,
+                      color: p.leaf,
                     ),
                   ),
                   error: (error, stackTrace) => RefreshIndicator(
                     onRefresh: _refresh,
-                    color: AppColors.primaryMain,
+                    color: p.leaf,
                     child: _centeredScrollable(
                       _HistoryError(
                         onRetry: () {
@@ -104,11 +108,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Widget _buildList(List<TransactionModel> transactions) {
+    final p = AppPalette.of(context);
     final filtered = transactions.where(_matchesFilter).toList();
 
     return RefreshIndicator(
       onRefresh: _refresh,
-      color: AppColors.primaryMain,
+      color: p.leaf,
       child: filtered.isEmpty
           ? _centeredScrollable(
               _HistoryEmpty(
@@ -181,6 +186,10 @@ class _HistoryHead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -189,41 +198,41 @@ class _HistoryHead extends StatelessWidget {
             Container(
               width: 6,
               height: 6,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryMain,
+              decoration: BoxDecoration(
+                color: p.leaf,
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'TRANSAKSI',
               style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1.2,
-                color: AppColors.primaryMain,
+                color: p.leaf,
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Riwayat Setoran',
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.6,
             height: 1.1,
-            color: AppColors.textPrimary,
+            color: p.text,
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Pantau status verifikasi setiap setoran sampah Anda.',
           style: TextStyle(
             fontSize: 13,
             height: 1.5,
-            color: AppColors.textMuted,
+            color: p.muted,
           ),
         ),
       ],
@@ -277,6 +286,10 @@ class _StatusFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     return Semantics(
       button: true,
       selected: selected,
@@ -285,13 +298,13 @@ class _StatusFilterChip extends StatelessWidget {
         child: Ink(
           decoration: ShapeDecoration(
             color: selected
-                ? AppColors.primaryMain
-                : AppColors.mintSoftBackground,
+                ? p.leaf
+                : p.mintWash,
             shape: StadiumBorder(
               side: BorderSide(
                 color: selected
-                    ? AppColors.primaryMain
-                    : AppColors.borderLine,
+                    ? p.leaf
+                    : p.border,
               ),
             ),
           ),
@@ -310,7 +323,7 @@ class _StatusFilterChip extends StatelessWidget {
                   fontSize: 12.5,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   letterSpacing: 0.1,
-                  color: selected ? Colors.white : AppColors.textPrimary,
+                  color: selected ? Colors.white : p.text,
                 ),
               ),
             ),
@@ -330,6 +343,10 @@ class _HistoryEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     final isAll = filter == 'Semua';
 
     return SurfaceCard(
@@ -340,24 +357,24 @@ class _HistoryEmpty extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppColors.mintSoftBackground,
+              color: p.mintWash,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.receipt_long_rounded,
               size: 30,
-              color: AppColors.primaryMain,
+              color: p.leaf,
             ),
           ),
           const SizedBox(height: 16),
           Text(
             isAll ? 'Belum ada setoran' : 'Belum ada setoran "$filter"',
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.2,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
           const SizedBox(height: 6),
@@ -367,10 +384,10 @@ class _HistoryEmpty extends StatelessWidget {
                     'status verifikasinya.'
                 : 'Coba pilih status lain untuk melihat setoran Anda.',
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               height: 1.5,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 20),
@@ -379,7 +396,7 @@ class _HistoryEmpty extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () => context.go('/setor'),
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primaryMain,
+                backgroundColor: p.leaf,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -400,7 +417,7 @@ class _HistoryEmpty extends StatelessWidget {
             TextButton(
               onPressed: onResetFilter,
               style: TextButton.styleFrom(
-                foregroundColor: AppColors.primaryMain,
+                foregroundColor: p.leaf,
                 minimumSize: const Size(0, 44),
               ),
               child: const Text(
@@ -423,6 +440,10 @@ class _HistoryError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
+
     return SurfaceCard(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -430,34 +451,34 @@ class _HistoryError extends StatelessWidget {
           Container(
             width: 56,
             height: 56,
-            decoration: const BoxDecoration(
-              color: AppColors.statusRejectedBg,
+            decoration: BoxDecoration(
+              color: warna.rejectedBackground,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.cloud_off_rounded,
               size: 26,
-              color: AppColors.danger,
+              color: warna.badText,
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'Riwayat gagal dimuat',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Periksa koneksi Anda, lalu muat ulang riwayat.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.5,
               height: 1.5,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -466,8 +487,8 @@ class _HistoryError extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: onRetry,
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryMain,
-                side: const BorderSide(color: AppColors.borderLine),
+                foregroundColor: p.leaf,
+                side: BorderSide(color: p.border),
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

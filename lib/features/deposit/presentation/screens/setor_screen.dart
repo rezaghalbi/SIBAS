@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/surface_card.dart';
@@ -15,12 +15,12 @@ import '../../domain/models/waste_category_model.dart';
 import '../providers/deposit_provider.dart';
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
   height: 1.25,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Uang dan berat selalu tabular agar kolom tidak bergeser (§3).
@@ -89,7 +89,7 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
   }) {
     final icon = Icon(
       _getCategoryIcon(cat.name),
-      color: isSelected ? AppColors.primaryMain : AppColors.textMuted,
+      color: isSelected ? p.leaf : p.muted,
       size: 26,
     );
     final path = cat.imagePath;
@@ -114,12 +114,13 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
   }
 
   Future<void> _handleSubmit() async {
+    final warna = AppStatusColors.of(p.brightness);
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Silakan pilih jenis sampah terlebih dahulu'),
-          backgroundColor: AppColors.danger,
+          backgroundColor: warna.badText,
         ),
       );
       return;
@@ -130,7 +131,7 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Pilih lokasi bank sampah terlebih dahulu'),
-          backgroundColor: AppColors.danger,
+          backgroundColor: warna.badText,
         ),
       );
       return;
@@ -160,7 +161,7 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
                   ? e.message
                   : 'Gagal membuat setoran. Periksa koneksi lalu coba lagi.',
             ),
-            backgroundColor: AppColors.danger,
+            backgroundColor: warna.badText,
           ),
         );
       }
@@ -171,6 +172,8 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final categoriesState = ref.watch(wasteCategoriesProvider);
     final hasLocation = ref.watch(selectedLocationProvider) != null;
     final isWide = MediaQuery.sizeOf(context).width >= 1024;
@@ -181,10 +184,10 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
     final showStickyCta = !isWide && !keyboardOpen;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       appBar: AppBar(
         title: const Text('Form Setor Sampah'),
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: p.primary,
         foregroundColor: Colors.white,
       ),
       body: SafeArea(
@@ -273,16 +276,18 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
   Widget _buildCategoryCard(
     AsyncValue<List<WasteCategoryModel>> categoriesState,
   ) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     return SurfaceCard(
       padding: const EdgeInsets.all(12),
       child: categoriesState.when(
         data: (categories) {
           if (categories.isEmpty) {
-            return const Padding(
+            return Padding(
               padding: EdgeInsets.all(12),
               child: Text(
                 'Belum ada jenis sampah yang aktif.',
-                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 13, color: p.muted),
               ),
             );
           }
@@ -331,7 +336,7 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
           padding: const EdgeInsets.all(12),
           child: Text(
             'Gagal memuat kategori: $err',
-            style: const TextStyle(fontSize: 13, color: AppColors.danger),
+            style: const TextStyle(fontSize: 13, color: warna.badText),
           ),
         ),
       ),
@@ -339,23 +344,24 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
   }
 
   Widget _buildWeightCard() {
+    final p = AppPalette.of(context);
     return SurfaceCard(
       padding: const EdgeInsets.all(16),
       child: TextFormField(
         controller: _weightController,
         style: const TextStyle(fontSize: 16, fontFeatures: _tabular),
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           hintText: 'Masukkan berat (contoh: 2.5)',
-          fillColor: AppColors.background,
+          fillColor: p.background,
           prefixIcon: Icon(
             Icons.scale_rounded,
-            color: AppColors.primaryMain,
+            color: p.leaf,
           ),
           suffixText: 'kg',
           suffixStyle: TextStyle(
             fontWeight: FontWeight.w700,
-            color: AppColors.primaryDark,
+            color: p.primary,
           ),
         ),
         onChanged: (val) {
@@ -407,16 +413,18 @@ class _InfoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SurfaceCard(
+    final p = AppPalette.of(context);
+
+    return SurfaceCard(
       radius: _innerRadius,
-      color: AppColors.mintSoftBackground,
+      color: p.mintWash,
       padding: EdgeInsets.all(16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             Icons.info_outline_rounded,
-            color: AppColors.primaryDark,
+            color: p.primary,
             size: 20,
           ),
           SizedBox(width: 12),
@@ -427,7 +435,7 @@ class _InfoBanner extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 height: 1.45,
-                color: AppColors.primaryDark,
+                color: p.primary,
               ),
             ),
           ),
@@ -455,6 +463,8 @@ class _CategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Semantics(
       button: true,
       selected: isSelected,
@@ -464,7 +474,7 @@ class _CategoryTile extends StatelessWidget {
         // Tile terpilih ditandai tint, centang, dan warna teks. Border tetap
         // 1 px netral dari `SurfaceCard` agar seragam dengan panel lain.
         color: isSelected
-            ? AppColors.primaryMain.withValues(alpha: 0.14)
+            ? p.leaf.withValues(alpha: 0.14)
             : null,
         padding: EdgeInsets.zero,
         child: Material(
@@ -484,9 +494,9 @@ class _CategoryTile extends StatelessWidget {
                     children: [
                       thumb,
                       if (isSelected)
-                        const Icon(
+                        Icon(
                           Icons.check_circle_rounded,
-                          color: AppColors.primaryMain,
+                          color: p.leaf,
                           size: 20,
                         ),
                     ],
@@ -503,8 +513,8 @@ class _CategoryTile extends StatelessWidget {
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: isSelected
-                              ? AppColors.primaryDark
-                              : AppColors.textPrimary,
+                              ? p.primary
+                              : p.text,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -517,8 +527,8 @@ class _CategoryTile extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           fontFeatures: _tabular,
                           color: isSelected
-                              ? AppColors.primaryMain
-                              : AppColors.textMuted,
+                              ? p.leaf
+                              : p.muted,
                         ),
                       ),
                     ],
@@ -559,6 +569,8 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return SurfaceCard(
       radius: _cardRadius,
       padding: const EdgeInsets.all(20),
@@ -580,26 +592,26 @@ class _SummaryCard extends StatelessWidget {
           _SummaryRow(label: 'Berat', value: weightLabel, tabular: true),
           const SizedBox(height: 10),
           _SummaryRow(label: 'Harga / kg', value: priceLabel, tabular: true),
-          const Divider(height: 28, color: AppColors.borderLine),
-          const Text(
+          Divider(height: 28, color: p.border),
+          Text(
             'Estimasi tabungan',
-            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 13, color: p.muted),
           ),
           const SizedBox(height: 4),
           Text(
             totalLabel,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
               fontFeatures: _tabular,
-              color: AppColors.primaryMain,
+              color: p.leaf,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Nilai estimasi, bukan nominal final.',
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: p.muted),
           ),
           if (showCta) ...[
             const SizedBox(height: 20),
@@ -628,15 +640,17 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
         ),
@@ -651,7 +665,7 @@ class _SummaryRow extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w700,
               fontFeatures: tabular ? _tabular : null,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
         ),
@@ -713,14 +727,16 @@ class _StickyCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.background.withValues(alpha: 0),
-            AppColors.background,
+            p.background.withValues(alpha: 0),
+            p.background,
           ],
           stops: const [0, 0.5],
         ),
@@ -820,8 +836,10 @@ class _LocationSectionState extends ConsumerState<_LocationSection> {
     List<BankLocationModel> aktif,
     BankLocationModel? terpilih,
   ) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     if (state.isLoading && !state.hasValue) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.all(16),
         child: Row(
           children: [
@@ -834,7 +852,7 @@ class _LocationSectionState extends ConsumerState<_LocationSection> {
             Expanded(
               child: Text(
                 'Memuat lokasi bank sampah…',
-                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 13, color: p.muted),
               ),
             ),
           ],
@@ -880,7 +898,7 @@ class _LocationSectionState extends ConsumerState<_LocationSection> {
                 Icon(
                   Icons.error_outline_rounded,
                   size: 16,
-                  color: AppColors.danger,
+                  color: warna.badText,
                 ),
                 SizedBox(width: 6),
                 Expanded(
@@ -889,7 +907,7 @@ class _LocationSectionState extends ConsumerState<_LocationSection> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.danger,
+                      color: warna.badText,
                     ),
                   ),
                 ),
@@ -916,6 +934,8 @@ class _LocationRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final kosong = lokasi == null;
     final alamat = lokasi?.address.trim() ?? '';
     final keterangan = alamat.isNotEmpty
@@ -932,13 +952,13 @@ class _LocationRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.mintSoftBackground,
+              color: p.mintWash,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               Icons.place_rounded,
               size: 20,
-              color: kosong ? AppColors.textMuted : AppColors.primaryMain,
+              color: kosong ? p.muted : p.leaf,
             ),
           ),
           const SizedBox(width: 12),
@@ -955,8 +975,8 @@ class _LocationRow extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: kosong
-                        ? AppColors.textMuted
-                        : AppColors.textPrimary,
+                        ? p.muted
+                        : p.text,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -964,10 +984,10 @@ class _LocationRow extends StatelessWidget {
                   keterangan,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     height: 1.35,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                 ),
               ],
@@ -977,10 +997,10 @@ class _LocationRow extends StatelessWidget {
           if (tetap)
             const _TerpilihBadge()
           else
-            const Icon(
+            Icon(
               Icons.expand_more_rounded,
               size: 20,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
         ],
       ),
@@ -1006,13 +1026,15 @@ class _TerpilihBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primaryMain.withValues(alpha: 0.12),
+        color: p.leaf.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Titik penanda status (§2): jangan andalkan warna saja.
@@ -1021,7 +1043,7 @@ class _TerpilihBadge extends StatelessWidget {
             height: 5,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: AppColors.primaryMain,
+                color: p.leaf,
                 shape: BoxShape.circle,
               ),
             ),
@@ -1033,7 +1055,7 @@ class _TerpilihBadge extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.1,
-              color: AppColors.primaryDark,
+              color: p.primary,
             ),
           ),
         ],
@@ -1048,38 +1070,40 @@ class _LocationEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
+            Icon(
               Icons.location_off_rounded,
               size: 20,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Belum ada lokasi bank sampah aktif.',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: p.text,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Setoran dan penarikan belum bisa diajukan sampai admin '
                     'mengaktifkan lokasi.',
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.4,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                     ),
                   ),
                 ],
@@ -1109,6 +1133,9 @@ class _LocationError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1118,7 +1145,7 @@ class _LocationError extends StatelessWidget {
             Icon(
               Icons.error_outline_rounded,
               size: 18,
-              color: AppColors.danger,
+              color: warna.badText,
             ),
             SizedBox(width: 8),
             Expanded(
@@ -1127,23 +1154,23 @@ class _LocationError extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.danger,
+                  color: warna.badText,
                 ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 2),
-        const Text(
+        Text(
           'Periksa koneksi lalu coba lagi.',
-          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 12, color: p.muted),
         ),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton.icon(
             onPressed: onRetry,
             style: TextButton.styleFrom(
-              foregroundColor: AppColors.primaryMain,
+              foregroundColor: p.leaf,
               minimumSize: const Size(0, 44),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
@@ -1165,6 +1192,8 @@ class _LocationSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Align(
       alignment: Alignment.bottomCenter,
       heightFactor: 1,
@@ -1184,7 +1213,7 @@ class _LocationSheet extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.borderLine,
+                    color: p.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1192,7 +1221,7 @@ class _LocationSheet extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 8, 8, 4),
                   child: Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Pilih Lokasi Bank Sampah',
                           style: TextStyle(
@@ -1200,16 +1229,16 @@ class _LocationSheet extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.5,
                             height: 1.15,
-                            color: AppColors.textPrimary,
+                            color: p.text,
                           ),
                         ),
                       ),
                       IconButton(
                         tooltip: 'Tutup',
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close_rounded,
-                          color: AppColors.textMuted,
+                          color: p.muted,
                         ),
                       ),
                     ],
@@ -1253,13 +1282,15 @@ class _LocationOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final alamat = lokasi.address.trim();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Material(
         color: dipilih
-            ? AppColors.primaryMain.withValues(alpha: 0.10)
+            ? p.leaf.withValues(alpha: 0.10)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(_innerRadius),
         clipBehavior: Clip.antiAlias,
@@ -1273,13 +1304,13 @@ class _LocationOption extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: AppColors.mintSoftBackground,
+                    color: p.mintWash,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.place_rounded,
                     size: 18,
-                    color: AppColors.primaryMain,
+                    color: p.leaf,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1292,10 +1323,10 @@ class _LocationOption extends StatelessWidget {
                         lokasi.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: p.text,
                         ),
                       ),
                       if (alamat.isNotEmpty) ...[
@@ -1304,10 +1335,10 @@ class _LocationOption extends StatelessWidget {
                           alamat,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             height: 1.35,
-                            color: AppColors.textMuted,
+                            color: p.muted,
                           ),
                         ),
                       ],
@@ -1316,10 +1347,10 @@ class _LocationOption extends StatelessWidget {
                 ),
                 if (dipilih) ...[
                   const SizedBox(width: 8),
-                  const Icon(
+                  Icon(
                     Icons.check_circle_rounded,
                     size: 20,
-                    color: AppColors.primaryMain,
+                    color: p.leaf,
                   ),
                 ],
               ],

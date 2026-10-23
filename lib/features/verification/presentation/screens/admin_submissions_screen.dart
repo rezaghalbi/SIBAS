@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
@@ -28,11 +28,11 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Pusat pengelolaan pengajuan admin: verifikasi setoran & penarikan saldo.
@@ -81,10 +81,12 @@ class _AdminSubmissionsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -136,6 +138,7 @@ class _AdminSubmissionsScreenState
   // ---------------------------------------------------------------- Setoran
 
   List<Widget> _setoranSlivers() {
+    final p = AppPalette.of(context);
     final txState = ref.watch(adminTransactionsProvider);
     final filter = ref.watch(adminFilterProvider);
     final searching = filter.query.trim().isNotEmpty;
@@ -175,10 +178,10 @@ class _AdminSubmissionsScreenState
                 if (total != null)
                   Text(
                     '$total pengajuan',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                       fontFeatures: _numbers,
                     ),
                   ),
@@ -236,9 +239,9 @@ class _AdminSubmissionsScreenState
       constraints: const BoxConstraints(minHeight: 52),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.cardSurface,
+        color: p.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLine),
+        border: Border.all(color: p.border),
       ),
       child: TextField(
         controller: _searchController,
@@ -249,10 +252,10 @@ class _AdminSubmissionsScreenState
               );
         },
         // 16 px agar Safari iOS tidak memperbesar halaman (§9).
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: p.text,
         ),
         decoration: InputDecoration(
           border: InputBorder.none,
@@ -262,13 +265,13 @@ class _AdminSubmissionsScreenState
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
           hintText: 'Cari nama, NIM, atau kode',
           hintMaxLines: 1,
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             fontSize: 15,
-            color: AppColors.textMuted,
+            color: p.muted,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.search_rounded,
-            color: AppColors.primaryMain,
+            color: p.leaf,
             size: 20,
           ),
           prefixIconConstraints: const BoxConstraints(
@@ -278,10 +281,10 @@ class _AdminSubmissionsScreenState
           suffixIcon: showClear
               ? IconButton(
                   tooltip: 'Hapus pencarian',
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
                     size: 18,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                   ),
                   onPressed: _clearQuery,
                 )
@@ -360,6 +363,7 @@ class _AdminSubmissionsScreenState
   }
 
   Widget _setoranCard(Map<String, dynamic> item) {
+    final p = AppPalette.of(context);
     final profile = item['profiles'] as Map<String, dynamic>?;
     final category = item['trash_types'] as Map<String, dynamic>?;
 
@@ -399,11 +403,11 @@ class _AdminSubmissionsScreenState
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.2,
-                        color: AppColors.textPrimary,
+                        color: p.text,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -411,10 +415,10 @@ class _AdminSubmissionsScreenState
                       'NIM $nim',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        color: p.muted,
                         fontFeatures: _numbers,
                       ),
                     ),
@@ -423,9 +427,9 @@ class _AdminSubmissionsScreenState
                       categoryName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textMuted,
+                        color: p.muted,
                       ),
                     ),
                   ],
@@ -440,9 +444,9 @@ class _AdminSubmissionsScreenState
               const Spacer(),
               Text(
                 createdAt == null ? '-' : _date.format(createdAt),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.textMuted,
+                  color: p.muted,
                   fontFeatures: _numbers,
                 ),
               ),
@@ -451,18 +455,18 @@ class _AdminSubmissionsScreenState
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.scale_rounded,
                 size: 16,
-                color: AppColors.primaryMain,
+                color: p.leaf,
               ),
               const SizedBox(width: 8),
               Text(
                 '${weight.toStringAsFixed(2)} kg',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: p.text,
                   fontFeatures: _numbers,
                 ),
               ),
@@ -474,10 +478,10 @@ class _AdminSubmissionsScreenState
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primaryDark,
+                      color: p.primary,
                       fontFeatures: _numbers,
                     ),
                   ),
@@ -489,10 +493,10 @@ class _AdminSubmissionsScreenState
             'Kode: $txCode',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'monospace',
               fontSize: 11,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           if (status.toUpperCase() == 'REJECTED' && reason.isNotEmpty) ...[
@@ -613,6 +617,7 @@ class _AdminSubmissionsScreenState
   // -------------------------------------------------------------- Penarikan
 
   List<Widget> _penarikanSlivers() {
+    final p = AppPalette.of(context);
     final state = ref.watch(adminWithdrawalsProvider(null));
     final total = state.valueOrNull?.length;
 
@@ -634,10 +639,10 @@ class _AdminSubmissionsScreenState
                 if (total != null)
                   Text(
                     '$total pengajuan',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textMuted,
+                      color: p.muted,
                       fontFeatures: _numbers,
                     ),
                   ),
@@ -685,6 +690,7 @@ class _AdminSubmissionsScreenState
   }
 
   Widget _penarikanCard(WithdrawalModel w) {
+    final p = AppPalette.of(context);
     final busy = _busyId == w.id;
     final reason = (w.rejectionReason ?? '').trim();
 
@@ -714,11 +720,11 @@ class _AdminSubmissionsScreenState
                             w.studentName ?? 'Mahasiswa',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               letterSpacing: -0.2,
-                              color: AppColors.textPrimary,
+                              color: p.text,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -726,10 +732,10 @@ class _AdminSubmissionsScreenState
                             'NIM ${w.studentNim ?? '-'}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textMuted,
+                              color: p.muted,
                               fontFeatures: _numbers,
                             ),
                           ),
@@ -745,9 +751,9 @@ class _AdminSubmissionsScreenState
                     const Spacer(),
                     Text(
                       _date.format(w.createdAt),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textMuted,
+                        color: p.muted,
                         fontFeatures: _numbers,
                       ),
                     ),
@@ -758,10 +764,10 @@ class _AdminSubmissionsScreenState
                   _currency.format(w.amount),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.primaryDark,
+                    color: p.primary,
                     fontFeatures: _numbers,
                   ),
                 ),
@@ -876,14 +882,14 @@ class _AdminSubmissionsScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
+            child: Text(
               'Batal',
-              style: TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: p.muted),
             ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryMain,
+              backgroundColor: p.leaf,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(ctx, true),
@@ -924,14 +930,14 @@ class _AdminSubmissionsScreenState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text(
+              child: Text(
                 'Batal',
-                style: TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: p.muted),
               ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.danger,
+                backgroundColor: warna.badText,
                 foregroundColor: Colors.white,
               ),
               onPressed: reason.trim().isEmpty
@@ -950,7 +956,7 @@ class _AdminSubmissionsScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.danger : AppColors.primaryDark,
+        backgroundColor: isError ? warna.badText : p.primary,
       ),
     );
   }
@@ -1002,7 +1008,7 @@ class _WidthLimit extends StatelessWidget {
 
 /// Gaya tombol setujui: hijau, tinggi 44 px, radius 12.
 final ButtonStyle _approveStyle = FilledButton.styleFrom(
-  backgroundColor: AppColors.primaryMain,
+  backgroundColor: p.leaf,
   foregroundColor: Colors.white,
   elevation: 0,
   minimumSize: const Size(0, _touchTarget),
@@ -1018,10 +1024,10 @@ final ButtonStyle _approveStyle = FilledButton.styleFrom(
 
 /// Gaya tombol tolak: garis merah, tinggi 44 px, radius 12.
 final ButtonStyle _rejectStyle = OutlinedButton.styleFrom(
-  foregroundColor: AppColors.danger,
+  foregroundColor: warna.badText,
   minimumSize: const Size(0, _touchTarget),
   padding: const EdgeInsets.symmetric(horizontal: 16),
-  side: const BorderSide(color: AppColors.danger),
+  side: const BorderSide(color: warna.badText),
   shape: RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(12),
   ),
@@ -1039,14 +1045,16 @@ class _IconBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Container(
       width: _iconBox,
       height: _iconBox,
       decoration: BoxDecoration(
-        color: AppColors.mintSoftBackground,
+        color: p.mintWash,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: AppColors.primaryMain, size: 22),
+      child: Icon(icon, color: p.leaf, size: 22),
     );
   }
 }
@@ -1059,19 +1067,20 @@ class _ReasonNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warna = AppStatusColors.of(p.brightness);
     return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         tone: SurfaceTone.subtle,
         radius: 16,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        color: AppColors.statusRejectedBg,
+        color: warna.rejectedBackground,
         child: Text(
           'Alasan ditolak: $reason',
           style: const TextStyle(
             fontSize: 12,
             height: 1.4,
-            color: AppColors.statusRejectedText,
+            color: warna.rejectedText,
           ),
         ),
       ),
@@ -1085,7 +1094,9 @@ class _BusyNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    final p = AppPalette.of(context);
+
+    return SizedBox(
       height: _touchTarget,
       child: Row(
         children: [
@@ -1097,7 +1108,7 @@ class _BusyNote extends StatelessWidget {
           SizedBox(width: 10),
           Text(
             'Memproses...',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 12, color: p.muted),
           ),
         ],
       ),
@@ -1156,6 +1167,8 @@ class _TabSegment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Semantics(
       button: true,
       selected: selected,
@@ -1180,7 +1193,7 @@ class _TabSegment extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   color: selected
-                      ? AppColors.primaryDark
+                      ? p.primary
                       : Colors.white,
                 ),
               ),
@@ -1206,6 +1219,8 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Semantics(
       button: true,
       selected: selected,
@@ -1214,13 +1229,13 @@ class _FilterChip extends StatelessWidget {
         child: Ink(
           decoration: ShapeDecoration(
             color: selected
-                ? AppColors.primaryMain
-                : AppColors.mintSoftBackground,
+                ? p.leaf
+                : p.mintWash,
             shape: StadiumBorder(
               side: BorderSide(
                 color: selected
-                    ? AppColors.primaryMain
-                    : AppColors.borderLine,
+                    ? p.leaf
+                    : p.border,
               ),
             ),
           ),
@@ -1238,7 +1253,7 @@ class _FilterChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected ? Colors.white : AppColors.textPrimary,
+                  color: selected ? Colors.white : p.text,
                 ),
               ),
             ),
@@ -1267,6 +1282,8 @@ class _StateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final label = actionLabel;
 
     return SizedBox(
@@ -1279,10 +1296,10 @@ class _StateCard extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: AppColors.mintSoftBackground,
+                color: p.mintWash,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(icon, size: 30, color: AppColors.primaryMain),
+              child: Icon(icon, size: 30, color: p.leaf),
             ),
             const SizedBox(height: 16),
             Text(
@@ -1294,10 +1311,10 @@ class _StateCard extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.5,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
             if (label != null && onAction != null) ...[
@@ -1309,8 +1326,8 @@ class _StateCard extends StatelessWidget {
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: Text(label),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primaryMain,
-                    side: const BorderSide(color: AppColors.borderLine),
+                    foregroundColor: p.leaf,
+                    side: BorderSide(color: p.border),
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1336,7 +1353,9 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    final p = AppPalette.of(context);
+
+    return SizedBox(
       width: double.infinity,
       child: SurfaceCard(
         padding: EdgeInsets.all(32),
@@ -1350,7 +1369,7 @@ class _LoadingCard extends StatelessWidget {
             SizedBox(height: 12),
             Text(
               'Memuat pengajuan...',
-              style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 12.5, color: p.muted),
             ),
           ],
         ),

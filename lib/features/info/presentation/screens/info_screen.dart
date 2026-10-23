@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
@@ -34,21 +34,21 @@ const double _cardRadius = 20;
 const double _touchTarget = 44;
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
   height: 1.25,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Label baris sebagai metadata kecil (§3), bukan teks utama.
-const TextStyle _rowLabel = TextStyle(
+TextStyle _rowLabel = TextStyle(
   fontSize: 12,
   fontWeight: FontWeight.w600,
   letterSpacing: 0.1,
   height: 1.4,
-  color: AppColors.textMuted,
+  color: p.muted,
 );
 
 /// Angka pada nomor telepon dan langkah memakai lebar digit tetap (§3).
@@ -63,6 +63,8 @@ class InfoScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = AppPalette.of(context);
+
     final settingsState = ref.watch(appSettingsProvider);
 
     // Saat memuat atau gagal, nilai tampil "Belum diatur" — bukan karangan.
@@ -70,7 +72,7 @@ class InfoScreen extends ConsumerWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -160,12 +162,12 @@ class InfoScreen extends ConsumerWidget {
                         value: settings?.contactHours ?? '',
                       ),
                       const SizedBox(height: 2),
-                      const Text(
+                      Text(
                         _responseNote,
                         style: TextStyle(
                           fontSize: 12,
                           height: 1.45,
-                          color: AppColors.textMuted,
+                          color: p.muted,
                         ),
                       ),
                     ],
@@ -225,13 +227,16 @@ class _SettingsNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
     final isError = !isLoading;
-    final accent = isError ? AppColors.danger : AppColors.primaryMain;
+    final accent = isError ? warna.badText : p.leaf;
 
     return SurfaceCard(
       color: isError
-          ? AppColors.statusRejectedBg
-          : AppColors.mintSoftBackground,
+          ? warna.rejectedBackground
+          : p.mintWash,
       radius: 16,
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(
@@ -258,7 +263,7 @@ class _SettingsNotice extends StatelessWidget {
                 fontSize: 12,
                 height: 1.45,
                 fontWeight: FontWeight.w500,
-                color: isError ? AppColors.danger : AppColors.textMuted,
+                color: isError ? warna.badText : p.muted,
               ),
             ),
           ),
@@ -266,7 +271,7 @@ class _SettingsNotice extends StatelessWidget {
             TextButton(
               onPressed: onRetry,
               style: TextButton.styleFrom(
-                foregroundColor: AppColors.danger,
+                foregroundColor: warna.badText,
                 minimumSize: const Size(0, _touchTarget),
                 padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
@@ -291,6 +296,8 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return SurfaceCard(
       radius: _cardRadius,
       padding: const EdgeInsets.all(20),
@@ -303,10 +310,10 @@ class _SectionCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.mintSoftBackground,
+                  color: p.mintWash,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, size: 20, color: AppColors.primaryMain),
+                child: Icon(icon, size: 20, color: p.leaf),
               ),
               const SizedBox(width: 12),
               Expanded(child: Text(title, style: _sectionTitle)),
@@ -330,18 +337,21 @@ class _InfoRow extends StatelessWidget {
   const _InfoRow({required this.label, required this.value, this.copyValue});
 
   Future<void> _copy(BuildContext context) async {
+    final p = AppPalette.of(context);
     await Clipboard.setData(ClipboardData(text: copyValue!));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text('Nomor admin disalin'),
-        backgroundColor: AppColors.primaryMain,
+        backgroundColor: p.leaf,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final shown = _display(value);
     final isUnset = shown == 'Belum diatur';
     final valueStyle = TextStyle(
@@ -349,7 +359,7 @@ class _InfoRow extends StatelessWidget {
       fontWeight: isUnset ? FontWeight.w500 : FontWeight.w600,
       fontStyle: isUnset ? FontStyle.italic : FontStyle.normal,
       height: 1.4,
-      color: isUnset ? AppColors.textMuted : AppColors.textPrimary,
+      color: isUnset ? p.muted : p.text,
       fontFeatures: _tabular,
     );
 
@@ -385,10 +395,10 @@ class _InfoRow extends StatelessWidget {
                 minWidth: _touchTarget,
                 minHeight: _touchTarget,
               ),
-              icon: const Icon(
+              icon: Icon(
                 Icons.copy_rounded,
                 size: 18,
-                color: AppColors.primaryMain,
+                color: p.leaf,
               ),
             ),
           ],
@@ -406,6 +416,8 @@ class _StepRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -415,16 +427,16 @@ class _StepRow extends StatelessWidget {
             width: 24,
             height: 24,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: AppColors.mintSoftBackground,
+            decoration: BoxDecoration(
+              color: p.mintWash,
               shape: BoxShape.circle,
             ),
             child: Text(
               number,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                color: AppColors.primaryDark,
+                color: p.primary,
                 fontFeatures: _tabular,
               ),
             ),
@@ -433,9 +445,9 @@ class _StepRow extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: AppColors.textPrimary,
+                color: p.text,
                 height: 1.5,
               ),
             ),
@@ -451,8 +463,10 @@ class _ComplaintFormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return SurfaceCard(
-      color: AppColors.mintSoftBackground,
+      color: p.mintWash,
       radius: _cardRadius,
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -460,12 +474,12 @@ class _ComplaintFormCard extends StatelessWidget {
         children: [
           const Text('Formulir Pengaduan', style: _sectionTitle),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Pengaduan ditanggapi maksimal 1×24 jam pada hari kerja.',
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -486,13 +500,13 @@ class _ComplaintFormCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Formulir pengaduan belum tersedia. Sampaikan pengaduan melalui '
             'kontak admin di atas.',
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
         ],

@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -26,24 +26,24 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-const TextStyle _sectionTitle = TextStyle(
+TextStyle _sectionTitle = TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Field 16 px agar Safari iOS tidak memperbesar halaman (§9).
-const TextStyle _fieldText = TextStyle(
+TextStyle _fieldText = TextStyle(
   fontSize: 16,
-  color: AppColors.textPrimary,
+  color: p.text,
 );
 
 /// Tombol batal di sheet form: garis tipis, tinggi 48 px.
 final ButtonStyle _batalStyle = OutlinedButton.styleFrom(
   minimumSize: const Size(0, 48),
-  foregroundColor: AppColors.textMuted,
-  side: const BorderSide(color: AppColors.borderLine),
+  foregroundColor: p.muted,
+  side: BorderSide(color: p.border),
   shape: RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(12),
   ),
@@ -52,7 +52,7 @@ final ButtonStyle _batalStyle = OutlinedButton.styleFrom(
 
 /// Tombol simpan: hijau, tinggi 48 px.
 final ButtonStyle _simpanStyle = FilledButton.styleFrom(
-  backgroundColor: AppColors.primaryMain,
+  backgroundColor: p.leaf,
   foregroundColor: Colors.white,
   elevation: 0,
   minimumSize: const Size(0, 48),
@@ -83,14 +83,16 @@ class _TrashTypeManagementScreenState
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final state = ref.watch(allTrashTypesProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(),
-        backgroundColor: AppColors.primaryMain,
+        backgroundColor: p.leaf,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Tambah Jenis'),
@@ -162,6 +164,7 @@ class _TrashTypeManagementScreenState
   List<Widget> _listSlivers(
     AsyncValue<List<Map<String, dynamic>>> state,
   ) {
+    final p = AppPalette.of(context);
     return state.when(
       data: (list) {
         if (list.isEmpty) {
@@ -185,10 +188,10 @@ class _TrashTypeManagementScreenState
                     ),
                     Text(
                       '${list.length} jenis',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        color: p.muted,
                         fontFeatures: _numbers,
                       ),
                     ),
@@ -263,10 +266,10 @@ class _TrashTypeManagementScreenState
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.mintSoftBackground,
+                    color: p.mintWash,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, size: 20, color: AppColors.primaryMain),
+                  child: Icon(icon, size: 20, color: p.leaf),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -277,10 +280,10 @@ class _TrashTypeManagementScreenState
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: p.text,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -288,18 +291,18 @@ class _TrashTypeManagementScreenState
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textMuted,
+                          color: p.muted,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
                   size: 20,
-                  color: AppColors.textMuted,
+                  color: p.muted,
                 ),
               ],
             ),
@@ -310,15 +313,16 @@ class _TrashTypeManagementScreenState
   }
 
   Widget _thumbCard(String? imagePath) {
+    final p = AppPalette.of(context);
     const fallback = ColoredBox(
-      color: AppColors.mintSoftBackground,
+      color: p.mintWash,
       child: SizedBox(
         width: 40,
         height: 40,
         child: Icon(
           Icons.recycling_rounded,
           size: 20,
-          color: AppColors.primaryMain,
+          color: p.leaf,
         ),
       ),
     );
@@ -344,6 +348,8 @@ class _TrashTypeManagementScreenState
   }
 
   Widget _itemCard(Map<String, dynamic> item) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     final id = item['id'] as String? ?? '';
     final name = (item['name'] as String?) ?? 'Tanpa nama';
     final description = ((item['description'] as String?) ?? '').trim();
@@ -377,10 +383,10 @@ class _TrashTypeManagementScreenState
                         description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           height: 1.35,
-                          color: AppColors.textMuted,
+                          color: p.muted,
                         ),
                       ),
                     ],
@@ -389,10 +395,10 @@ class _TrashTypeManagementScreenState
                       _priceLabel(item),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primaryDark,
+                        color: p.primary,
                         fontFeatures: _numbers,
                       ),
                     ),
@@ -411,10 +417,10 @@ class _TrashTypeManagementScreenState
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Ubah'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primaryMain,
+                  foregroundColor: p.leaf,
                   minimumSize: const Size(0, _touch),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  side: const BorderSide(color: AppColors.borderLine),
+                  side: BorderSide(color: p.border),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -431,8 +437,8 @@ class _TrashTypeManagementScreenState
                 icon: const Icon(Icons.delete_outline_rounded, size: 20),
                 style: IconButton.styleFrom(
                   minimumSize: const Size(_touch, _touch),
-                  backgroundColor: AppColors.statusRejectedBg,
-                  foregroundColor: AppColors.danger,
+                  backgroundColor: warna.rejectedBackground,
+                  foregroundColor: warna.badText,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -451,10 +457,12 @@ class _TrashTypeManagementScreenState
     bool isActive,
     bool busy,
   ) {
-    final ink = isActive ? AppColors.statusApprovedText : AppColors.textMuted;
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+    final ink = isActive ? warna.approvedText : p.muted;
     final surface = isActive
-        ? AppColors.statusApprovedBg
-        : AppColors.statusExpired.withValues(alpha: 0.10);
+        ? warna.approvedBackground
+        : warna.neutralText.withValues(alpha: 0.10);
 
     return Semantics(
       button: true,
@@ -515,11 +523,12 @@ class _TrashTypeManagementScreenState
   }
 
   Future<void> _openForm([Map<String, dynamic>? initial]) async {
+    final p = AppPalette.of(context);
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: AppColors.textPrimary.withValues(alpha: 0.36),
+      barrierColor: p.text.withValues(alpha: 0.36),
       builder: (_) => _TrashTypeFormSheet(initial: initial),
     );
     if (saved != true || !mounted) return;
@@ -615,10 +624,10 @@ class _TrashTypeManagementScreenState
         ),
         content: Text(
           message,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             height: 1.45,
-            color: AppColors.textMuted,
+            color: p.muted,
           ),
         ),
         actions: [
@@ -626,13 +635,13 @@ class _TrashTypeManagementScreenState
             onPressed: () => Navigator.pop(ctx, false),
             style: TextButton.styleFrom(
               minimumSize: const Size(0, _touch),
-              foregroundColor: AppColors.textMuted,
+              foregroundColor: p.muted,
             ),
             child: const Text('Batal'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.danger,
+              backgroundColor: warna.badText,
               foregroundColor: Colors.white,
               minimumSize: const Size(0, _touch),
               shape: RoundedRectangleBorder(
@@ -653,12 +662,13 @@ class _TrashTypeManagementScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.danger : AppColors.primaryDark,
+        backgroundColor: isError ? warna.badText : p.primary,
       ),
     );
   }
 
   Widget _emptyCard() {
+    final p = AppPalette.of(context);
     return SurfaceCard(
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       child: Column(
@@ -667,33 +677,33 @@ class _TrashTypeManagementScreenState
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.mintSoftBackground,
+              color: p.mintWash,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.recycling_rounded,
               size: 26,
-              color: AppColors.primaryMain,
+              color: p.leaf,
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'Belum ada jenis sampah',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Tambahkan jenis sampah lewat tombol di bawah.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
         ],
@@ -702,7 +712,8 @@ class _TrashTypeManagementScreenState
   }
 
   Widget _loadingCard() {
-    return const SurfaceCard(
+    final p = AppPalette.of(context);
+    return SurfaceCard(
       padding: EdgeInsets.all(28),
       child: Column(
         children: [
@@ -714,7 +725,7 @@ class _TrashTypeManagementScreenState
           SizedBox(height: 12),
           Text(
             'Memuat jenis sampah...',
-            style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 12.5, color: p.muted),
           ),
         ],
       ),
@@ -730,33 +741,33 @@ class _TrashTypeManagementScreenState
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.statusRejectedBg,
+              color: warna.rejectedBackground,
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
               Icons.cloud_off_rounded,
               size: 26,
-              color: AppColors.danger,
+              color: warna.badText,
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'Gagal memuat jenis sampah',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Periksa koneksi Anda, lalu muat ulang daftar.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 16),
@@ -766,8 +777,8 @@ class _TrashTypeManagementScreenState
             label: const Text('Coba Lagi'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(0, _touch),
-              foregroundColor: AppColors.primaryMain,
-              side: const BorderSide(color: AppColors.borderLine),
+              foregroundColor: p.leaf,
+              side: BorderSide(color: p.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -921,6 +932,7 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
   }
 
   Future<void> _openFotoSheet() async {
+    final warna = AppStatusColors.of(p.brightness);
     final action = await showModalBottomSheet<String>(
       context: context,
       builder: (ctx) => SafeArea(
@@ -942,7 +954,7 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
               ListTile(
                 leading: const Icon(
                   Icons.delete_outline_rounded,
-                  color: AppColors.danger,
+                  color: warna.badText,
                 ),
                 title: const Text('Hapus Foto'),
                 onTap: () => Navigator.pop(ctx, 'hapus'),
@@ -997,12 +1009,13 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
   }
 
   Widget _fotoField() {
+    final p = AppPalette.of(context);
     final url = _hapusFoto
         ? null
         : ref.watch(fotoJenisSampahUrlProvider(_initialFoto));
     const placeholder = ColoredBox(
-      color: AppColors.mintSoftBackground,
-      child: Icon(Icons.image_outlined, size: 28, color: AppColors.textMuted),
+      color: p.mintWash,
+      child: Icon(Icons.image_outlined, size: 28, color: p.muted),
     );
 
     Widget preview;
@@ -1021,12 +1034,12 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Foto (opsional)',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: p.text,
           ),
         ),
         const SizedBox(height: 8),
@@ -1045,8 +1058,8 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, _touch),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    foregroundColor: AppColors.primaryMain,
-                    side: const BorderSide(color: AppColors.borderLine),
+                    foregroundColor: p.leaf,
+                    side: BorderSide(color: p.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1070,12 +1083,13 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
   }
 
   Widget _handle() {
+    final p = AppPalette.of(context);
     return Center(
       child: Container(
         width: 36,
         height: 4,
         decoration: BoxDecoration(
-          color: AppColors.borderLine,
+          color: p.border,
           borderRadius: BorderRadius.circular(999),
         ),
       ),
@@ -1145,6 +1159,8 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
   }
 
   Widget _sheetBody() {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1160,10 +1176,10 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
           _isEdit
               ? 'Perubahan tarif berlaku untuk setoran baru.'
               : 'Jenis baru langsung tampil di katalog setoran.',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             height: 1.4,
-            color: AppColors.textMuted,
+            color: p.muted,
           ),
         ),
         const SizedBox(height: 16),
@@ -1187,7 +1203,7 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
                 SurfaceCard(
                   tone: SurfaceTone.subtle,
                   radius: 12,
-                  color: AppColors.statusRejectedBg,
+                  color: warna.rejectedBackground,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 12,
@@ -1197,7 +1213,7 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
                     style: const TextStyle(
                       fontSize: 12.5,
                       height: 1.4,
-                      color: AppColors.statusRejectedText,
+                      color: warna.rejectedText,
                     ),
                   ),
                 ),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/constants/theme.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -85,6 +85,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _pilihSumberFoto(bool adaFoto) async {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     final aksi = await showModalBottomSheet<_AksiFoto>(
       context: context,
       useSafeArea: true,
@@ -104,11 +106,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderLine,
+                color: p.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(20, 12, 20, 4),
               child: Align(
                 alignment: Alignment.centerLeft,
@@ -117,7 +119,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: p.text,
                   ),
                 ),
               ),
@@ -136,25 +138,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ListTile(
                 leading: const _IkonSheet(
                   icon: Icons.delete_outline_rounded,
-                  warna: AppColors.danger,
+                  warna: warna.badText,
                 ),
                 title: const Text(
                   'Hapus Foto',
                   style: TextStyle(
-                    color: AppColors.danger,
+                    color: warna.badText,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 onTap: () => Navigator.pop(ctx, _AksiFoto.hapus),
               ),
-            const Divider(height: 1, color: AppColors.borderLine),
+            Divider(height: 1, color: p.border),
             ListTile(
               onTap: () => Navigator.pop(ctx),
-              title: const Center(
+              title: Center(
                 child: Text(
                   'Batal',
                   style: TextStyle(
-                    color: AppColors.textMuted,
+                    color: p.muted,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -224,6 +226,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     ref.listen(currentUserProvider, (_, next) => _isiForm(next.valueOrNull));
 
     final user = ref.watch(currentUserProvider).valueOrNull;
@@ -232,7 +236,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final bisaAksi = !_fotoSibuk && !_simpanSibuk;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: Column(
         children: [
           HeroHeader(
@@ -289,13 +293,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     clipBehavior: Clip.antiAlias,
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
-                                      color: AppColors.primaryLight,
+                                      color: p.lime,
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: Colors.white,
                                         width: 3,
                                       ),
-                                      boxShadow: const [AppColors.cardShadow],
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: p.border,
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
                                     child: Stack(
                                       fit: StackFit.expand,
@@ -331,11 +341,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            const Text(
+                            Text(
                               'Ketuk foto untuk mengganti',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textMuted,
+                                color: p.muted,
                               ),
                             ),
                           ],
@@ -345,9 +355,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: AppColors.cardSurface,
+                          color: p.surface,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.borderLine),
+                          border: Border.all(color: p.border),
                         ),
                         child: Form(
                           key: _formKey,
@@ -360,11 +370,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 controller: _nama,
                                 enabled: bisaAksi,
                                 textCapitalization: TextCapitalization.words,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Nama lengkap',
                                   prefixIcon: Icon(
                                     Icons.person_outline_rounded,
-                                    color: AppColors.primaryMain,
+                                    color: p.leaf,
                                     size: 20,
                                   ),
                                 ),
@@ -376,11 +386,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               TextFormField(
                                 controller: _nim,
                                 enabled: bisaAksi,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Contoh: P07124220001',
                                   prefixIcon: Icon(
                                     Icons.badge_outlined,
-                                    color: AppColors.primaryMain,
+                                    color: p.leaf,
                                     size: 20,
                                   ),
                                 ),
@@ -394,14 +404,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 enabled: bisaAksi,
                                 keyboardType: TextInputType.phone,
                                 autocorrect: false,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: 'Contoh: 081234567890',
                                   helperText:
                                       'Dipakai admin untuk menghubungi Anda',
                                   helperMaxLines: 2,
                                   prefixIcon: Icon(
                                     Icons.chat_outlined,
-                                    color: AppColors.primaryMain,
+                                    color: p.leaf,
                                     size: 20,
                                   ),
                                 ),
@@ -416,25 +426,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.mintSoftBackground,
+                                  color: p.mintWash,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.borderLine),
+                                  border: Border.all(color: p.border),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.lock_outline_rounded,
                                       size: 18,
-                                      color: AppColors.textMuted,
+                                      color: p.muted,
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         email.isEmpty ? 'Belum diisi' : email,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary,
+                                          color: p.text,
                                         ),
                                       ),
                                     ),
@@ -442,11 +452,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              const Text(
+                              Text(
                                 'Ubah lewat menu Ubah Email di Profil.',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textMuted,
+                                  color: p.muted,
                                 ),
                               ),
                               if (_galat != null) ...[
@@ -493,6 +503,8 @@ class _Inisial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final parts = (nama ?? '')
         .trim()
         .split(RegExp(r'\s+'))
@@ -504,8 +516,8 @@ class _Inisial extends StatelessWidget {
     return Center(
       child: Text(
         huruf,
-        style: const TextStyle(
-          color: AppColors.primaryDark,
+        style: TextStyle(
+          color: p.primary,
           fontSize: 32,
           fontWeight: FontWeight.w800,
         ),
@@ -518,15 +530,17 @@ class _IkonSheet extends StatelessWidget {
   final IconData icon;
   final Color warna;
 
-  const _IkonSheet({required this.icon, this.warna = AppColors.primaryMain});
+  _IkonSheet({required this.icon, this.warna = p.leaf});
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     return Container(
       width: 34,
       height: 34,
       decoration: BoxDecoration(
-        color: AppColors.mintSoftBackground,
+        color: p.mintWash,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(icon, size: 18, color: warna),
@@ -542,13 +556,14 @@ class _BannerGalat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warna = AppStatusColors.of(p.brightness);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
+        color: warna.rejectedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
+        border: Border.all(color: warna.badText.withValues(alpha: 0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,7 +571,7 @@ class _BannerGalat extends StatelessWidget {
           const Icon(
             Icons.error_outline_rounded,
             size: 18,
-            color: AppColors.danger,
+            color: warna.badText,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -565,7 +580,7 @@ class _BannerGalat extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: AppColors.danger,
+                color: warna.badText,
               ),
             ),
           ),
@@ -585,14 +600,15 @@ String _mimeDariNama(String nama) {
 
 Widget _label(String teks) => Text(
       teks,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
+        color: p.text,
       ),
     );
 
 void _snack(BuildContext context, String message) {
+    final p = AppPalette.of(context);
   final messenger = ScaffoldMessenger.of(context);
   messenger
     ..hideCurrentSnackBar()
@@ -600,7 +616,7 @@ void _snack(BuildContext context, String message) {
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: p.primary,
       ),
     );
 }

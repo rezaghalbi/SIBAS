@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/theme.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../providers/withdrawal_provider.dart';
 
 const String _genericError =
@@ -34,11 +34,13 @@ String _safeMessage(Object? error) {
 
 /// Membuka sheet penarikan saldo.
 Future<void> showWithdrawSheet(BuildContext context) async {
+    final p = AppPalette.of(context);
+
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: Colors.white,
+    backgroundColor: p.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(AppTheme.bottomSheetRadius),
@@ -115,6 +117,8 @@ class _WithdrawSheetState extends ConsumerState<WithdrawSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
     final balance = ref.watch(availableBalanceProvider).valueOrNull ?? 0.0;
     final isSubmitting = ref.watch(withdrawalControllerProvider).isLoading;
 
@@ -128,127 +132,128 @@ class _WithdrawSheetState extends ConsumerState<WithdrawSheet> {
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.borderLine,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Tarik Saldo',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: p.border,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              IconButton(
-                onPressed: isSubmitting ? null : () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
-                tooltip: 'Tutup',
-              ),
-            ],
-          ),
-          Text(
-            'Saldo tersedia ${_currency.format(balance)}',
-            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _controller,
-            autofocus: true,
-            enabled: !isSubmitting,
-            keyboardType: TextInputType.number,
-            inputFormatters: [const _ThousandsFormatter()],
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _submit(balance),
-            decoration: const InputDecoration(
-              labelText: 'Nominal Penarikan',
-              prefixText: 'Rp ',
-              hintText: 'Contoh: 50.000',
             ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Pengajuan diproses admin. Dana dicairkan setelah disetujui.',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.statusRejectedBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.danger.withValues(alpha: 0.35),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.error_outline_rounded,
-                    size: 18,
-                    color: AppColors.danger,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _error!,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.danger,
-                        fontWeight: FontWeight.w600,
-                      ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Tarik Saldo',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: p.text,
                     ),
                   ),
-                ],
+                ),
+                IconButton(
+                  onPressed:
+                      isSubmitting ? null : () => Navigator.of(context).pop(),
+                  icon: Icon(Icons.close_rounded, color: p.muted),
+                  tooltip: 'Tutup',
+                ),
+              ],
+            ),
+            Text(
+              'Saldo tersedia ${_currency.format(balance)}',
+              style: TextStyle(fontSize: 13, color: p.muted),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              enabled: !isSubmitting,
+              keyboardType: TextInputType.number,
+              inputFormatters: [const _ThousandsFormatter()],
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(balance),
+              decoration: const InputDecoration(
+                labelText: 'Nominal Penarikan',
+                prefixText: 'Rp ',
+                hintText: 'Contoh: 50.000',
               ),
             ),
-          ],
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () => Navigator.of(context).pop(),
-                  child: const Text('Batal'),
+            const SizedBox(height: 8),
+            Text(
+              'Pengajuan diproses admin. Dana dicairkan setelah disetujui.',
+              style: TextStyle(fontSize: 12, color: p.muted),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: status.rejectedBackground,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: status.badText.withValues(alpha: 0.35),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: isSubmitting ? null : () => _submit(balance),
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Kirim Pengajuan'),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      size: 18,
+                      color: status.badText,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: status.badText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
-          ),
-        ],
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: isSubmitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
+                    child: const Text('Batal'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: isSubmitting ? null : () => _submit(balance),
+                    child: isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Kirim Pengajuan'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

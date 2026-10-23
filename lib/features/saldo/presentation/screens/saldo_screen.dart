@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
@@ -29,6 +29,8 @@ class SaldoScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final p = AppPalette.of(context);
+
     final user = ref.watch(currentUserProvider).valueOrNull;
     final balanceState = ref.watch(availableBalanceProvider);
     final withdrawalsState = ref.watch(studentWithdrawalsProvider);
@@ -53,7 +55,7 @@ class SaldoScreen extends ConsumerWidget {
     final hasError = balanceState.hasError || withdrawalsState.hasError;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(availableBalanceProvider);
@@ -119,13 +121,14 @@ class SaldoScreen extends ConsumerWidget {
                           const SizedBox(height: 16),
                           LayoutBuilder(
                             builder: (context, constraints) {
+    final p = AppPalette.of(context);
                               final withdrawButton = ElevatedButton.icon(
                                 onPressed: canWithdraw
                                     ? () => context.push('/tarik')
                                     : null,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: AppColors.primaryMain,
+                                  foregroundColor: p.leaf,
                                   disabledBackgroundColor:
                                       Colors.white.withValues(alpha: 0.35),
                                   disabledForegroundColor:
@@ -450,6 +453,10 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     return SurfaceCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -458,10 +465,10 @@ class _SummaryCard extends StatelessWidget {
           Text(
             label,
             maxLines: 2,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
           const SizedBox(height: 8),
@@ -475,11 +482,11 @@ class _SummaryCard extends StatelessWidget {
                   child: Text(
                     value,
                     maxLines: 1,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.4,
-                      color: AppColors.textPrimary,
+                      color: p.text,
                       fontFeatures: _tabularFigures,
                     ),
                   ),
@@ -488,10 +495,10 @@ class _SummaryCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 unit,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textMuted,
+                  color: p.muted,
                 ),
               ),
             ],
@@ -510,26 +517,30 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     return Row(
       children: [
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15.5,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.2,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
         ),
         if (trailing != null)
           Text(
             trailing!,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
       ],
@@ -545,6 +556,10 @@ class _WithdrawalTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
+
     final currency = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
@@ -564,12 +579,12 @@ class _WithdrawalTile extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.mintSoftBackground,
+              color: p.mintWash,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.payments_rounded,
-              color: AppColors.primaryMain,
+              color: p.leaf,
               size: 20,
             ),
           ),
@@ -582,20 +597,20 @@ class _WithdrawalTile extends StatelessWidget {
                   currency.format(withdrawal.amount),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.2,
-                    color: AppColors.textPrimary,
+                    color: p.text,
                     fontFeatures: _tabularFigures,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   date.format(withdrawal.createdAt),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: p.muted,
                     fontFeatures: _tabularFigures,
                   ),
                 ),
@@ -609,7 +624,7 @@ class _WithdrawalTile extends StatelessWidget {
                     width: double.infinity,
                     child: SurfaceCard(
                       tone: SurfaceTone.subtle,
-                      color: AppColors.statusRejectedBg,
+                      color: warna.rejectedBackground,
                       radius: 16,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -617,10 +632,10 @@ class _WithdrawalTile extends StatelessWidget {
                       ),
                       child: Text(
                         'Alasan: $reason',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           height: 1.4,
-                          color: AppColors.danger,
+                          color: warna.badText,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -641,6 +656,10 @@ class _EmptyWithdrawals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     return SurfaceCard(
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
       child: Column(
@@ -649,33 +668,33 @@ class _EmptyWithdrawals extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.mintSoftBackground,
+              color: p.mintWash,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.account_balance_wallet_outlined,
-              color: AppColors.primaryMain,
+              color: p.leaf,
               size: 26,
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'Belum ada pengajuan penarikan',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: p.text,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Pengajuan yang Anda kirim akan muncul di sini beserta statusnya.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.5,
               height: 1.5,
-              color: AppColors.textMuted,
+              color: p.muted,
             ),
           ),
         ],
@@ -691,14 +710,18 @@ class _Footnote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+
+
+
     return Padding(
       padding: const EdgeInsets.only(top: 2),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11.5,
           height: 1.5,
-          color: AppColors.textMuted,
+          color: p.muted,
         ),
       ),
     );
@@ -744,8 +767,11 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warna = AppStatusColors.of(p.brightness);
+
+
     return SurfaceCard(
-      color: AppColors.statusRejectedBg,
+      color: warna.rejectedBackground,
       radius: 16,
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -754,19 +780,19 @@ class _ErrorBox extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
+              Icon(
                 Icons.cloud_off_rounded,
                 size: 18,
-                color: AppColors.danger,
+                color: warna.badText,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   message,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.danger,
+                    color: warna.badText,
                   ),
                 ),
               ),
@@ -779,7 +805,7 @@ class _ErrorBox extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Coba Lagi'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+              style: TextButton.styleFrom(foregroundColor: warna.badText),
             ),
           ),
         ],

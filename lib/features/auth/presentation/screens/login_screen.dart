@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/colors.dart';
+import '../theme/app_palette.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../data/auth_repository.dart';
@@ -61,6 +61,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleForgotPassword() async {
+    final p = AppPalette.of(context);
     final terkirim = await showDialog<String>(
       context: context,
       builder: (_) => _ForgotPasswordDialog(
@@ -76,18 +77,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             'Tautan atur ulang sandi dikirim ke $terkirim. Periksa kotak masuk.',
           ),
           behavior: SnackBarBehavior.floating,
-          backgroundColor: AppColors.primaryDark,
+          backgroundColor: p.primary,
         ),
       );
   }
 
   Future<void> _handleResend() async {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Isi email terlebih dahulu untuk mengirim ulang verifikasi'),
-          backgroundColor: AppColors.danger,
+          backgroundColor: warna.badText,
         ),
       );
       return;
@@ -100,7 +103,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Email verifikasi dikirim ulang ke $email'),
-            backgroundColor: AppColors.primaryMain,
+            backgroundColor: p.leaf,
           ),
         );
       }
@@ -109,7 +112,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(authErrorMessage(e)),
-            backgroundColor: AppColors.danger,
+            backgroundColor: warna.badText,
           ),
         );
       }
@@ -120,10 +123,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
+
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: p.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -171,7 +178,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'SIBAS',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleLarge?.copyWith(
-                            color: AppColors.primaryDark,
+                            color: p.primary,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.5,
                           ),
@@ -181,7 +188,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Bank Sampah Poltekkes Kemenkes Yogyakarta',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textMuted,
+                            color: p.muted,
                             fontSize: 13,
                           ),
                         ),
@@ -192,19 +199,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: AppColors.mintSoftBackground,
+                            color: p.mintWash,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.primaryMain),
+                              Icon(Icons.info_outline_rounded, size: 16, color: p.leaf),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Masuk sebagai mahasiswa atau admin — diarahkan otomatis sesuai akun.',
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     fontSize: 12,
-                                    color: AppColors.textMuted,
+                                    color: p.muted,
                                   ),
                                 ),
                               ),
@@ -218,10 +225,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                             decoration: BoxDecoration(
-                              color: AppColors.statusRejectedBg,
+                              color: warna.rejectedBackground,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppColors.danger.withValues(alpha: 0.35),
+                                color: warna.badText.withValues(alpha: 0.35),
                               ),
                             ),
                             child: Column(
@@ -230,18 +237,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.mark_email_unread_outlined,
                                       size: 18,
-                                      color: AppColors.danger,
+                                      color: warna.badText,
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         _verificationNotice!,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12.5,
-                                          color: AppColors.danger,
+                                          color: warna.badText,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -270,16 +277,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Email Kampus / Akun',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: p.text,
                           ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'nama@poltekkes-jogja.ac.id',
-                            prefixIcon: Icon(Icons.mail_outline_rounded, color: AppColors.primaryMain, size: 20),
+                            prefixIcon: Icon(Icons.mail_outline_rounded, color: p.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) return 'Email wajib diisi';
@@ -294,7 +301,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'Kata Sandi',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: p.text,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -303,11 +310,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: '••••••••',
-                            prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryMain, size: 20),
+                            prefixIcon: Icon(Icons.lock_outline_rounded, color: p.leaf, size: 20),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                color: AppColors.textMuted,
+                                color: p.muted,
                                 size: 20,
                               ),
                               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -331,9 +338,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                             child: Text(
                               'Lupa kata sandi?',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12.5,
-                                color: AppColors.primaryMain,
+                                color: p.leaf,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -346,27 +353,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.statusRejectedBg,
+                              color: warna.rejectedBackground,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppColors.danger.withValues(alpha: 0.35),
+                                color: warna.badText.withValues(alpha: 0.35),
                               ),
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.error_outline_rounded,
                                   size: 18,
-                                  color: AppColors.danger,
+                                  color: warna.badText,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _errorMessage!,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12.5,
-                                      color: AppColors.danger,
+                                      color: warna.badText,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -403,7 +410,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               child: Text(
                                 'Buat Akun Baru',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.primaryMain,
+                                  color: p.leaf,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
                                 ),
@@ -483,6 +490,10 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final p = AppPalette.of(context);
+    final warna = AppStatusColors.of(p.brightness);
+
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       title: const Text(
@@ -496,13 +507,13 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Masukkan email akun. Kami kirim tautan untuk mengatur ulang '
               'kata sandi.',
               style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: AppColors.textMuted,
+                color: p.muted,
               ),
             ),
             const SizedBox(height: 12),
@@ -511,11 +522,11 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               autofocus: widget.emailAwal.isEmpty,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'nama@poltekkes-jogja.ac.id',
                 prefixIcon: Icon(
                   Icons.mail_outline_rounded,
-                  color: AppColors.primaryMain,
+                  color: p.leaf,
                   size: 20,
                 ),
               ),
@@ -527,28 +538,28 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.statusRejectedBg,
+                  color: warna.rejectedBackground,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: AppColors.danger.withValues(alpha: 0.35),
+                    color: warna.badText.withValues(alpha: 0.35),
                   ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.error_outline_rounded,
                       size: 16,
-                      color: AppColors.danger,
+                      color: warna.badText,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _galat!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           height: 1.4,
-                          color: AppColors.danger,
+                          color: warna.badText,
                         ),
                       ),
                     ),
@@ -562,9 +573,9 @@ class _ForgotPasswordDialogState extends ConsumerState<_ForgotPasswordDialog> {
       actions: [
         TextButton(
           onPressed: _sibuk ? null : () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: p.muted),
           ),
         ),
         ElevatedButton(
