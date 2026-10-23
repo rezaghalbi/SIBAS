@@ -1,3 +1,5 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,8 @@ import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../info/presentation/providers/app_settings_provider.dart';
+import '../../../students/presentation/providers/student_provider.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
 
@@ -26,42 +30,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     super.dispose();
   }
 
-  Widget _buildMetricCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color iconColor,
-    required Color bgColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, color: iconColor, size: 16),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(currentUserProvider);
@@ -69,6 +37,27 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     final txListState = ref.watch(adminTransactionsProvider);
 
     final adminName = userState.valueOrNull?.fullName ?? 'Petugas SIBAS';
+
+    // Pintasan memakai data yang sudah ada; saat memuat/gagal tampilkan "—"
+    // supaya kartu tetap bisa diketuk.
+    final metrics = metricsState.valueOrNull;
+    final studentCount = ref.watch(studentsProvider).valueOrNull?.length;
+    final qrTtlMinutes =
+        ref.watch(appSettingsProvider).valueOrNull?.qrTtlMinutes;
+
+    final pendingLabel =
+        metrics == null ? '—' : '${metrics.pendingCount} transaksi menunggu';
+    final historyLabel = metrics == null
+        ? '—'
+        : '${metrics.approvedCount} disetujui · '
+            '${metrics.rejectedCount} ditolak';
+    final studentsLabel =
+        studentCount == null ? '—' : '$studentCount mahasiswa';
+    final settingsLabel = qrTtlMinutes == null ? '—' : 'QR $qrTtlMinutes menit';
+    // Total berat tetap ditampilkan sebagai keterangan judul seksi.
+    final weightLabel = metrics == null
+        ? 'Total — kg'
+        : 'Total ${metrics.totalWeightKg.toStringAsFixed(1)} kg';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -143,53 +132,90 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
           ),
 
-          // 2. Metrik Statistik
+          // 2. Ringkasan & pintasan cepat
           SliverPadding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             sliver: SliverToBoxAdapter(
-              child: metricsState.when(
-                data: (metrics) => GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.6,
-                  children: [
-                    _buildMetricCard(
-                      title: 'Total Sampah',
-                      value: '${metrics.totalWeightKg.toStringAsFixed(1)} kg',
-                      icon: Icons.scale_rounded,
-                      iconColor: AppColors.primaryMain,
-                      bgColor: AppColors.mintSoftBackground,
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Ringkasan',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                    _buildMetricCard(
-                      title: 'Pending Validasi',
-                      value: '${metrics.pendingCount} Transaksi',
-                      icon: Icons.pending_actions_rounded,
-                      iconColor: AppColors.statusPendingText,
-                      bgColor: AppColors.statusPendingBg,
+                  ),
+                  Text(
+                    weightLabel,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryDark,
+                      fontFeatures: [FontFeature.tabularFigures()],
                     ),
-                    _buildMetricCard(
-                      title: 'Total Diterima',
-                      value: '${metrics.approvedCount}',
-                      icon: Icons.check_circle_outline_rounded,
-                      iconColor: AppColors.statusApprovedText,
-                      bgColor: AppColors.statusApprovedBg,
-                    ),
-                    _buildMetricCard(
-                      title: 'Total Ditolak',
-                      value: '${metrics.rejectedCount}',
-                      icon: Icons.cancel_outlined,
-                      iconColor: AppColors.statusRejectedText,
-                      bgColor: AppColors.statusRejectedBg,
-                    ),
-                  ],
-                ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Gagal memuat metrik: $e'),
+                  ),
+                ],
               ),
             ),
+          ),
+          SliverLayoutBuilder(
+            builder: (context, constraints) {
+              // 360 px → 2 kolom; desktop → tepat 4 kolom selebar konten, tanpa
+              // slot kosong saat lebar jendela berubah.
+              final columns = constraints.crossAxisExtent < 700 ? 2 : 4;
+              const gap = 12.0;
+              final available = constraints.crossAxisExtent - 40;
+              final extent = (available - gap * (columns - 1)) / columns;
+
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: extent,
+                    mainAxisExtent: 108,
+                    crossAxisSpacing: gap,
+                    mainAxisSpacing: gap,
+                  ),
+                  delegate: SliverChildListDelegate([
+                    _DashboardShortcutTile(
+                      title: 'Menunggu Validasi',
+                      value: pendingLabel,
+                      icon: Icons.pending_actions_rounded,
+                      iconColor: AppColors.statusPendingText,
+                      iconBackground: AppColors.statusPendingBg,
+                      onTap: () => context.push('/admin/submissions'),
+                    ),
+                    _DashboardShortcutTile(
+                      title: 'Riwayat Transaksi',
+                      value: historyLabel,
+                      icon: Icons.history_rounded,
+                      iconColor: AppColors.statusApprovedText,
+                      iconBackground: AppColors.statusApprovedBg,
+                      onTap: () => context.push('/admin/history'),
+                    ),
+                    _DashboardShortcutTile(
+                      title: 'Data Mahasiswa',
+                      value: studentsLabel,
+                      icon: Icons.groups_rounded,
+                      iconColor: AppColors.primaryMain,
+                      iconBackground: AppColors.mintSoftBackground,
+                      onTap: () => context.push('/admin/students'),
+                    ),
+                    _DashboardShortcutTile(
+                      title: 'Pengaturan',
+                      value: settingsLabel,
+                      icon: Icons.tune_rounded,
+                      iconColor: AppColors.textMuted,
+                      iconBackground: AppColors.mintSoftBackground,
+                      onTap: () => context.push('/admin/settings'),
+                    ),
+                  ]),
+                ),
+              );
+            },
           ),
 
           // Pintasan pengelolaan jenis sampah & tarif
@@ -268,6 +294,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     onPressed: () {
                       ref.invalidate(adminMetricsProvider);
                       ref.invalidate(adminTransactionsProvider);
+                      ref.invalidate(studentsProvider);
+                      ref.invalidate(appSettingsProvider);
                     },
                   ),
                 ],
@@ -381,3 +409,101 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     );
   }
 }
+
+/// Kartu pintasan dashboard admin: seluruh permukaan kartu adalah target
+/// sentuh (tinggi 108 px, jauh di atas minimum 44 px).
+class _DashboardShortcutTile extends StatelessWidget {
+  const _DashboardShortcutTile({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBackground,
+    required this.onTap,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBackground;
+  final VoidCallback onTap;
+
+  static const BorderRadius _radius = BorderRadius.all(Radius.circular(20));
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: _radius,
+      child: Ink(
+        decoration: BoxDecoration(
+          color: AppColors.cardSurface,
+          borderRadius: _radius,
+          border: Border.all(color: AppColors.borderLine),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: _radius,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: iconBackground,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, size: 18, color: iconColor),
+                    ),
+                    const Spacer(),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: AppColors.textMuted,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                // `scaleDown` menjaga angka panjang tetap satu baris di layar
+                // 360 px tanpa memotong informasi.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
