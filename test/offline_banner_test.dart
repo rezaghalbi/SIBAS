@@ -4,7 +4,7 @@ import 'package:sibas/core/network/api_guard.dart';
 import 'package:sibas/core/widgets/offline_banner.dart';
 
 void main() {
-  const pesan = 'Tidak ada koneksi — data mungkin tidak terbaru';
+  const pesan = 'Maaf, Anda sedang offline. SIBAS memerlukan koneksi internet.';
 
   tearDown(() => offlineNotifier.value = false);
 

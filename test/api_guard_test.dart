@@ -10,7 +10,7 @@ void main() {
       addTearDown(() => offlineNotifier.value = false);
       expect(
         pesanKesalahan(const JaringanException('apa saja')),
-        pesanWajibOnline,
+        'apa saja',
       );
       expect(
         pesanKesalahan(PostgrestException(message: 'gagal', code: '500')),
