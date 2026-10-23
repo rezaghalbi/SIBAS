@@ -9,9 +9,9 @@ void main() {
     expect(
       header,
       'Kode,Tanggal,Mahasiswa,NIM,Jenis Sampah,Berat (kg),Harga/kg,'
-      'Total,Status,Alasan Ditolak',
+      'Total,Status,Alasan Ditolak,Lokasi',
     );
-    expect(header.split(',').length, 10);
+    expect(header.split(',').length, 11);
   });
 
   test('field berkoma dan berquote di-escape RFC 4180', () {
@@ -32,7 +32,26 @@ void main() {
     expect(baris, contains('"TX,001"'));
     expect(baris, contains('"Budi ""BB"", S.Pd"'));
     expect(baris, contains(',2.50,3500,8750,APPROVED,'));
-    expect(baris.endsWith('APPROVED,'), isTrue);
+    expect(baris.endsWith('APPROVED,,'), isTrue);
+  });
+
+  test('menyertakan nama lokasi di kolom terakhir', () {
+    final csv = bangunCsvSetoran([
+      {
+        'id': 'tx-2',
+        'tx_code': 'TX-002',
+        'created_at': DateTime(2026, 1, 2, 3, 4),
+        'profiles': {'full_name': 'Budi', 'nim': '20230001'},
+        'trash_types': {'name': 'Kertas', 'price_per_kg': 2000},
+        'weight': 1.0,
+        'final_amount': 2000,
+        'status': 'APPROVED',
+        'location': {'name': 'Bank Sampah Poltekkes'},
+      },
+    ]);
+
+    final baris = csv.split('\r\n')[1];
+    expect(baris.endsWith('APPROVED,,Bank Sampah Poltekkes'), isTrue);
   });
 
   test('header dan isi rekap penarikan', () {
@@ -51,12 +70,12 @@ void main() {
     final lines = csv.split('\r\n');
     expect(
       lines.first,
-      'ID,Tanggal,Mahasiswa,NIM,Jumlah,Status,Alasan Ditolak',
+      'ID,Tanggal,Mahasiswa,NIM,Jumlah,Status,Alasan Ditolak,Lokasi',
     );
-    expect(lines.first.split(',').length, 7);
+    expect(lines.first.split(',').length, 8);
     expect(
       lines[1],
-      '12345678,2026-01-02 03:04,Ani,20230002,150000,PENDING,',
+      '12345678,2026-01-02 03:04,Ani,20230002,150000,PENDING,,',
     );
   });
 }

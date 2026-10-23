@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 final _currency = NumberFormat.currency(
   locale: 'id_ID',
@@ -71,7 +71,7 @@ class _WithdrawQrSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderLine,
+                  color: SibasColors.border,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -79,38 +79,38 @@ class _WithdrawQrSheet extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     'QR Penarikan',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      color: SibasColors.text,
                     ),
                   ),
                 ),
                 IconButton(
                   tooltip: 'Tutup',
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
-                    color: AppColors.textMuted,
+                    color: SibasColors.muted,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Nominal Penarikan',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 12, color: SibasColors.muted),
             ),
             const SizedBox(height: 4),
             Text(
               _currency.format(amount),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
+                color: SibasColors.text,
                 letterSpacing: -0.5,
               ),
             ),
@@ -120,25 +120,25 @@ class _WithdrawQrSheet extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.mintSoftBackground,
+                  color: SibasColors.mintWash,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderLine),
+                  border: Border.all(color: SibasColors.border),
                 ),
                 child: Column(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.info_outline_rounded,
                       size: 28,
-                      color: AppColors.primaryDark,
+                      color: SibasColors.primary,
                     ),
                     const SizedBox(height: 10),
-                    const Text(
+                    Text(
                       'Pengajuan ini sudah diproses.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: SibasColors.text,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -152,7 +152,7 @@ class _WithdrawQrSheet extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.mintAccent, width: 2),
+                    border: Border.all(color: SibasColors.mint, width: 2),
                   ),
                   child: QrImageView(
                     data: token,
@@ -164,10 +164,10 @@ class _WithdrawQrSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Tunjukkan QR ini ke admin untuk mencairkan dana.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 13, color: SibasColors.muted),
               ),
             ],
             const SizedBox(height: 24),

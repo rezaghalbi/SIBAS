@@ -9,7 +9,8 @@ class WithdrawalRepository {
   WithdrawalRepository(this._client);
 
   static const _selectWithRelations =
-      '*, profiles:profiles!withdrawals_mahasiswa_id_fkey(full_name, nim)';
+      '*, profiles:profiles!withdrawals_mahasiswa_id_fkey(full_name, nim), '
+      'location:bank_locations(name, address, latitude, longitude)';
 
   /// Saldo yang boleh ditarik. Dihitung server lewat RPC available_balance.
   Future<double> getAvailableBalance(String userId) {
@@ -24,11 +25,18 @@ class WithdrawalRepository {
   }
 
   /// Ajukan penarikan. Nominal & status awal ditentukan server.
-  Future<WithdrawalModel> createWithdrawal(double amount) {
+  Future<WithdrawalModel> createWithdrawal(
+    double amount, {
+    String? locationId,
+  }) {
     return guardRequest(() async {
       final res = await _client.rpc(
         'create_withdrawal',
-        params: {'p_amount': amount},
+        params: {
+          'p_amount': amount,
+          // Null berarti server memakai lokasi aktif pertama.
+          'p_location_id': locationId,
+        },
       );
 
       if (res is Map) {
@@ -66,15 +74,36 @@ class WithdrawalRepository {
     });
   }
 
-  /// Daftar pengajuan untuk admin, opsional difilter status.
-  Future<List<WithdrawalModel>> getAllWithdrawals({String? statusFilter}) {
+  /// Daftar pengajuan untuk admin.
+  ///
+  /// Status, lokasi, dan pencarian (nama/NIM) difilter di server agar tidak
+  /// terpotong batas baris; `limit` dipakai untuk paginasi bertahap.
+  Future<List<WithdrawalModel>> getAllWithdrawals({
+    String? statusFilter,
+    String? locationId,
+    String query = '',
+    int limit = 50,
+  }) {
     return guardRequest(() async {
       var builder = _client.from('withdrawals').select(_selectWithRelations);
       if (statusFilter != null && statusFilter.isNotEmpty) {
         builder = builder.eq('status', statusFilter.toUpperCase());
       }
+      if (locationId != null && locationId.isNotEmpty) {
+        builder = builder.eq('location_id', locationId);
+      }
 
-      final res = await builder.order('created_at', ascending: false).limit(200);
+      final needle = query.trim().replaceAll(RegExp(r'[,()*]'), ' ').trim();
+      if (needle.isNotEmpty) {
+        final pola = '%$needle%';
+        builder = builder.or(
+          'profiles.full_name.ilike.$pola,profiles.nim.ilike.$pola',
+        );
+      }
+
+      final res = await builder
+          .order('created_at', ascending: false)
+          .limit(limit.clamp(1, 200));
       return (res as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(WithdrawalModel.fromJson)

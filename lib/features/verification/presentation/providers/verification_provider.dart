@@ -8,12 +8,16 @@ final verificationRepositoryProvider = Provider<VerificationRepository>((ref) {
   return VerificationRepository(supabase);
 });
 
-/// Provider metrik admin
+/// Jumlah baris yang diminta daftar admin. Naik saat "Muat lebih banyak".
+final adminPageLimitProvider = StateProvider<int>((ref) => 50);
+
+/// Provider metrik admin, mengikuti filter lokasi aktif.
 final adminMetricsProvider = FutureProvider<AdminMetricsModel>((ref) async {
   final repo = ref.watch(verificationRepositoryProvider);
+  final lokasi = ref.watch(adminFilterProvider).locationId;
   // Ikut dibuang saat sesi berganti (logout/login akun lain).
   ref.watch(sessionEpochProvider);
-  return repo.getAdminMetrics();
+  return repo.getAdminMetrics(locationId: lokasi);
 });
 
 /// State filter transaksi admin
@@ -30,5 +34,7 @@ final adminTransactionsProvider = FutureProvider<List<Map<String, dynamic>>>((re
   return repo.getAllTransactions(
     query: filter.query,
     statusFilter: filter.status,
+    locationId: filter.locationId,
+    limit: ref.watch(adminPageLimitProvider),
   );
 });

@@ -8,6 +8,11 @@ import 'supabase_client.dart';
 /// Status koneksi kasar untuk banner offline (tanpa dependency baru).
 final ValueNotifier<bool> offlineNotifier = ValueNotifier<bool>(false);
 
+/// SIBAS wajib online: tidak ada mode baca dari cache.
+const String pesanWajibOnline =
+    'Maaf, Anda sedang offline. SIBAS memerlukan koneksi internet untuk '
+    'dibuka. Sambungkan jaringan lalu coba lagi.';
+
 /// Kegagalan yang terasa seperti masalah jaringan bagi pengguna.
 class JaringanException implements Exception {
   final String pesan;
@@ -41,7 +46,7 @@ Future<T> guardRequest<T>(
   } on TimeoutException {
     offlineNotifier.value = true;
     throw const JaringanException(
-      'Koneksi terlalu lama. Periksa jaringan lalu coba lagi.',
+      'Maaf, koneksi terlalu lama. Sambungkan internet lalu coba lagi.',
     );
   } catch (error) {
     if (_sesiBerakhir(error)) {
@@ -50,9 +55,7 @@ Future<T> guardRequest<T>(
     }
     if (_gangguanJaringan(error)) {
       offlineNotifier.value = true;
-      throw const JaringanException(
-        'Tidak dapat menghubungi server. Periksa jaringan lalu coba lagi.',
-      );
+      throw const JaringanException(pesanWajibOnline);
     }
     // Jangan telan error domain (StateError, AuthException, PostgrestException).
     rethrow;
@@ -65,6 +68,8 @@ String pesanKesalahan(Object error) {
     return 'Sesi Anda berakhir. Silakan masuk lagi.';
   }
   if (error is JaringanException) return error.pesan;
+  // Permintaan lain yang gagal saat perangkat offline juga memakai pesan ini.
+  if (offlineNotifier.value) return pesanWajibOnline;
 
   final pesan = switch (error) {
     AuthException(:final message) => message,

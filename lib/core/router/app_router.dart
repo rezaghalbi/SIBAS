@@ -6,6 +6,7 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
+import '../../features/bank_location/presentation/screens/admin_locations_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/deposit/presentation/screens/qr_display_screen.dart';
 import '../../features/deposit/presentation/screens/setor_screen.dart';
@@ -25,7 +26,7 @@ import '../../features/verification/presentation/screens/admin_scan_screen.dart'
 import '../../features/verification/presentation/screens/admin_submissions_screen.dart';
 import '../../features/withdrawal/presentation/screens/tarik_screen.dart';
 import '../../features/withdrawal/presentation/screens/withdrawal_detail_screen.dart';
-import '../widgets/app_bottom_nav.dart';
+import '../widgets/adaptive_shell.dart';
 
 /// Konfigurasi GoRouter resmi SIBAS lengkap dengan seluruh rute aplikasi.
 ///
@@ -213,6 +214,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/settings',
         builder: (context, state) => const AdminSettingsScreen(),
       ),
+      GoRoute(
+        path: '/admin/locations',
+        builder: (context, state) => const AdminLocationsScreen(),
+      ),
 
       // Admin — shell terpisah agar tiap peran punya riwayat tab sendiri.
       StatefulShellRoute.indexedStack(
@@ -265,7 +270,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-/// Membungkus shell tab dengan bottom nav. Scaffold berada di luar
+/// Membungkus shell tab dengan navigasi adaptif ([AdaptiveShell]): nav bawah
+/// di layar sempit, rail samping mulai 900 px. Scaffold berada di luar
 /// [navigationShell], jadi nav tidak ikut transisi dan state tab tetap hidup.
 class _NavScaffold extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -283,17 +289,15 @@ class _NavScaffold extends ConsumerWidget {
         ? (ref.watch(adminMetricsProvider).valueOrNull?.pendingCount ?? 0)
         : 0;
 
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: navigationShell.currentIndex,
-        isAdmin: isAdmin,
-        pendingCount: pendingCount,
-        onTap: (target) => navigationShell.goBranch(
-          target,
-          // Tap tab yang sedang aktif mengembalikan ke lokasi awal tab itu.
-          initialLocation: target == navigationShell.currentIndex,
-        ),
+    return AdaptiveShell(
+      navigationShell: navigationShell,
+      currentIndex: navigationShell.currentIndex,
+      isAdmin: isAdmin,
+      pendingCount: pendingCount,
+      onTap: (target) => navigationShell.goBranch(
+        target,
+        // Tap tab yang sedang aktif mengembalikan ke lokasi awal tab itu.
+        initialLocation: target == navigationShell.currentIndex,
       ),
     );
   }

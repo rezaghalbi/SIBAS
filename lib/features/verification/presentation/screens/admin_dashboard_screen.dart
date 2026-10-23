@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/colors.dart';
-import '../../../../core/widgets/glass_panel.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../info/presentation/providers/app_settings_provider.dart';
+import '../../../students/presentation/providers/student_provider.dart';
+import '../../domain/models/admin_metrics_model.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Halaman Dashboard Utama Petugas Admin
 class AdminDashboardScreen extends ConsumerStatefulWidget {
@@ -26,42 +30,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     super.dispose();
   }
 
-  Widget _buildMetricCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color iconColor,
-    required Color bgColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, color: iconColor, size: 16),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(currentUserProvider);
@@ -70,8 +38,29 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
 
     final adminName = userState.valueOrNull?.fullName ?? 'Petugas SIBAS';
 
+    // Pintasan memakai data yang sudah ada; saat memuat/gagal tampilkan "—"
+    // supaya kartu tetap bisa diketuk.
+    final metrics = metricsState.valueOrNull;
+    final studentCount = ref.watch(studentsProvider).valueOrNull?.length;
+    final qrTtlMinutes =
+        ref.watch(appSettingsProvider).valueOrNull?.qrTtlMinutes;
+
+    final pendingLabel =
+        metrics == null ? '—' : '${metrics.pendingCount} transaksi menunggu';
+    final historyLabel = metrics == null
+        ? '—'
+        : '${metrics.approvedCount} disetujui · '
+            '${metrics.rejectedCount} ditolak';
+    final studentsLabel =
+        studentCount == null ? '—' : '$studentCount mahasiswa';
+    final settingsLabel = qrTtlMinutes == null ? '—' : 'QR $qrTtlMinutes menit';
+    // Total berat tetap ditampilkan sebagai keterangan judul seksi.
+    final weightLabel = metrics == null
+        ? 'Total — kg'
+        : 'Total ${metrics.totalWeightKg.toStringAsFixed(1)} kg';
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: SibasColors.background,
       body: CustomScrollView(
         slivers: [
           // 1. Hero Header
@@ -90,10 +79,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Batal', style: TextStyle(color: AppColors.textMuted)),
+                          child: Text('Batal', style: TextStyle(color: SibasColors.muted)),
                         ),
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
+                          style: ElevatedButton.styleFrom(backgroundColor: SibasColors.status.badText, foregroundColor: Colors.white),
                           onPressed: () {
                             Navigator.pop(ctx);
                             ref.read(currentUserProvider.notifier).logout();
@@ -110,85 +99,178 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   child: const Icon(Icons.logout_rounded, color: Colors.white, size: 20),
                 ),
               ),
+              // Panel di dalam hero memakai token hero, bukan `SurfaceCard`:
+              // `color` pada `SurfaceCard` memaksa alfa `.88` di ujung gradien
+              // sehingga putih `.14` berubah menjadi putih hampir pekat dan
+              // teks putih kehilangan kontras.
               bottomContent: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.heroCardSurface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.heroCardBorder),
+                  color: SibasColors.glassTop,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: SibasColors.glassBorder),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Column(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Panel hero sempit di ponsel: tombol turun ke bawah
+                    // supaya tidak bertumpuk dengan teks (§8).
+                    final sempit = constraints.maxWidth < 340;
+
+                    const info = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Mode Petugas', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        Text('Pemindai QR Siap', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                        Text(
+                          'Mode Petugas',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Pemindai QR Siap',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
                       ],
-                    ),
-                    ElevatedButton.icon(
+                    );
+
+                    final tombol = ElevatedButton.icon(
                       onPressed: () => context.push('/admin/scan'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: AppColors.primaryDark,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        foregroundColor: SibasColors.primary,
+                        minimumSize: const Size(0, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
-                      label: const Text('Buka Pemindai QR', style: TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ],
+                      label: const Text(
+                        'Buka Pemindai QR',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    );
+
+                    if (sempit) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          info,
+                          const SizedBox(height: 12),
+                          tombol,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: info),
+                        const SizedBox(width: 12),
+                        tombol,
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
           ),
 
-          // 2. Metrik Statistik
+          // 2. Ringkasan & pintasan cepat
           SliverPadding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             sliver: SliverToBoxAdapter(
-              child: metricsState.when(
-                data: (metrics) => GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.6,
-                  children: [
-                    _buildMetricCard(
-                      title: 'Total Sampah',
-                      value: '${metrics.totalWeightKg.toStringAsFixed(1)} kg',
-                      icon: Icons.scale_rounded,
-                      iconColor: AppColors.primaryMain,
-                      bgColor: AppColors.mintSoftBackground,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Ringkasan',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: SibasColors.text,
+                      ),
                     ),
-                    _buildMetricCard(
-                      title: 'Pending Validasi',
-                      value: '${metrics.pendingCount} Transaksi',
-                      icon: Icons.pending_actions_rounded,
-                      iconColor: AppColors.statusPendingText,
-                      bgColor: AppColors.statusPendingBg,
+                  ),
+                  Text(
+                    weightLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: SibasColors.primary,
+                      fontFeatures: [FontFeature.tabularFigures()],
                     ),
-                    _buildMetricCard(
-                      title: 'Total Diterima',
-                      value: '${metrics.approvedCount}',
-                      icon: Icons.check_circle_outline_rounded,
-                      iconColor: AppColors.statusApprovedText,
-                      bgColor: AppColors.statusApprovedBg,
-                    ),
-                    _buildMetricCard(
-                      title: 'Total Ditolak',
-                      value: '${metrics.rejectedCount}',
-                      icon: Icons.cancel_outlined,
-                      iconColor: AppColors.statusRejectedText,
-                      bgColor: AppColors.statusRejectedBg,
-                    ),
-                  ],
-                ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Gagal memuat metrik: $e'),
+                  ),
+                ],
               ),
+            ),
+          ),
+          SliverLayoutBuilder(
+            builder: (context, constraints) {
+              // 360 px → 2 kolom; desktop → tepat 4 kolom selebar konten, tanpa
+              // slot kosong saat lebar jendela berubah.
+              final columns = constraints.crossAxisExtent < 700 ? 2 : 4;
+              const gap = 12.0;
+              final available = constraints.crossAxisExtent - 40;
+              final extent = (available - gap * (columns - 1)) / columns;
+
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: extent,
+                    mainAxisExtent: 108,
+                    crossAxisSpacing: gap,
+                    mainAxisSpacing: gap,
+                  ),
+                  delegate: SliverChildListDelegate([
+                    _DashboardShortcutTile(
+                      title: 'Menunggu Validasi',
+                      value: pendingLabel,
+                      icon: Icons.pending_actions_rounded,
+                      iconColor: SibasColors.status.pendingText,
+                      iconBackground: SibasColors.status.pendingBackground,
+                      onTap: () => context.push('/admin/submissions'),
+                    ),
+                    _DashboardShortcutTile(
+                      title: 'Riwayat Transaksi',
+                      value: historyLabel,
+                      icon: Icons.history_rounded,
+                      iconColor: SibasColors.status.approvedText,
+                      iconBackground: SibasColors.status.approvedBackground,
+                      onTap: () => context.push('/admin/history'),
+                    ),
+                    _DashboardShortcutTile(
+                      title: 'Data Mahasiswa',
+                      value: studentsLabel,
+                      icon: Icons.groups_rounded,
+                      iconColor: SibasColors.leaf,
+                      iconBackground: SibasColors.mintWash,
+                      onTap: () => context.push('/admin/students'),
+                    ),
+                    _DashboardShortcutTile(
+                      title: 'Pengaturan',
+                      value: settingsLabel,
+                      icon: Icons.tune_rounded,
+                      iconColor: SibasColors.muted,
+                      iconBackground: SibasColors.mintWash,
+                      onTap: () => context.push('/admin/settings'),
+                    ),
+                  ]),
+                ),
+              );
+            },
+          ),
+
+          // Rekap per lokasi bank sampah + filter cepat.
+          const SliverPadding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
+            sliver: SliverToBoxAdapter(
+              child: ContentWidth(child: _LocationRecap()),
             ),
           ),
 
@@ -196,31 +278,83 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
             sliver: SliverToBoxAdapter(
-              child: GlassPanel(
-                radius: 18,
+              child: SurfaceCard(
                 child: Material(
                   color: Colors.transparent,
                   child: ListTile(
                     onTap: () => context.push('/admin/trash-types'),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     leading: Container(
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.mintSoftBackground,
+                        color: SibasColors.mintWash,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.category_rounded, size: 18, color: AppColors.primaryMain),
+                      child: Icon(Icons.category_rounded, size: 18, color: SibasColors.leaf),
                     ),
-                    title: const Text(
+                    title: Text(
                       'Kelola Jenis Sampah',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: SibasColors.text),
                     ),
-                    subtitle: const Text(
+                    subtitle: Text(
                       'Atur kategori dan tarif per kg',
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                      style: TextStyle(fontSize: 12, color: SibasColors.muted),
                     ),
-                    trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textMuted),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 20, color: SibasColors.muted),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Pintasan pengelolaan lokasi bank sampah
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            sliver: SliverToBoxAdapter(
+              child: SurfaceCard(
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    onTap: () => context.push('/admin/locations'),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    leading: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: SibasColors.mintWash,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.location_on_rounded,
+                        size: 18,
+                        color: SibasColors.leaf,
+                      ),
+                    ),
+                    title: Text(
+                      'Lokasi Bank Sampah',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: SibasColors.text,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Atur titik setor dan tarik sampah',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: SibasColors.muted,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: SibasColors.muted,
+                    ),
                   ),
                 ),
               ),
@@ -234,21 +368,21 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.cardSurface,
+                  color: SibasColors.surface,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.borderLine),
+                  border: Border.all(color: SibasColors.border),
                 ),
                 child: TextField(
                   controller: _searchController,
                   onChanged: (val) {
                     ref.read(adminFilterProvider.notifier).update((f) => f.copyWith(query: val));
                   },
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     hintText: 'Cari Nama Mahasiswa, NIM, atau ID Transaksi...',
-                    prefixIcon: Icon(Icons.search_rounded, color: AppColors.primaryMain),
+                    prefixIcon: Icon(Icons.search_rounded, color: SibasColors.leaf),
                   ),
                 ),
               ),
@@ -262,12 +396,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Daftar Penyetoran Mahasiswa', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                  Text('Daftar Penyetoran Mahasiswa', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: SibasColors.text)),
                   IconButton(
-                    icon: const Icon(Icons.refresh_rounded, color: AppColors.primaryMain),
+                    icon: Icon(Icons.refresh_rounded, color: SibasColors.leaf),
                     onPressed: () {
                       ref.invalidate(adminMetricsProvider);
                       ref.invalidate(adminTransactionsProvider);
+                      ref.invalidate(studentsProvider);
+                      ref.invalidate(appSettingsProvider);
                     },
                   ),
                 ],
@@ -282,11 +418,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               data: (txList) {
                 if (txList.isEmpty) {
                   return SliverToBoxAdapter(
-                    child: Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(color: AppColors.cardSurface, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.borderLine)),
-                      child: const Center(
-                        child: Text('Belum ada transaksi yang sesuai kriteria pencarian.', style: TextStyle(color: AppColors.textMuted)),
+                    child: SurfaceCard(
+                      padding: EdgeInsets.all(32),
+                      child: Center(
+                        child: Text(
+                          'Belum ada transaksi yang sesuai kriteria '
+                          'pencarian.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: SibasColors.muted),
+                        ),
                       ),
                     ),
                   );
@@ -308,21 +448,16 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       final id = item['id'] as String?;
                       final canOpen = id != null && id.isNotEmpty;
 
-                      return Container(
+                      return SurfaceCard(
                         margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardSurface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderLine),
-                        ),
                         child: ListTile(
                           contentPadding: const EdgeInsets.all(14),
                           onTap: canOpen
                               ? () => context.push('/transaction/$id')
                               : null,
-                          leading: const CircleAvatar(
-                            backgroundColor: AppColors.mintSoftBackground,
-                            child: Icon(Icons.recycling_rounded, color: AppColors.primaryMain),
+                          leading: CircleAvatar(
+                            backgroundColor: SibasColors.mintWash,
+                            child: Icon(Icons.recycling_rounded, color: SibasColors.leaf),
                           ),
                           title: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -337,15 +472,15 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-                              Text('NIM: $nim • $catName', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                              Text('NIM: $nim • $catName', style: TextStyle(fontSize: 12, color: SibasColors.muted)),
                               const SizedBox(height: 2),
-                              Text('Berat Pengajuan: ${weight.toStringAsFixed(1)} kg', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+                              Text('Berat Pengajuan: ${weight.toStringAsFixed(1)} kg', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: SibasColors.primary)),
                             ],
                           ),
                           trailing: isPending
                               ? ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryMain,
+                                    backgroundColor: SibasColors.leaf,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
@@ -362,7 +497,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                                   },
                                   child: const Text('Validasi'),
                                 )
-                              : const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+                              : Icon(Icons.chevron_right_rounded, color: SibasColors.muted),
                         ),
                       );
                     },
@@ -380,4 +515,224 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       ),
     );
   }
+}
+
+/// Kartu pintasan dashboard admin: seluruh permukaan kartu adalah target
+/// sentuh (tinggi 108 px, jauh di atas minimum 44 px).
+class _DashboardShortcutTile extends StatelessWidget {
+  const _DashboardShortcutTile({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBackground,
+    required this.onTap,
+  });
+
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBackground;
+  final VoidCallback onTap;
+
+  static const double _radius = 20;
+
+  @override
+  Widget build(BuildContext context) {
+    return SurfaceCard(
+      radius: _radius,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(_radius),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(_radius),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: iconBackground,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, size: 18, color: iconColor),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: SibasColors.muted,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: SibasColors.muted,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                // `scaleDown` menjaga angka panjang tetap satu baris di layar
+                // 360 px tanpa memotong informasi.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: SibasColors.text,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+/// Rekap setoran per lokasi bank sampah.
+///
+/// Mengetuk satu baris memasang filter lokasi untuk dashboard sekaligus
+/// daftar pengajuan dan riwayat; "Semua lokasi" menghapus filter.
+class _LocationRecap extends ConsumerWidget {
+  const _LocationRecap();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final metrics = ref.watch(adminMetricsProvider).valueOrNull;
+    final lokasi = metrics?.locations ?? const <LocationMetric>[];
+    final terpilih = ref.watch(adminFilterProvider).locationId;
+
+    if (lokasi.isEmpty) return const SizedBox.shrink();
+
+    return SurfaceCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Rekap per lokasi',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                    color: SibasColors.text,
+                  ),
+                ),
+              ),
+              if (terpilih != null)
+                TextButton(
+                  onPressed: () => ref
+                      .read(adminFilterProvider.notifier)
+                      .update((f) => f.copyWith(clearLocation: true)),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    foregroundColor: SibasColors.leaf,
+                  ),
+                  child: const Text('Semua lokasi'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (final item in lokasi)
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                final aktif = terpilih == item.id;
+                ref.read(adminFilterProvider.notifier).update(
+                      (f) => aktif
+                          ? f.copyWith(clearLocation: true)
+                          : f.copyWith(locationId: item.id),
+                    );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: [
+                    Icon(
+                      terpilih == item.id
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      size: 18,
+                      color: terpilih == item.id
+                          ? SibasColors.leaf
+                          : SibasColors.muted,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: SibasColors.text,
+                            ),
+                          ),
+                          Text(
+                            '${_kg(item.totalWeightKg)} kg · '
+                            '${item.pendingCount} menunggu',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: SibasColors.muted,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!item.isActive)
+                      Text(
+                        'Nonaktif',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: SibasColors.muted,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _kg(double nilai) => nilai.toStringAsFixed(1);
 }

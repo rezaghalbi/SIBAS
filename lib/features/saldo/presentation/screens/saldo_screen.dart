@@ -3,18 +3,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../deposit/presentation/providers/deposit_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
+import '../../../../core/theme/sibas_colors.dart';
+
+/// Angka uang, berat, dan tanggal memakai tabular figures (§3).
+const List<FontFeature> _tabularFigures = [FontFeature.tabularFigures()];
 
 /// Saldo tersedia, pengajuan penarikan, dan riwayat penarikan mahasiswa.
 class SaldoScreen extends ConsumerWidget {
   const SaldoScreen({super.key});
+
+  /// Kolom konten dibatasi agar nominal dan riwayat tidak melar di desktop.
+  static const double _contentMaxWidth = 720;
+
+  /// Jumlah pengajuan terakhir yang tampil di ringkasan layar.
+  static const int _recentLimit = 4;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,10 +34,14 @@ class SaldoScreen extends ConsumerWidget {
     final withdrawalsState = ref.watch(studentWithdrawalsProvider);
     final categories = ref.watch(wasteCategoriesProvider).valueOrNull;
 
-    final withdrawals = withdrawalsState.valueOrNull ?? const <WithdrawalModel>[];
-    final hasActiveRate = categories?.any((item) => item.pricePerKg > 0) ?? false;
+    final withdrawals =
+        withdrawalsState.valueOrNull ?? const <WithdrawalModel>[];
+    final recentWithdrawals = withdrawals.take(_recentLimit).toList();
+    final hasActiveRate =
+        categories?.any((item) => item.pricePerKg > 0) ?? false;
 
-    // Saldo server; selama RPC loading pakai saldo profil agar tidak berkedip 0.
+    // Saldo server; selama RPC loading pakai saldo profil agar tidak
+    // berkedip 0.
     final balance = balanceState.valueOrNull ?? user?.balance ?? 0.0;
     final totalWeight = user?.totalWeight ?? 0.0;
 
@@ -38,7 +53,7 @@ class SaldoScreen extends ConsumerWidget {
     final hasError = balanceState.hasError || withdrawalsState.hasError;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: SibasColors.background,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(availableBalanceProvider);
@@ -53,179 +68,248 @@ class SaldoScreen extends ConsumerWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
-              child: HeroHeader(
-                title: 'Saldo Sampah',
-                subtitle: 'Penarikan tabungan sampah Anda',
-                bottomContent: GlassPanel(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        showRupiah ? 'Saldo Tersedia' : 'Total Sampah Terkumpul',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      if (balanceState.isLoading && user == null)
-                        const SizedBox(
-                          height: 40,
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        _MainValue(
-                          showRupiah: showRupiah,
-                          balance: balance,
-                          totalWeight: totalWeight,
-                        ),
-                      const SizedBox(height: 16),
-                      Row(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: _contentMaxWidth,
+                  ),
+                  child: HeroHeader(
+                    title: 'Saldo Sampah',
+                    subtitle: 'Penarikan tabungan sampah Anda',
+                    trailing: const _BackButton(),
+                    bottomContent: GlassPanel(
+                      tone: GlassTone.hero,
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: canWithdraw
-                                  ? () => context.push('/tarik')
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: AppColors.primaryMain,
-                                disabledBackgroundColor:
-                                    Colors.white.withValues(alpha: 0.35),
-                                disabledForegroundColor:
-                                    Colors.white.withValues(alpha: 0.8),
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              icon: const Icon(Icons.savings_rounded, size: 18),
-                              label: const Text(
-                                'Tarik Saldo',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                          Text(
+                            showRupiah
+                                ? 'Saldo Tersedia'
+                                : 'Total Sampah Terkumpul',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3,
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => context.push('/history'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                ),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                          const SizedBox(height: 10),
+                          if (balanceState.isLoading && user == null)
+                            const SizedBox(
+                              height: 44,
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                              icon: const Icon(Icons.receipt_long_rounded, size: 18),
-                              label: const Text(
-                                'Riwayat Setoran',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
+                            )
+                          else
+                            _MainValue(
+                              showRupiah: showRupiah,
+                              balance: balance,
+                              totalWeight: totalWeight,
+                            ),
+                          const SizedBox(height: 16),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final withdrawButton = ElevatedButton.icon(
+                                onPressed: canWithdraw
+                                    ? () => context.push('/tarik')
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: SibasColors.leaf,
+                                  disabledBackgroundColor:
+                                      Colors.white.withValues(alpha: 0.35),
+                                  disabledForegroundColor:
+                                      Colors.white.withValues(alpha: 0.8),
+                                  elevation: 0,
+                                  minimumSize: const Size(0, 44),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
+                                icon: const Icon(
+                                  Icons.savings_rounded,
+                                  size: 18,
+                                ),
+                                label: const Text(
+                                  'Tarik Dana',
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              );
+
+                              final historyButton = OutlinedButton.icon(
+                                onPressed: () => context.push('/history'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  minimumSize: const Size(0, 44),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  side: BorderSide(
+                                    color: Colors.white.withValues(
+                                      alpha: 0.7,
+                                    ),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.receipt_long_rounded,
+                                  size: 18,
+                                ),
+                                label: const Text(
+                                  'Riwayat Setoran',
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              );
+
+                              // Layar 360 px: tombol ditumpuk agar label
+                              // tidak terpotong; mulai 380 px berdampingan.
+                              if (constraints.maxWidth < 380) {
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    withdrawButton,
+                                    const SizedBox(height: 10),
+                                    historyButton,
+                                  ],
+                                );
+                              }
+
+                              return Row(
+                                children: [
+                                  Expanded(child: withdrawButton),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: historyButton),
+                                ],
+                              );
+                            },
+                          ),
+                          if (!canWithdraw &&
+                              !balanceState.isLoading &&
+                              !balanceState.hasError) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              showRupiah
+                                  ? 'Penarikan bisa diajukan setelah '
+                                      'ada saldo disetujui.'
+                                  : 'Tarif per kg belum aktif, '
+                                      'penarikan belum tersedia.',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 12,
+                                height: 1.4,
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
-                      if (!canWithdraw &&
-                          !balanceState.isLoading &&
-                          !balanceState.hasError) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          showRupiah
-                              ? 'Penarikan bisa diajukan setelah ada saldo disetujui.'
-                              : 'Tarif per kg belum aktif, penarikan belum tersedia.',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: ContentWidth(
+                maxWidth: _contentMaxWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 24),
+                    if (hasError) ...[
+                      _ErrorBox(
+                        message:
+                            'Gagal memuat data saldo. Periksa koneksi Anda.',
+                        onRetry: () {
+                          ref.invalidate(availableBalanceProvider);
+                          ref.invalidate(studentWithdrawalsProvider);
+                        },
+                      ),
+                      const SizedBox(height: 24),
                     ],
-                  ),
-                ),
-              ),
-            ),
-            if (hasError)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: _ErrorBox(
-                    message: 'Gagal memuat data saldo. Periksa koneksi Anda.',
-                    onRetry: () {
-                      ref.invalidate(availableBalanceProvider);
-                      ref.invalidate(studentWithdrawalsProvider);
-                    },
-                  ),
-                ),
-              ),
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 24, 20, 12),
-                child: Text(
-                  'Riwayat Penarikan',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ),
-            ...withdrawalsState.when<List<Widget>>(
-              loading: () => [
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                ),
-              ],
-              error: (_, __) => const [SliverToBoxAdapter(child: SizedBox.shrink())],
-              data: (items) => items.isEmpty
-                  ? [
-                      const SliverToBoxAdapter(child: _EmptyWithdrawals()),
-                    ]
-                  : [
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) =>
-                                _WithdrawalTile(withdrawal: items[index]),
-                            childCount: items.length,
-                          ),
-                        ),
+                    _SummaryRow(
+                      totalWeightKg: totalWeight,
+                      withdrawalCount: withdrawals.length,
+                      showWeight: showRupiah,
+                    ),
+                    if (!withdrawalsState.hasError) ...[
+                      const SizedBox(height: 26),
+                      _SectionTitle(
+                        label: 'Penarikan Terakhir',
+                        trailing: withdrawals.isEmpty
+                            ? null
+                            : '${withdrawals.length} pengajuan',
+                      ),
+                      const SizedBox(height: 12),
+                      ..._buildWithdrawalSection(
+                        state: withdrawalsState,
+                        recent: recentWithdrawals,
+                        total: withdrawals.length,
                       ),
                     ],
+                    SizedBox(
+                      height: 24 + MediaQuery.paddingOf(context).bottom,
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
       ),
     );
+  }
+
+  /// Riwayat singkat: empat pengajuan terbaru, keadaan kosong, atau pemuat.
+  List<Widget> _buildWithdrawalSection({
+    required AsyncValue<List<WithdrawalModel>> state,
+    required List<WithdrawalModel> recent,
+    required int total,
+  }) {
+    if (state.isLoading && recent.isEmpty) {
+      return const [
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 28),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ];
+    }
+
+    if (recent.isEmpty) {
+      return const [_EmptyWithdrawals()];
+    }
+
+    return [
+      for (final withdrawal in recent)
+        _WithdrawalTile(withdrawal: withdrawal),
+      if (total > recent.length)
+        _Footnote(
+          text: 'Menampilkan ${recent.length} dari $total pengajuan '
+              'terakhir.',
+        ),
+    ];
   }
 }
 
@@ -248,18 +332,27 @@ class _MainValue extends StatelessWidget {
       symbol: 'Rp ',
       decimalDigits: 0,
     );
+    // Ukuran display naik di layar lebar (§3), tetap muat di 360 px.
+    final nominalSize = MediaQuery.sizeOf(context).width >= 600 ? 38.0 : 32.0;
 
     if (showRupiah) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            currency.format(balance),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
+          // Nominal besar tidak boleh terpotong di layar 360 px.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              currency.format(balance),
+              maxLines: 1,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: nominalSize,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                fontFeatures: _tabularFigures,
+              ),
             ),
           ),
           const SizedBox(height: 6),
@@ -268,6 +361,7 @@ class _MainValue extends StatelessWidget {
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.85),
               fontSize: 12,
+              fontFeatures: _tabularFigures,
             ),
           ),
         ],
@@ -280,10 +374,12 @@ class _MainValue extends StatelessWidget {
       children: [
         Text(
           totalWeight.toStringAsFixed(1),
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 32,
+            fontSize: nominalSize,
             fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+            fontFeatures: _tabularFigures,
           ),
         ),
         const SizedBox(width: 6),
@@ -295,6 +391,147 @@ class _MainValue extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Dua kartu ringkasan: berat terkumpul dan jumlah pengajuan penarikan.
+///
+/// Bila tarif belum aktif, hero sudah menampilkan berat, jadi kartu berat
+/// disembunyikan agar tidak mengulang angka yang sama.
+class _SummaryRow extends StatelessWidget {
+  final double totalWeightKg;
+  final int withdrawalCount;
+  final bool showWeight;
+
+  const _SummaryRow({
+    required this.totalWeightKg,
+    required this.withdrawalCount,
+    required this.showWeight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        if (showWeight) ...[
+          Expanded(
+            child: _SummaryCard(
+              label: 'Berat terkumpul',
+              value: totalWeightKg.toStringAsFixed(1),
+              unit: 'kg',
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          child: _SummaryCard(
+            label: 'Pengajuan tarik',
+            value: '$withdrawalCount',
+            unit: 'kali',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+
+  const _SummaryCard({
+    required this.label,
+    required this.value,
+    required this.unit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SurfaceCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 2,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: SibasColors.muted,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                      color: SibasColors.text,
+                      fontFeatures: _tabularFigures,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                unit,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: SibasColors.muted,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String label;
+  final String? trailing;
+
+  const _SectionTitle({required this.label, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+              color: SibasColors.text,
+            ),
+          ),
+        ),
+        if (trailing != null)
+          Text(
+            trailing!,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: SibasColors.muted,
+            ),
+          ),
       ],
     );
   }
@@ -314,69 +551,85 @@ class _WithdrawalTile extends StatelessWidget {
       decimalDigits: 0,
     );
     final date = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
+    final reason = withdrawal.rejectionReason;
+    final hasReason = reason != null && reason.isNotEmpty;
 
-    return Container(
+    return SurfaceCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderLine),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: AppColors.mintSoftBackground,
-              borderRadius: BorderRadius.circular(14),
+              color: SibasColors.mintWash,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.payments_rounded,
-              color: AppColors.primaryMain,
-              size: 22,
+              color: SibasColors.leaf,
+              size: 20,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   currency.format(withdrawal.amount),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                    color: SibasColors.text,
+                    fontFeatures: _tabularFigures,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   date.format(withdrawal.createdAt),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: SibasColors.muted,
+                    fontFeatures: _tabularFigures,
                   ),
                 ),
-                if (withdrawal.rejectionReason != null &&
-                    withdrawal.rejectionReason!.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    'Alasan: ${withdrawal.rejectionReason}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.danger,
-                      fontWeight: FontWeight.w600,
+                // Badge di bawah tanggal: label status terpanjang tetap utuh
+                // di layar 360 px.
+                const SizedBox(height: 8),
+                StatusBadge(status: withdrawal.status),
+                if (hasReason) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SurfaceCard(
+                      tone: SurfaceTone.subtle,
+                      color: SibasColors.status.rejectedBackground,
+                      radius: 16,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        'Alasan: $reason',
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: SibasColors.status.badText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          StatusBadge(status: withdrawal.status),
         ],
       ),
     );
@@ -388,45 +641,96 @@ class _EmptyWithdrawals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderLine),
-      ),
+    return SurfaceCard(
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
       child: Column(
         children: [
           Container(
             width: 56,
             height: 56,
-            decoration: const BoxDecoration(
-              color: AppColors.mintSoftBackground,
-              shape: BoxShape.circle,
+            decoration: BoxDecoration(
+              color: SibasColors.mintWash,
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.account_balance_wallet_outlined,
-              color: AppColors.primaryMain,
+              color: SibasColors.leaf,
               size: 26,
             ),
           ),
-          const SizedBox(height: 12),
-          const Text(
+          const SizedBox(height: 14),
+          Text(
             'Belum ada pengajuan penarikan',
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: SibasColors.text,
             ),
           ),
-          const SizedBox(height: 4),
-          const Text(
+          const SizedBox(height: 6),
+          Text(
             'Pengajuan yang Anda kirim akan muncul di sini beserta statusnya.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.5,
+              color: SibasColors.muted,
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _Footnote extends StatelessWidget {
+  final String text;
+
+  const _Footnote({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11.5,
+          height: 1.5,
+          color: SibasColors.muted,
+        ),
+      ),
+    );
+  }
+}
+
+/// Tombol kembali di atas hero: halaman ini berdiri tanpa nav bawah.
+class _BackButton extends StatelessWidget {
+  const _BackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Kembali',
+      onPressed: () {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/dashboard');
+        }
+      },
+      icon: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.arrow_back_rounded,
+          color: Colors.white,
+          size: 20,
+        ),
       ),
     );
   }
@@ -440,32 +744,29 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
+      color: SibasColors.status.rejectedBackground,
+      radius: 16,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
+              Icon(
                 Icons.cloud_off_rounded,
                 size: 18,
-                color: AppColors.danger,
+                color: SibasColors.status.badText,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   message,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.danger,
+                    color: SibasColors.status.badText,
                   ),
                 ),
               ),
@@ -478,7 +779,7 @@ class _ErrorBox extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Coba Lagi'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+              style: TextButton.styleFrom(foregroundColor: SibasColors.status.badText),
             ),
           ),
         ],

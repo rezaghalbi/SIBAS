@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/constants/colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../bank_location/presentation/providers/bank_location_provider.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 import '../providers/verification_provider.dart';
+import '../../../../core/theme/sibas_colors.dart';
+
+/// Teks lokasi dari payload; string kosong dianggap tidak ada.
+String? _teksLokasi(Object? nilai) {
+  final teks = nilai?.toString().trim();
+  return (teks == null || teks.isEmpty) ? null : teks;
+}
 
 /// Modal Bottom Sheet untuk memvalidasi transaksi via RPC Supabase
 class VerificationBottomSheet extends ConsumerStatefulWidget {
@@ -84,7 +91,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
                       'mahasiswa mengajukan ulang.',
             ),
             backgroundColor:
-                approved ? AppColors.primaryMain : AppColors.danger,
+                approved ? SibasColors.leaf : SibasColors.status.badText,
           ),
         );
       }
@@ -93,7 +100,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal memverifikasi. Periksa koneksi lalu coba lagi.'),
-            backgroundColor: AppColors.danger,
+            backgroundColor: SibasColors.status.badText,
           ),
         );
       }
@@ -105,9 +112,9 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
   Future<void> _handleReject() async {
     if (_reasonController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Alasan penolakan wajib diisi'),
-          backgroundColor: AppColors.danger,
+          backgroundColor: SibasColors.status.badText,
         ),
       );
       return;
@@ -138,7 +145,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
                   : 'QR sudah kedaluwarsa. Status menjadi EXPIRED.',
             ),
             backgroundColor:
-                rejected ? AppColors.statusRejectedText : AppColors.danger,
+                rejected ? SibasColors.status.rejectedText : SibasColors.status.badText,
           ),
         );
       }
@@ -147,7 +154,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal menolak transaksi. Periksa koneksi lalu coba lagi.'),
-            backgroundColor: AppColors.danger,
+            backgroundColor: SibasColors.status.badText,
           ),
         );
       }
@@ -168,6 +175,21 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
     final submittedWeight = (widget.transactionData['weight'] as num?)?.toDouble() ?? 0.0;
     final txId = (widget.transactionData['id'] as String?) ?? '';
 
+    // Lokasi: objek `location` dari RPC, atau `location_id` pada baris daftar.
+    // Null berarti data lama / payload tanpa lokasi, baris tidak dirender.
+    final lokasiPayload = widget.transactionData['location'];
+    final lokasiMap = lokasiPayload is Map ? lokasiPayload : null;
+    final lokasiId = _teksLokasi(widget.transactionData['location_id']);
+    final daftarLokasi = ref.watch(bankLocationsProvider).valueOrNull;
+    String? lokasiNama = _teksLokasi(lokasiMap?['name']);
+    if (lokasiNama == null && lokasiId != null && daftarLokasi != null) {
+      for (final lokasi in daftarLokasi) {
+        if (lokasi.id != lokasiId) continue;
+        lokasiNama = _teksLokasi(lokasi.name);
+        break;
+      }
+    }
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -186,7 +208,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
                 width: 48,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: AppColors.borderLine,
+                  color: SibasColors.border,
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -197,16 +219,16 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Validasi Setoran Mahasiswa',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: SibasColors.text,
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                  icon: Icon(Icons.close_rounded, color: SibasColors.muted),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -217,14 +239,14 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.mintSoftBackground,
+                color: SibasColors.mintWash,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.mintAccent),
+                border: Border.all(color: SibasColors.mint),
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(
-                    backgroundColor: AppColors.primaryMain,
+                  CircleAvatar(
+                    backgroundColor: SibasColors.leaf,
                     foregroundColor: Colors.white,
                     child: Icon(Icons.person_rounded, size: 22),
                   ),
@@ -235,11 +257,11 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
                       children: [
                         Text(
                           studentName,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppColors.primaryDark),
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: SibasColors.primary),
                         ),
                         Text(
                           'NIM: $studentNim • $categoryName',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                          style: TextStyle(fontSize: 12, color: SibasColors.muted),
                         ),
                       ],
                     ),
@@ -249,10 +271,51 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
             ),
             const SizedBox(height: 16),
 
+            // Lokasi setoran hanya tampil bila payload memuatnya.
+            if (lokasiNama != null) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.place_outlined,
+                    size: 18,
+                    color: SibasColors.leaf,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Lokasi Setoran',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            height: 1.3,
+                            color: SibasColors.muted,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          lokasiNama,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            height: 1.4,
+                            fontWeight: FontWeight.w700,
+                            color: SibasColors.text,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
             // ID Transaksi
             Text(
               'ID Transaksi: $txId',
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: SibasColors.muted),
             ),
             const SizedBox(height: 16),
 
@@ -261,20 +324,20 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: SibasColors.background,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderLine),
+                  border: Border.all(color: SibasColors.border),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Berat Pengajuan',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textPrimary),
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: SibasColors.text),
                     ),
                     Text(
                       '${submittedWeight.toStringAsFixed(2)} kg',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.primaryDark),
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: SibasColors.primary),
                     ),
                   ],
                 ),
@@ -283,7 +346,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
               if (pricePerKg > 0)
                 Text(
                   'Tarif berlaku: ${_currencyFormat.format(pricePerKg)} / kg',
-                  style: const TextStyle(fontSize: 12, color: AppColors.primaryMain, fontWeight: FontWeight.w600),
+                  style: TextStyle(fontSize: 12, color: SibasColors.leaf, fontWeight: FontWeight.w600),
                 ),
               const SizedBox(height: 24),
 
@@ -294,7 +357,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
                 child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : _handleApprove,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.statusApprovedText,
+                    backgroundColor: SibasColors.status.approvedText,
                     foregroundColor: Colors.white,
                   ),
                   icon: const Icon(Icons.check_circle_outline_rounded, size: 22),
@@ -310,14 +373,14 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => setState(() => _isRejecting = true),
-                  child: const Text('Tolak Pengajuan Setoran', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+                  child: Text('Tolak Pengajuan Setoran', style: TextStyle(color: SibasColors.status.badText, fontWeight: FontWeight.w700)),
                 ),
               ),
             ] else ...[
               // Form Alasan Penolakan
-              const Text(
+              Text(
                 'Alasan Penolakan',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.danger),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: SibasColors.status.badText),
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -337,7 +400,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
                 child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : _handleReject,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.danger,
+                    backgroundColor: SibasColors.status.badText,
                     foregroundColor: Colors.white,
                   ),
                   icon: const Icon(Icons.cancel_outlined, size: 22),

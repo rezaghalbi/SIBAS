@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../constants/colors.dart';
+import '../theme/sibas_colors.dart';
 
 /// Chip status dengan visual presisi sesuai prototype .antigravity/design_system.md
 /// - Menunggu Verifikasi: Text #B45309, BG #FEF3C7
@@ -27,30 +27,30 @@ class StatusBadge extends StatelessWidget {
       case 'APPROVED':
       case 'DITERIMA':
       case 'DISETUJUI':
-        textColor = AppColors.statusApprovedText;
-        bgColor = AppColors.statusApprovedBg;
+        textColor = SibasColors.status.approvedText;
+        bgColor = SibasColors.status.approvedBackground;
         label = customLabel ?? 'Disetujui';
         break;
 
       case 'REJECTED':
       case 'DITOLAK':
-        textColor = AppColors.statusRejectedText;
-        bgColor = AppColors.statusRejectedBg;
+        textColor = SibasColors.status.rejectedText;
+        bgColor = SibasColors.status.rejectedBackground;
         label = customLabel ?? 'Ditolak';
         break;
 
       case 'EXPIRED':
       case 'KEDALUWARSA':
-        textColor = AppColors.statusRejectedText;
-        bgColor = AppColors.statusRejectedBg;
+        textColor = SibasColors.status.rejectedText;
+        bgColor = SibasColors.status.rejectedBackground;
         label = customLabel ?? 'Kedaluwarsa';
         break;
 
       case 'PENDING':
       case 'MENUNGGU':
       default:
-        textColor = AppColors.statusPendingText;
-        bgColor = AppColors.statusPendingBg;
+        textColor = SibasColors.status.pendingText;
+        bgColor = SibasColors.status.pendingBackground;
         label = customLabel ?? 'Menunggu Verifikasi';
         break;
     }

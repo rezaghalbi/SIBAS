@@ -3,14 +3,41 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/colors.dart';
 import '../../../../core/network/api_guard.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/withdrawal_provider.dart';
 import '../widgets/withdraw_qr_sheet.dart';
+import '../../../../core/theme/sibas_colors.dart';
+
+/// Lebar isi detail: cukup untuk dua kolom label–nilai di desktop.
+const double _maxContentWidth = 720;
+
+/// Target sentuh minimum (§4).
+const double _touch = 44;
+
+/// Tombol aksi utama (setujui/tolak) 48 px.
+const double _action = 48;
+
+/// Lebar label di baris nilai; tetap di ponsel 360 px.
+const double _labelWidth = 124;
+
+/// Nominal, tanggal, dan berat memakai lebar digit tetap (§3).
+const List<FontFeature> _numbers = <FontFeature>[
+  FontFeature.tabularFigures(),
+];
+
+/// Judul seksi: 15.5 w700, tracking -0.2 (§3).
+TextStyle get _sectionTitle => TextStyle(
+  fontSize: 15.5,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -0.2,
+  color: SibasColors.text,
+);
 
 final _currency = NumberFormat.currency(
   locale: 'id_ID',
@@ -31,45 +58,60 @@ class WithdrawalDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detailState = ref.watch(withdrawalDetailProvider(withdrawalId));
     final row = detailState.valueOrNull;
-    final isAdmin = ref.watch(currentUserProvider).valueOrNull?.isAdmin ?? false;
+    final isAdmin =
+        ref.watch(currentUserProvider).valueOrNull?.isAdmin ?? false;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: SibasColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: HeroHeader(
-              title: 'Detail Penarikan',
-              subtitle: 'Rincian pengajuan pencairan saldo',
-              trailing: const _BackButton(),
-              bottomContent: row == null
-                  ? null
-                  : _SummaryPanel(
-                      amount: _num(row['amount']),
-                      status: _text(row['status']),
-                    ),
+            // HeroHeader sudah memakai gutter sendiri; cukup dibatasi lebar
+            // agar tepinya sejajar dengan isi di bawah.
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+                child: HeroHeader(
+                  title: 'Detail Penarikan',
+                  subtitle: 'Rincian pengajuan pencairan saldo',
+                  trailing: const _BackButton(),
+                  bottomContent: row == null
+                      ? null
+                      : _SummaryPanel(
+                          amount: _num(row['amount']),
+                          status: _text(row['status']),
+                        ),
+                ),
+              ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-            sliver: SliverToBoxAdapter(
-              child: detailState.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
+          SliverToBoxAdapter(
+            child: ContentWidth(
+              maxWidth: _maxContentWidth,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  0,
+                  20,
+                  0,
+                  96 + bottomInset,
                 ),
-                error: (error, __) => _ErrorBox(
-                  message: pesanKesalahan(error),
-                  onRetry: () =>
-                      ref.invalidate(withdrawalDetailProvider(withdrawalId)),
+                child: detailState.when(
+                  loading: () => const _LoadingPanel(),
+                  error: (error, __) => _ErrorBox(
+                    message: pesanKesalahan(error),
+                    onRetry: () => ref.invalidate(
+                      withdrawalDetailProvider(withdrawalId),
+                    ),
+                  ),
+                  data: (data) => data == null
+                      ? const _NotFoundBox()
+                      : _DetailBody(
+                          row: data,
+                          withdrawalId: withdrawalId,
+                          isAdmin: isAdmin,
+                        ),
                 ),
-                data: (data) => data == null
-                    ? const _NotFoundBox()
-                    : _DetailBody(
-                        row: data,
-                        withdrawalId: withdrawalId,
-                        isAdmin: isAdmin,
-                      ),
               ),
             ),
           ),
@@ -91,6 +133,22 @@ DateTime? _date(dynamic value) =>
 
 Map? _map(dynamic value) => value is Map ? value : null;
 
+/// Angka dari JSON bisa `num` atau string (PostgREST `numeric`).
+double? _angka(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
+  return null;
+}
+
+/// Koordinat 6 desimal, mis. `-7.797068, 110.370529`. Null bila tidak
+/// lengkap, supaya baris tidak menampilkan "null".
+String? _koordinat(Map? lokasi) {
+  final lat = _angka(lokasi?['latitude']);
+  final lng = _angka(lokasi?['longitude']);
+  if (lat == null || lng == null) return null;
+  return '${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}';
+}
+
 String _statusLabel(String status) => switch (status.toUpperCase()) {
       'APPROVED' => 'Disetujui',
       'REJECTED' => 'Ditolak',
@@ -100,11 +158,23 @@ String _statusLabel(String status) => switch (status.toUpperCase()) {
     };
 
 Color _statusColor(String status) => switch (status.toUpperCase()) {
-      'APPROVED' => AppColors.statusApprovedText,
-      'REJECTED' => AppColors.statusRejectedText,
-      'EXPIRED' => AppColors.statusExpired,
-      _ => AppColors.statusPendingText,
+      'APPROVED' => SibasColors.status.approvedText,
+      'REJECTED' => SibasColors.status.rejectedText,
+      'EXPIRED' => SibasColors.status.neutralText,
+      _ => SibasColors.status.pendingText,
     };
+
+/// Inisial pengaju: maksimal dua huruf.
+String _initials(String name) {
+  final words = name.trim().split(RegExp(r'\s+'));
+  final buffer = StringBuffer();
+  for (final word in words) {
+    if (word.isEmpty) continue;
+    buffer.write(word[0].toUpperCase());
+    if (buffer.length == 2) break;
+  }
+  return buffer.isEmpty ? '?' : buffer.toString();
+}
 
 /// Ringkasan nominal dan status di dalam hero header.
 class _SummaryPanel extends StatelessWidget {
@@ -118,6 +188,7 @@ class _SummaryPanel extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: GlassPanel(
+        tone: GlassTone.hero,
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,9 +210,11 @@ class _SummaryPanel extends StatelessWidget {
                 _currency.format(amount ?? 0),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 28,
+                  fontSize: 30,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
+                  letterSpacing: -0.8,
+                  height: 1.05,
+                  fontFeatures: _numbers,
                 ),
               ),
             ),
@@ -175,12 +248,16 @@ class _DetailBody extends StatelessWidget {
     final verifiedAt = _date(row['verified_at']);
     final mahasiswa = _map(row['mahasiswa']);
     final verifikator = _map(row['verifikator']);
+    final lokasi = _map(row['location']);
     final rejectionReason = _text(row['rejection_reason']);
     final qrToken = _text(row['qr_token']);
 
     final studentName = _text(mahasiswa?['full_name']) ?? '-';
     final studentNim = _text(mahasiswa?['nim']);
     final verifierName = _text(verifikator?['full_name']);
+    final lokasiNama = _text(lokasi?['name']);
+    final lokasiAlamat = _text(lokasi?['address']);
+    final lokasiKoordinat = _koordinat(lokasi);
 
     final verifierLabel = switch (status.toUpperCase()) {
       'APPROVED' => 'Disetujui oleh',
@@ -205,41 +282,42 @@ class _DetailBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.cardSurface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.borderLine),
-          ),
+        _Section(
+          title: 'Pengaju',
+          child: _StudentBlock(name: studentName, nim: studentNim),
+        ),
+        const SizedBox(height: 16),
+        _Section(
+          title: 'Rincian Pengajuan',
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Rincian Pengajuan',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const Divider(height: 20, color: AppColors.borderLine),
-              _DetailField(
+              _InfoRow(
                 label: 'Tanggal Diajukan',
-                value: createdAt == null ? '-' : dateFormat.format(createdAt),
+                value: createdAt == null
+                    ? '-'
+                    : dateFormat.format(createdAt.toLocal()),
+                numbers: true,
               ),
-              _DetailField(
-                label: 'Pengaju',
-                value: studentName,
-                secondary: studentNim == null ? null : 'NIM $studentNim',
+              _InfoRow(
+                label: 'Status',
+                value: _statusLabel(status),
+                emphasis: true,
               ),
               if (verifiedAt != null || verifierName != null)
-                _DetailField(
+                _InfoRow(
                   label: verifierLabel,
                   value: verifierName ?? '-',
-                  secondary:
-                      verifiedAt == null ? null : dateFormat.format(verifiedAt),
+                  secondary: verifiedAt == null
+                      ? null
+                      : dateFormat.format(verifiedAt.toLocal()),
+                  numbers: verifiedAt != null,
+                  isLast: lokasiNama == null,
+                ),
+              if (lokasiNama != null)
+                _LocationRow(
+                  nama: lokasiNama,
+                  alamat: lokasiAlamat,
+                  koordinat: lokasiKoordinat,
                 ),
             ],
           ),
@@ -257,6 +335,18 @@ class _DetailBody extends StatelessWidget {
               ),
               icon: const Icon(Icons.qr_code_2_rounded, size: 18),
               label: const Text('Tampilkan QR Penarikan'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: SibasColors.primary,
+                minimumSize: const Size(0, _action),
+                side: BorderSide(color: SibasColors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         ],
@@ -275,59 +365,265 @@ class _DetailBody extends StatelessWidget {
             amount: _num(row['amount']) ?? 0,
           ),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         _Timeline(audits: audits),
       ],
     );
   }
 }
 
-/// Label-kecil di atas nilai; aman untuk lebar 360 px.
-class _DetailField extends StatelessWidget {
+/// Kartu seksi: judul 15.5 w700, radius 20, border 1 px (§4, §5).
+class _Section extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _Section({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: SurfaceCard(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: _sectionTitle),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Blok identitas pengaju: inisial, nama, dan NIM.
+class _StudentBlock extends StatelessWidget {
+  final String name;
+  final String? nim;
+
+  const _StudentBlock({required this.name, this.nim});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: SibasColors.mintWash,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: SibasColors.border),
+          ),
+          child: Text(
+            _initials(name),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.4,
+              color: SibasColors.primary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  height: 1.3,
+                  color: SibasColors.text,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                nim == null ? 'NIM belum terisi' : 'NIM $nim',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.4,
+                  color: SibasColors.muted,
+                  fontFeatures: _numbers,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Baris label–nilai; angka memakai lebar digit tetap (§3).
+class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final String? secondary;
+  final bool numbers;
+  final bool emphasis;
+  final bool isLast;
 
-  const _DetailField({
+  const _InfoRow({
     required this.label,
     required this.value,
     this.secondary,
+    this.numbers = false,
+    this.emphasis = false,
+    this.isLast = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+          SizedBox(
+            width: _labelWidth,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.4,
+                color: SibasColors.muted,
+              ),
             ),
           ),
-          if (secondary != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              secondary!,
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.4,
+                    fontWeight: FontWeight.w700,
+                    color: emphasis
+                        ? SibasColors.primary
+                        : SibasColors.text,
+                    fontFeatures: numbers ? _numbers : null,
+                  ),
+                ),
+                if (secondary != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    secondary!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: SibasColors.muted,
+                      fontFeatures: _numbers,
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ],
       ),
     );
   }
 }
 
-/// Timeline vertikal dari audit penarikan (urutan kronologis).
+/// Lokasi pengambilan; hanya dirender bila `detail_penarikan` membawanya.
+/// Koordinat ditampilkan sebagai teks biasa, bukan peta.
+class _LocationRow extends StatelessWidget {
+  final String nama;
+  final String? alamat;
+  final String? koordinat;
+
+  const _LocationRow({required this.nama, this.alamat, this.koordinat});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: _labelWidth,
+          child: Text(
+            'Lokasi',
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.4,
+              color: SibasColors.muted,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: Icon(
+                  Icons.place_outlined,
+                  size: 15,
+                  color: SibasColors.leaf,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nama,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        height: 1.4,
+                        fontWeight: FontWeight.w700,
+                        color: SibasColors.text,
+                      ),
+                    ),
+                    if (alamat != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        alamat!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: SibasColors.muted,
+                        ),
+                      ),
+                    ],
+                    if (koordinat != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Koordinat $koordinat',
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: SibasColors.muted,
+                          fontFeatures: _numbers,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Riwayat proses dari audit penarikan (urutan kronologis).
 class _Timeline extends StatelessWidget {
   final List<Map> audits;
 
@@ -335,39 +631,31 @@ class _Timeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Riwayat Proses',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const Divider(height: 20, color: AppColors.borderLine),
-          if (audits.isEmpty)
-            const Text(
+    return _Section(
+      title: 'Riwayat Proses',
+      child: audits.isEmpty
+          ? Text(
               'Belum ada catatan proses.',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-            )
-          else
-            for (var index = 0; index < audits.length; index++)
-              _TimelineItem(
-                audit: audits[index],
-                isLast: index == audits.length - 1,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: SibasColors.muted,
               ),
-        ],
-      ),
+            )
+          : SurfaceCard(
+              tone: SurfaceTone.subtle,
+              radius: 16,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  for (var i = 0; i < audits.length; i++)
+                    _TimelineItem(
+                      audit: audits[i],
+                      isLast: i == audits.length - 1,
+                    ),
+                ],
+              ),
+            ),
     );
   }
 }
@@ -393,30 +681,31 @@ class _TimelineItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(
-            width: 14,
-            child: Column(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  margin: const EdgeInsets.only(top: 3),
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
+          Column(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                margin: const EdgeInsets.only(top: 4),
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 3),
+                    color: SibasColors.border,
                   ),
                 ),
-                if (!isLast)
-                  Expanded(
-                    child: Container(width: 2, color: AppColors.borderLine),
-                  ),
-              ],
-            ),
+            ],
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 18),
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -425,6 +714,7 @@ class _TimelineItem extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
+                      letterSpacing: -0.1,
                       color: color,
                     ),
                   ),
@@ -432,19 +722,21 @@ class _TimelineItem extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       note,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        height: 1.4,
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.45,
+                        color: SibasColors.text,
                       ),
                     ),
                   ],
                   const SizedBox(height: 3),
                   Text(
                     meta,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textMuted,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      height: 1.4,
+                      color: SibasColors.muted,
+                      fontFeatures: _numbers,
                     ),
                   ),
                 ],
@@ -505,6 +797,9 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         title: const Text('Setujui Penarikan'),
         content: Text(
           'Setujui penarikan ${_currency.format(widget.amount)}? '
@@ -513,10 +808,22 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(0, _touch),
+              foregroundColor: SibasColors.muted,
+            ),
             child: const Text('Batal'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: SibasColors.leaf,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(0, _touch),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
             child: const Text('Setujui'),
           ),
         ],
@@ -549,56 +856,83 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Tindakan Admin',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+      child: SurfaceCard(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Tindakan Admin', style: _sectionTitle),
+            const SizedBox(height: 4),
+            Text(
+              'Periksa pengajuan sebelum menyetujui atau menolak.',
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.4,
+                color: SibasColors.muted,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Periksa data pengajuan sebelum menyetujui atau menolak.',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
+            const SizedBox(height: 16),
+            FilledButton.icon(
               onPressed: _busy ? null : _approve,
               icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
               label: const Text('Setujui'),
-            ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _busy ? null : _reject,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.danger,
-                side: BorderSide(
-                  color: AppColors.danger.withValues(alpha: 0.5),
-                  width: 1.5,
+              style: FilledButton.styleFrom(
+                backgroundColor: SibasColors.leaf,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: const Size(0, _action),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: _busy ? null : _reject,
               icon: const Icon(Icons.cancel_outlined, size: 18),
               label: const Text('Tolak'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: SibasColors.status.badText,
+                minimumSize: const Size(0, _action),
+                side: BorderSide(color: SibasColors.status.badText),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-          ),
-        ],
+            if (_busy) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Memproses...',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: SibasColors.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -633,14 +967,21 @@ class _RejectDialogState extends State<_RejectDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       title: const Text('Tolak Penarikan'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Tulis alasan agar mahasiswa tahu mengapa pengajuan ditolak.',
-            style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: SibasColors.muted,
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -649,6 +990,7 @@ class _RejectDialogState extends State<_RejectDialog> {
             maxLines: 3,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
+            style: const TextStyle(fontSize: 16),
             decoration: InputDecoration(
               hintText: 'Contoh: Nomor rekening belum lengkap',
               errorText: _error,
@@ -659,11 +1001,22 @@ class _RejectDialogState extends State<_RejectDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            minimumSize: const Size(0, _touch),
+            foregroundColor: SibasColors.muted,
+          ),
           child: const Text('Batal'),
         ),
-        ElevatedButton(
+        FilledButton(
           onPressed: _submit,
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+          style: FilledButton.styleFrom(
+            backgroundColor: SibasColors.status.badText,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(0, _touch),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
           child: const Text('Tolak'),
         ),
       ],
@@ -684,44 +1037,89 @@ class _NoteBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: AppColors.danger),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.danger,
+      child: SurfaceCard(
+        tone: SurfaceTone.subtle,
+        radius: 16,
+        padding: const EdgeInsets.all(16),
+        color: SibasColors.status.rejectedBackground,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20, color: SibasColors.status.badText),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: SibasColors.status.badText,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    height: 1.4,
-                    color: AppColors.danger,
+                  const SizedBox(height: 4),
+                  Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.45,
+                      color: SibasColors.status.badText,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Keadaan memuat: spinner kecil dan satu kalimat.
+class _LoadingPanel extends StatelessWidget {
+  const _LoadingPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: SurfaceCard(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Memuat detail penarikan',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+                color: SibasColors.text,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Mengambil rincian pengajuan beserta riwayat prosesnya.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: SibasColors.muted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -735,33 +1133,67 @@ class _ErrorBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.danger,
+      child: SurfaceCard(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: SibasColors.status.rejectedBackground,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.cloud_off_rounded,
+                size: 26,
+                color: SibasColors.status.badText,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          TextButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Coba Lagi'),
-            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              'Detail penarikan gagal dimuat',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+                color: SibasColors.text,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: SibasColors.muted,
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Coba Lagi'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: SibasColors.primary,
+                minimumSize: const Size(0, _touch),
+                side: BorderSide(color: SibasColors.border),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -772,28 +1204,73 @@ class _NotFoundBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLine),
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.search_off_rounded, size: 32, color: AppColors.textMuted),
-          SizedBox(height: 10),
-          Text(
-            'Penarikan tidak ditemukan',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textMuted,
+      child: SurfaceCard(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: SibasColors.mintWash,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.search_off_rounded,
+                size: 26,
+                color: SibasColors.primary,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              'Penarikan tidak ditemukan',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+                color: SibasColors.text,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Data pengajuan ini tidak tersedia atau sudah dihapus.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: SibasColors.muted,
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/dashboard');
+                }
+              },
+              icon: const Icon(Icons.arrow_back_rounded, size: 18),
+              label: const Text('Kembali'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: SibasColors.primary,
+                minimumSize: const Size(0, _touch),
+                side: BorderSide(color: SibasColors.border),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

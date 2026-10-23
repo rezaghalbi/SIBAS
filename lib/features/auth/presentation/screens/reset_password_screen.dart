@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/colors.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../providers/auth_provider.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 /// Layar atur sandi baru setelah pengguna membuka tautan reset dari email.
 ///
@@ -54,10 +54,10 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Kata sandi diperbarui. Silakan masuk kembali.'),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: AppColors.primaryDark,
+            backgroundColor: SibasColors.primary,
           ),
         );
       await notifier.logout();
@@ -90,7 +90,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         _snack(context, 'Gunakan tombol Batalkan untuk keluar.');
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: SibasColors.background,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -109,35 +109,35 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
-                          color: AppColors.mintSoftBackground,
+                          color: SibasColors.mintWash,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderLine),
+                          border: Border.all(color: SibasColors.border),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.lock_reset_rounded,
                           size: 26,
-                          color: AppColors.primaryMain,
+                          color: SibasColors.leaf,
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Atur Kata Sandi Baru',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                        color: SibasColors.text,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
+                    Text(
                       'Buat kata sandi baru untuk akun Anda.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.4,
-                        color: AppColors.textMuted,
+                        color: SibasColors.muted,
                       ),
                     ),
                     const SizedBox(height: 22),
@@ -205,9 +205,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                             const SizedBox(height: 4),
                             TextButton(
                               onPressed: _sibuk ? null : _batalkan,
-                              child: const Text(
+                              child: Text(
                                 'Batalkan',
-                                style: TextStyle(color: AppColors.textMuted),
+                                style: TextStyle(color: SibasColors.muted),
                               ),
                             ),
                           ],
@@ -237,9 +237,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       enabled: !_sibuk,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.lock_outline_rounded,
-          color: AppColors.primaryMain,
+          color: SibasColors.leaf,
           size: 20,
         ),
         suffixIcon: IconButton(
@@ -247,7 +247,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             obscured
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
-            color: AppColors.textMuted,
+            color: SibasColors.muted,
             size: 20,
           ),
           tooltip: obscured ? 'Lihat kata sandi' : 'Sembunyikan kata sandi',
@@ -271,26 +271,26 @@ class _KotakGalat extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
+        color: SibasColors.status.rejectedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
+        border: Border.all(color: SibasColors.status.badText.withValues(alpha: 0.35)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
             size: 18,
-            color: AppColors.danger,
+            color: SibasColors.status.badText,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: AppColors.danger,
+                color: SibasColors.status.badText,
               ),
             ),
           ),
@@ -302,10 +302,10 @@ class _KotakGalat extends StatelessWidget {
 
 Widget _label(String teks) => Text(
       teks,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
+        color: SibasColors.text,
       ),
     );
 
@@ -317,7 +317,7 @@ void _snack(BuildContext context, String message) {
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: SibasColors.primary,
       ),
     );
 }

@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/theme.dart';
 import '../providers/withdrawal_provider.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 const String _genericError =
     'Pengajuan gagal dikirim. Periksa koneksi lalu coba lagi.';
@@ -135,7 +135,7 @@ class _WithdrawSheetState extends ConsumerState<WithdrawSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderLine,
+                color: SibasColors.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -143,26 +143,26 @@ class _WithdrawSheetState extends ConsumerState<WithdrawSheet> {
           const SizedBox(height: 16),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Tarik Saldo',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: SibasColors.text,
                   ),
                 ),
               ),
               IconButton(
                 onPressed: isSubmitting ? null : () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                icon: Icon(Icons.close_rounded, color: SibasColors.muted),
                 tooltip: 'Tutup',
               ),
             ],
           ),
           Text(
             'Saldo tersedia ${_currency.format(balance)}',
-            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 13, color: SibasColors.muted),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -180,9 +180,9 @@ class _WithdrawSheetState extends ConsumerState<WithdrawSheet> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Pengajuan diproses admin. Dana dicairkan setelah disetujui.',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 12, color: SibasColors.muted),
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
@@ -190,27 +190,27 @@ class _WithdrawSheetState extends ConsumerState<WithdrawSheet> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.statusRejectedBg,
+                color: SibasColors.status.rejectedBackground,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.danger.withValues(alpha: 0.35),
+                  color: SibasColors.status.badText.withValues(alpha: 0.35),
                 ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.error_outline_rounded,
                     size: 18,
-                    color: AppColors.danger,
+                    color: SibasColors.status.badText,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _error!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.danger,
+                        color: SibasColors.status.badText,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

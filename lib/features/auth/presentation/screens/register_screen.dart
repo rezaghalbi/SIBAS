@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/colors.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../profile/domain/validasi_profil.dart';
 import '../../data/auth_repository.dart';
 import '../providers/auth_provider.dart';
+import '../../../../core/theme/sibas_colors.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -59,7 +59,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ? 'Pendaftaran berhasil. Cek email untuk verifikasi sebelum masuk.'
                   : 'Pendaftaran berhasil!',
             ),
-            backgroundColor: AppColors.primaryMain,
+            backgroundColor: SibasColors.leaf,
           ),
         );
       }
@@ -78,7 +78,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: SibasColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -100,16 +100,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             width: 68,
                             height: 68,
                             decoration: BoxDecoration(
-                              color: AppColors.mintSoftBackground,
+                              color: SibasColors.mintWash,
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.mintAccent, width: 2),
+                              border: Border.all(color: SibasColors.mint, width: 2),
                             ),
                             padding: const EdgeInsets.all(10),
                             // Tanpa berkas logo: ikon wordmark bawaan.
-                            child: const Icon(
+                            child: Icon(
                               Icons.person_add_rounded,
                               size: 36,
-                              color: AppColors.primaryMain,
+                              color: SibasColors.leaf,
                             ),
                           ),
                         ),
@@ -118,7 +118,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Daftar Akun SIBAS',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleLarge?.copyWith(
-                            color: AppColors.primaryDark,
+                            color: SibasColors.primary,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -127,7 +127,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Sistem Informasi Bank Sampah Poltekkes Jogja',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textMuted,
+                            color: SibasColors.muted,
                             fontSize: 13,
                           ),
                         ),
@@ -138,17 +138,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: AppColors.mintSoftBackground,
+                            color: SibasColors.mintWash,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.school_outlined, size: 18, color: AppColors.primaryMain),
+                              Icon(Icons.school_outlined, size: 18, color: SibasColors.leaf),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Pendaftaran untuk akun mahasiswa. Akun admin dibuat oleh pengelola bank sampah.',
-                                  style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+                                  style: TextStyle(fontSize: 12.5, color: SibasColors.muted),
                                 ),
                               ),
                             ],
@@ -161,15 +161,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Nama Lengkap',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: _fullNameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Masukkan nama lengkap',
-                            prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primaryMain, size: 20),
+                            prefixIcon: Icon(Icons.person_outline_rounded, color: SibasColors.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) return 'Nama lengkap wajib diisi';
@@ -183,16 +183,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'NIM (Nomor Induk Mahasiswa)',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: _nimController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Contoh: P07124220001',
-                            prefixIcon: Icon(Icons.badge_outlined, color: AppColors.primaryMain, size: 20),
+                            prefixIcon: Icon(Icons.badge_outlined, color: SibasColors.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {
@@ -208,7 +208,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Nomor WhatsApp',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -216,11 +216,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
                           autocorrect: false,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Contoh: 081234567890',
                             helperText: 'Dipakai admin untuk menghubungi Anda',
                             helperMaxLines: 2,
-                            prefixIcon: Icon(Icons.chat_outlined, color: AppColors.primaryMain, size: 20),
+                            prefixIcon: Icon(Icons.chat_outlined, color: SibasColors.leaf, size: 20),
                           ),
                           validator: validasiNomorWa,
                         ),
@@ -231,16 +231,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Email Kampus / Akun',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'nama@poltekkes-jogja.ac.id',
-                            prefixIcon: Icon(Icons.mail_outline_rounded, color: AppColors.primaryMain, size: 20),
+                            prefixIcon: Icon(Icons.mail_outline_rounded, color: SibasColors.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) return 'Email wajib diisi';
@@ -255,7 +255,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Kata Sandi',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -264,11 +264,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: 'Minimal 6 karakter',
-                            prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primaryMain, size: 20),
+                            prefixIcon: Icon(Icons.lock_outline_rounded, color: SibasColors.leaf, size: 20),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                color: AppColors.textMuted,
+                                color: SibasColors.muted,
                                 size: 20,
                               ),
                               onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -288,16 +288,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           'Ulangi Kata Sandi',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: SibasColors.text,
                           ),
                         ),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: _confirmPasswordController,
                           obscureText: _obscurePassword,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Ulangi kata sandi',
-                            prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.primaryMain, size: 20),
+                            prefixIcon: Icon(Icons.lock_outline_rounded, color: SibasColors.leaf, size: 20),
                           ),
                           validator: (val) {
                             if (val == null || val.isEmpty) return 'Ulangi kata sandi';
@@ -312,27 +312,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.statusRejectedBg,
+                              color: SibasColors.status.rejectedBackground,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppColors.danger.withValues(alpha: 0.35),
+                                color: SibasColors.status.badText.withValues(alpha: 0.35),
                               ),
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.error_outline_rounded,
                                   size: 18,
-                                  color: AppColors.danger,
+                                  color: SibasColors.status.badText,
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _errorMessage!,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12.5,
-                                      color: AppColors.danger,
+                                      color: SibasColors.status.badText,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -366,7 +366,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               child: Text(
                                 'Masuk di sini',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.primaryMain,
+                                  color: SibasColors.leaf,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
                                 ),

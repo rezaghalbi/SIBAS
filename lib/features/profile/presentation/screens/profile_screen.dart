@@ -3,12 +3,49 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/constants/colors.dart';
 import '../../../../core/network/api_guard.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/theme/sibas_colors.dart';
+import '../../../../core/widgets/theme_mode_card.dart';
+
+/// Lebar konten halaman pengaturan. Lebih sempit dari 1120 px (§4) agar baris
+/// teks tidak melebar di desktop dengan rail.
+const double _maxContentWidth = 720;
+
+/// Jarak antar seksi pada skala 4 pt (§4).
+const double _sectionGap = 24;
+
+/// Radius kartu konten (r-20) sesuai §4.
+const double _cardRadius = 20;
+
+/// Target sentuh minimum 44 px (§1 butir 6, §4).
+const double _touchTarget = 44;
+
+/// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
+TextStyle get _sectionTitle => TextStyle(
+  fontSize: 15.5,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -0.2,
+  height: 1.25,
+  color: SibasColors.text,
+);
+
+/// Label baris sebagai metadata kecil (§3), bukan teks utama.
+TextStyle get _rowLabel => TextStyle(
+  fontSize: 12,
+  fontWeight: FontWeight.w600,
+  letterSpacing: 0.1,
+  height: 1.4,
+  color: SibasColors.muted,
+);
+
+/// Angka berat dan hitungan memakai lebar digit tetap (§3).
+const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
 
 /// Profil akun yang sedang login: identitas, peran, total berat, pengaturan
 /// akun (nama, kata sandi, sesi), dan keluar.
@@ -19,7 +56,7 @@ class ProfileScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Keluar Akun',
           style: TextStyle(fontWeight: FontWeight.w700),
@@ -30,15 +67,15 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
+            child: Text(
               'Batal',
-              style: TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: SibasColors.muted),
             ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
+              backgroundColor: SibasColors.status.badText,
               foregroundColor: Colors.white,
             ),
             child: const Text('Keluar'),
@@ -118,97 +155,110 @@ class ProfileScreen extends ConsumerWidget {
           );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: SibasColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: HeroHeader(
-              title: 'Profil Saya',
-              subtitle: user?.email ?? 'Memuat data akun...',
-              trailing: IconButton(
-                onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go('/dashboard');
-                  }
-                },
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
+            child: _WidthLimit(
+              child: HeroHeader(
+                title: 'Profil Saya',
+                subtitle: user?.email ?? 'Memuat data akun...',
+                trailing: IconButton(
+                  tooltip: 'Kembali',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: _touchTarget,
+                    minHeight: _touchTarget,
                   ),
-                  child: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: Colors.white,
-                    size: 20,
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/dashboard');
+                    }
+                  },
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
-              ),
-              bottomContent: user == null
-                  ? null
-                  : GlassPanel(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 54,
-                            height: 54,
-                            clipBehavior: Clip.antiAlias,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.35),
+                // Satu-satunya kaca di layar ini: panel identitas di dalam
+                // gradien hero (§7.1). Nav shell memakai kuota kedua.
+                bottomContent: user == null
+                    ? null
+                    : GlassPanel(
+                        tone: GlassTone.hero,
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 54,
+                              height: 54,
+                              clipBehavior: Clip.antiAlias,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.35),
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: avatarUrl == null
+                                  ? inisial
+                                  : Image.network(
+                                      avatarUrl,
+                                      width: 54,
+                                      height: 54,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => inisial,
+                                    ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user.fullName,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _roleLabel(user),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.85,
+                                      ),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            alignment: Alignment.center,
-                            child: avatarUrl == null
-                                ? inisial
-                                : Image.network(
-                                    avatarUrl,
-                                    width: 54,
-                                    height: 54,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => inisial,
-                                  ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  user.fullName,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _roleLabel(user),
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.85),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+              ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-            sliver: SliverToBoxAdapter(
+          SliverToBoxAdapter(
+            child: _ContentSection(
               child: userState.when(
                 data: (data) {
                   if (data == null) {
@@ -222,10 +272,7 @@ class ProfileScreen extends ConsumerWidget {
                     isEmailVerified: emailVerified,
                   );
                 },
-                loading: () => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
+                loading: () => const _LoadingCard(),
                 error: (_, __) => _MessageBox(
                   icon: Icons.cloud_off_rounded,
                   text: 'Gagal memuat profil. Periksa koneksi Anda.',
@@ -235,113 +282,76 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            sliver: SliverToBoxAdapter(
-              child: GlassPanel(
-                radius: 20,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Column(
-                    children: [
-                      _MenuTile(
-                        icon: Icons.info_outline_rounded,
-                        label: 'Pusat Informasi',
-                        onTap: () => context.push('/info'),
-                      ),
-                      const Divider(
-                        height: 1,
-                        indent: 56,
-                        color: AppColors.borderLine,
-                      ),
-                      _MenuTile(
-                        icon: Icons.account_balance_wallet_outlined,
-                        label: 'Riwayat Penarikan',
-                        onTap: () => context.push('/saldo'),
-                      ),
-                    ],
+          SliverToBoxAdapter(
+            child: _ContentSection(
+              child: _MenuCard(
+                items: [
+                  _MenuTile(
+                    icon: Icons.info_outline_rounded,
+                    label: 'Pusat Informasi',
+                    onTap: () => context.push('/info'),
                   ),
-                ),
+                  _MenuTile(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'Riwayat Penarikan',
+                    onTap: () => context.push('/saldo'),
+                  ),
+                ],
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            sliver: SliverToBoxAdapter(
-              child: GlassPanel(
-                radius: 20,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Column(
-                    children: [
-                      _MenuTile(
-                        icon: Icons.edit_outlined,
-                        label: 'Edit Profil',
-                        onTap: user == null
-                            ? null
-                            : () => context.push('/profile/edit'),
-                      ),
-                      const Divider(
-                        height: 1,
-                        indent: 56,
-                        color: AppColors.borderLine,
-                      ),
-                      _MenuTile(
-                        icon: Icons.lock_reset_rounded,
-                        label: 'Ubah Kata Sandi',
-                        onTap: user == null
-                            ? null
-                            : () => _openChangePassword(context),
-                      ),
-                      const Divider(
-                        height: 1,
-                        indent: 56,
-                        color: AppColors.borderLine,
-                      ),
-                      _MenuTile(
-                        icon: Icons.email_outlined,
-                        label: 'Ubah Email',
-                        onTap: user == null
-                            ? null
-                            : () => _openChangeEmail(context, user.email),
-                      ),
-                      const Divider(
-                        height: 1,
-                        indent: 56,
-                        color: AppColors.borderLine,
-                      ),
-                      _MenuTile(
-                        icon: Icons.devices_other_rounded,
-                        label: 'Keluar dari semua perangkat',
-                        color: AppColors.danger,
-                        onTap: user == null
-                            ? null
-                            : () => _openSignOutEverywhere(context),
-                      ),
-                      const Divider(
-                        height: 1,
-                        indent: 56,
-                        color: AppColors.borderLine,
-                      ),
-                      _MenuTile(
-                        icon: Icons.no_accounts_rounded,
-                        label: 'Hapus Akun',
-                        color: AppColors.statusRejected,
-                        onTap: user == null
-                            ? null
-                            : () => _openDeleteAccount(context, ref),
-                      ),
-                    ],
+          SliverToBoxAdapter(
+            child: _ContentSection(
+              child: ThemeModeCard(),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: _ContentSection(
+              child: _MenuCard(
+                items: [
+                  _MenuTile(
+                    icon: Icons.edit_outlined,
+                    label: 'Edit Profil',
+                    onTap: user == null
+                        ? null
+                        : () => context.push('/profile/edit'),
                   ),
-                ),
+                  _MenuTile(
+                    icon: Icons.lock_reset_rounded,
+                    label: 'Ubah Kata Sandi',
+                    onTap: user == null
+                        ? null
+                        : () => _openChangePassword(context),
+                  ),
+                  _MenuTile(
+                    icon: Icons.email_outlined,
+                    label: 'Ubah Email',
+                    onTap: user == null
+                        ? null
+                        : () => _openChangeEmail(context, user.email),
+                  ),
+                  _MenuTile(
+                    icon: Icons.devices_other_rounded,
+                    label: 'Keluar dari semua perangkat',
+                    color: SibasColors.status.badText,
+                    onTap: user == null
+                        ? null
+                        : () => _openSignOutEverywhere(context),
+                  ),
+                  _MenuTile(
+                    icon: Icons.no_accounts_rounded,
+                    label: 'Hapus Akun',
+                    color: SibasColors.status.rejectedText,
+                    onTap: user == null
+                        ? null
+                        : () => _openDeleteAccount(context, ref),
+                  ),
+                ],
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-            sliver: SliverToBoxAdapter(
+          SliverToBoxAdapter(
+            child: _ContentSection(
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -349,14 +359,27 @@ class ProfileScreen extends ConsumerWidget {
                       ? null
                       : () => _confirmLogout(context, ref),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.danger,
-                    side: const BorderSide(color: AppColors.danger, width: 1.5),
+                    foregroundColor: SibasColors.status.badText,
+                    side: BorderSide(
+                      color: SibasColors.status.badText,
+                      width: 1.5,
+                    ),
+                    minimumSize: const Size(0, 48),
                     padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   icon: const Icon(Icons.logout_rounded, size: 20),
                   label: const Text('Keluar'),
                 ),
               ),
+            ),
+          ),
+          // Nav mengambang tidak boleh menutup tombol terakhir (§4).
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 96 + MediaQuery.paddingOf(context).bottom,
             ),
           ),
         ],
@@ -377,44 +400,30 @@ class _ProfileCard extends StatelessWidget {
         ? 'Belum diisi'
         : user.nim!;
     final statusColor = isEmailVerified
-        ? AppColors.primaryMain
-        : AppColors.statusPendingText;
+        ? SibasColors.leaf
+        : SibasColors.status.pendingText;
 
-    return Container(
+    return SurfaceCard(
+      radius: _cardRadius,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderLine),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Data Akun',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
+          Text('Data Akun', style: _sectionTitle),
+          const SizedBox(height: 16),
           _InfoRow(label: 'Nama Lengkap', value: user.fullName),
           _InfoRow(
             label: 'Email',
             value: user.email.isEmpty ? 'Belum diisi' : user.email,
           ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 14),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 120,
-                  child: Text(
-                    'Status Email',
-                    style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-                  ),
+                  child: Text('Status Email', style: _rowLabel),
                 ),
                 Expanded(
                   child: Row(
@@ -447,26 +456,22 @@ class _ProfileCard extends StatelessWidget {
             ),
           ),
           if (!isEmailVerified) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.statusPendingBg,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.statusPendingText.withValues(alpha: 0.35),
-                ),
-              ),
-              child: const Text(
+            SurfaceCard(
+              tone: SurfaceTone.subtle,
+              color: SibasColors.status.pendingBackground,
+              radius: 16,
+              padding: EdgeInsets.all(12),
+              child: Text(
                 'Verifikasi lewat tautan di kotak masuk email Anda. Bila tidak '
                 'menerima email, minta admin mengirim ulang.',
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.4,
-                  color: AppColors.statusPendingText,
+                  color: SibasColors.status.pendingText,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
           ],
           _InfoRow(label: 'NIM', value: nim),
           _InfoRow(label: 'Peran', value: _roleLabel(user)),
@@ -474,12 +479,15 @@ class _ProfileCard extends StatelessWidget {
             label: 'Total Berat Sampah',
             value: '${user.totalWeight.toStringAsFixed(1)} kg',
           ),
-          const SizedBox(height: 4),
-          const Divider(height: 20, color: AppColors.borderLine),
-          const Text(
+          Divider(height: 24, color: SibasColors.border),
+          Text(
             'Nama, NIM, nomor WhatsApp, dan foto bisa diubah lewat menu Edit '
             'Profil. Data lain hubungi admin bila perlu diperbarui.',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: SibasColors.muted,
+            ),
           ),
         ],
       ),
@@ -487,45 +495,113 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
+/// Daftar aksi sebagai satu kartu konten (`SurfaceCard`). Kaca hanya untuk
+/// lapisan mengambang (§7.1), jadi grup menu tidak memakai `GlassPanel`.
+class _MenuCard extends StatelessWidget {
+  final List<Widget> items;
+
+  const _MenuCard({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final children = <Widget>[];
+    for (var i = 0; i < items.length; i++) {
+      if (i > 0) {
+        children.add(
+          Divider(
+            height: 1,
+            indent: 62,
+            endIndent: 16,
+            color: SibasColors.border,
+          ),
+        );
+      }
+      children.add(items[i]);
+    }
+
+    return SurfaceCard(
+      radius: _cardRadius,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(mainAxisSize: MainAxisSize.min, children: children),
+      ),
+    );
+  }
+}
+
+/// Satu baris menu. Seluruh permukaan baris bisa diketuk, tinggi minimal 56 px
+/// sehingga target sentuh 44 px terpenuhi (§4).
 class _MenuTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
-  final Color color;
+  final Color? color;
 
-  const _MenuTile({
+  _MenuTile({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = AppColors.primaryMain,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          color: AppColors.mintSoftBackground,
-          borderRadius: BorderRadius.circular(10),
+    final enabled = onTap != null;
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: enabled
+                        ? SibasColors.mintWash
+                        : SibasColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 18,
+                    color: enabled ? (color ?? SibasColors.leaf) : SibasColors.muted,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.1,
+                      color: enabled
+                          ? SibasColors.text
+                          : SibasColors.muted,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: enabled
+                      ? SibasColors.muted
+                      : SibasColors.muted.withValues(alpha: 0.4),
+                ),
+              ],
+            ),
+          ),
         ),
-        child: Icon(icon, size: 18, color: color),
-      ),
-      title: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
-      ),
-      trailing: const Icon(
-        Icons.chevron_right_rounded,
-        size: 20,
-        color: AppColors.textMuted,
       ),
     );
   }
@@ -540,24 +616,20 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-            ),
-          ),
+          SizedBox(width: 120, child: Text(label, style: _rowLabel)),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                height: 1.4,
+                color: SibasColors.text,
+                fontFeatures: _tabular,
               ),
             ),
           ),
@@ -575,34 +647,34 @@ class _ErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.error_outline_rounded,
-            size: 18,
-            color: AppColors.danger,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                fontSize: 12,
-                height: 1.4,
-                color: AppColors.danger,
+      child: SurfaceCard(
+        tone: SurfaceTone.subtle,
+        color: SibasColors.status.rejectedBackground,
+        radius: 16,
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 18,
+              color: SibasColors.status.badText,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.4,
+                  color: SibasColors.status.badText,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -669,7 +741,7 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
         'Ubah Email',
         style: TextStyle(fontWeight: FontWeight.w700),
@@ -685,23 +757,23 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Email baru',
                 prefixIcon: Icon(
                   Icons.email_outlined,
-                  color: AppColors.primaryMain,
+                  color: SibasColors.leaf,
                   size: 20,
                 ),
               ),
               validator: _validate,
             ),
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Email lama tetap aktif sampai tautan konfirmasi diklik.',
               style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: AppColors.textMuted,
+                color: SibasColors.muted,
               ),
             ),
             if (_error != null) ...[
@@ -714,9 +786,9 @@ class _ChangeEmailDialogState extends ConsumerState<_ChangeEmailDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: SibasColors.muted),
           ),
         ),
         ElevatedButton(
@@ -789,7 +861,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
         'Ubah Kata Sandi',
         style: TextStyle(fontWeight: FontWeight.w700),
@@ -854,9 +926,9 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: SibasColors.muted),
           ),
         ),
         ElevatedButton(
@@ -885,9 +957,9 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
       obscureText: obscured,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.lock_outline_rounded,
-          color: AppColors.primaryMain,
+          color: SibasColors.leaf,
           size: 20,
         ),
         suffixIcon: IconButton(
@@ -895,7 +967,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
             obscured
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
-            color: AppColors.textMuted,
+            color: SibasColors.muted,
             size: 20,
           ),
           tooltip: obscured ? 'Lihat kata sandi' : 'Sembunyikan kata sandi',
@@ -928,7 +1000,8 @@ class _SignOutEverywhereDialogState
       // Sesi mungkin sudah tidak valid; pembersihan lokal tetap dijalankan.
     }
     try {
-      // logout() memanggil signOut lagi — wajar, hanya memastikan state bersih.
+      // logout() memanggil signOut lagi — wajar, hanya memastikan state
+      // bersih.
       await ref.read(currentUserProvider.notifier).logout();
     } catch (_) {
       // Diabaikan: pengguna tetap diarahkan ke halaman masuk.
@@ -940,7 +1013,7 @@ class _SignOutEverywhereDialogState
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
         'Keluar dari Semua Perangkat',
         style: TextStyle(fontWeight: FontWeight.w700),
@@ -952,15 +1025,15 @@ class _SignOutEverywhereDialogState
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: SibasColors.muted),
           ),
         ),
         ElevatedButton(
           onPressed: _busy ? null : _confirm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.danger,
+            backgroundColor: SibasColors.status.badText,
             foregroundColor: Colors.white,
           ),
           child: _busy
@@ -1027,21 +1100,21 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 6, right: 8),
             child: Icon(
               Icons.circle,
               size: 5,
-              color: AppColors.statusRejected,
+              color: SibasColors.status.rejectedText,
             ),
           ),
           Expanded(
             child: Text(
               teks,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 height: 1.45,
-                color: AppColors.textPrimary,
+                color: SibasColors.text,
               ),
             ),
           ),
@@ -1053,7 +1126,7 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
         'Hapus akun ini?',
         style: TextStyle(fontWeight: FontWeight.w700),
@@ -1068,7 +1141,8 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
           ),
           _poin('Nama, NIM, dan email dianonimkan.'),
           _poin(
-            'Riwayat setoran dan penarikan tetap tersimpan untuk keperluan audit.',
+            'Riwayat setoran dan penarikan tetap tersimpan untuk keperluan '
+            'audit.',
           ),
           _poin(
             'Saldo harus nol dan tidak boleh ada pengajuan yang menunggu '
@@ -1101,17 +1175,17 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
       actions: [
         TextButton(
           onPressed: _busy ? null : () => Navigator.pop(context),
-          child: const Text(
+          child: Text(
             'Batal',
-            style: TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: SibasColors.muted),
           ),
         ),
         ElevatedButton(
           onPressed: (_busy || !_siap) ? null : _confirm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.statusRejected,
+            backgroundColor: SibasColors.status.rejectedText,
             foregroundColor: Colors.white,
-            disabledBackgroundColor: AppColors.statusRejected.withValues(
+            disabledBackgroundColor: SibasColors.status.rejectedText.withValues(
               alpha: 0.35,
             ),
             disabledForegroundColor: Colors.white.withValues(alpha: 0.75),
@@ -1132,6 +1206,7 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
   }
 }
 
+/// Kotak pesan untuk state kosong dan galat: kartu statis tanpa blur (§7.1).
 class _MessageBox extends StatelessWidget {
   final IconData icon;
   final String text;
@@ -1147,45 +1222,111 @@ class _MessageBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final accent = isError ? SibasColors.status.badText : SibasColors.leaf;
+
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isError ? AppColors.statusRejectedBg : AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isError
-              ? AppColors.danger.withValues(alpha: 0.3)
-              : AppColors.borderLine,
+      child: SurfaceCard(
+        color: isError ? SibasColors.status.rejectedBackground : null,
+        radius: _cardRadius,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isError
+                    ? SibasColors.status.badText.withValues(alpha: 0.10)
+                    : SibasColors.mintWash,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 22, color: accent),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                fontWeight: FontWeight.w600,
+                color: isError ? SibasColors.status.badText : SibasColors.muted,
+              ),
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Coba Lagi'),
+                style: TextButton.styleFrom(
+                  foregroundColor: SibasColors.status.badText,
+                  minimumSize: const Size(0, _touchTarget),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            size: 28,
-            color: isError ? AppColors.danger : AppColors.textMuted,
+    );
+  }
+}
+
+/// Placeholder saat data akun dimuat: satu kartu setinggi konten agar halaman
+/// tidak meloncat saat data datang.
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: const SurfaceCard(
+        radius: _cardRadius,
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.4),
           ),
-          const SizedBox(height: 10),
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isError ? AppColors.danger : AppColors.textMuted,
-            ),
-          ),
-          if (onRetry != null) ...[
-            const SizedBox(height: 6),
-            TextButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Coba Lagi'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            ),
-          ],
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Seksi konten: lebar maksimal 720 px dengan gutter 16/32 (§4, §10.5).
+class _ContentSection extends StatelessWidget {
+  final Widget child;
+
+  const _ContentSection({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ContentWidth(
+      maxWidth: _maxContentWidth,
+      child: Padding(
+        padding: const EdgeInsets.only(top: _sectionGap),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Batas lebar yang sama untuk hero, agar tepi kartu sejajar dengan seksi.
+class _WidthLimit extends StatelessWidget {
+  final Widget child;
+
+  const _WidthLimit({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+        child: child,
       ),
     );
   }
@@ -1208,7 +1349,7 @@ void _snack(BuildContext context, String message) {
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primaryDark,
+        backgroundColor: SibasColors.primary,
       ),
     );
 }

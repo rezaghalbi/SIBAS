@@ -2,13 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/colors.dart';
 import '../../../../core/network/api_guard.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
+import '../../../../core/widgets/surface_card.dart';
 import '../../domain/models/student_model.dart';
 import '../../domain/student_filter.dart';
 import '../providers/student_provider.dart';
+import '../../../../core/theme/sibas_colors.dart';
+
+/// Target sentuh minimum (§4).
+const double _touch = 44;
+
+/// Lebar maksimum sheet detail agar tetap terbaca di desktop.
+const double _sheetWidth = 560;
+
+/// Lebar konten: sama dengan `ContentWidth` agar hero sejajar (§4).
+const double _maxContentWidth = 1120;
+
+/// Saldo dan berat memakai lebar digit tetap (§3).
+const List<FontFeature> _numbers = <FontFeature>[
+  FontFeature.tabularFigures(),
+];
+
+/// Judul seksi: 15.5 w700, tracking -0.2 (§3).
+TextStyle get _sectionTitle => TextStyle(
+  fontSize: 15.5,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -0.2,
+  color: SibasColors.text,
+);
 
 /// Daftar akun mahasiswa untuk admin (baca saja).
 ///
@@ -52,68 +76,88 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(studentsProvider);
+    final inset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: SibasColors.background,
       body: RefreshIndicator(
-        color: AppColors.primaryMain,
+        color: SibasColors.leaf,
         onRefresh: _muatUlang,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverToBoxAdapter(child: _header()),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-              sliver: SliverToBoxAdapter(child: _kolomCari()),
+            SliverToBoxAdapter(child: _hero()),
+            SliverToBoxAdapter(
+              child: ContentWidth(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: _kolomCari(),
+                ),
+              ),
             ),
             ..._isi(state),
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            // Nav mengambang tidak boleh menutup baris terakhir (§4).
+            SliverToBoxAdapter(child: SizedBox(height: 96 + inset)),
           ],
         ),
       ),
     );
   }
 
-  Widget _header() {
-    return HeroHeader(
-      title: 'Data Mahasiswa',
-      subtitle: 'Daftar akun mahasiswa',
-      trailing: IconButton(
-        tooltip: 'Kembali',
-        onPressed: () => Navigator.maybePop(context),
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.arrow_back_rounded,
-            color: Colors.white,
-            size: 20,
+  /// Hero memakai gutter sendiri; dibatasi lebar agar sejajar kartu isi.
+  Widget _hero() {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+        child: HeroHeader(
+          title: 'Data Mahasiswa',
+          subtitle: 'Daftar akun mahasiswa',
+          trailing: IconButton(
+            tooltip: 'Kembali',
+            onPressed: () => Navigator.maybePop(context),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  /// Satu-satunya panel kaca di layar ini (1 blur); kartu daftar memakai
-  /// permukaan solid agar tetap ringan saat digulir di web.
+  /// Kolom pencarian: field 16 px di atas panel kaca statis.
   Widget _kolomCari() {
-    return GlassPanel(
+    return SurfaceCard(
+      tone: SurfaceTone.subtle,
       radius: 16,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: TextField(
         controller: _cari,
         onChanged: (value) => setState(() => _query = value),
         textInputAction: TextInputAction.search,
-        style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+        style: TextStyle(fontSize: 16, color: SibasColors.text),
         decoration: InputDecoration(
           hintText: 'Cari nama, NIM, email, atau WA',
-          prefixIcon: const Icon(
+          hintMaxLines: 1,
+          hintStyle: TextStyle(
+            fontSize: 15,
+            color: SibasColors.muted,
+          ),
+          prefixIcon: Icon(
             Icons.search_rounded,
             size: 20,
-            color: AppColors.textMuted,
+            color: SibasColors.leaf,
+          ),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: _touch,
+            minHeight: _touch,
           ),
           suffixIcon: _query.isEmpty
               ? null
@@ -123,15 +167,15 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                     _cari.clear();
                     setState(() => _query = '');
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
                     size: 18,
-                    color: AppColors.textMuted,
+                    color: SibasColors.muted,
                   ),
                 ),
           filled: false,
           isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          contentPadding: const EdgeInsets.fromLTRB(0, 14, 12, 14),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
@@ -142,25 +186,24 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
 
   List<Widget> _isi(AsyncValue<List<StudentModel>> state) {
     return state.when<List<Widget>>(
-      loading: () => const [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ),
-      ],
+      loading: () => [_stateSliver(_loadingCard())],
       error: (error, _) => [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-          sliver: SliverToBoxAdapter(
-            child: _kartuPesan(
-              icon: Icons.cloud_off_rounded,
-              judul: 'Gagal memuat data mahasiswa',
-              pesan: pesanKesalahan(error),
-              aksi: ElevatedButton(
-                onPressed: () => ref.invalidate(studentsProvider),
-                child: const Text('Coba Lagi'),
+        _stateSliver(
+          _kartuPesan(
+            icon: Icons.cloud_off_rounded,
+            judul: 'Gagal memuat data mahasiswa',
+            pesan: pesanKesalahan(error),
+            aksi: OutlinedButton.icon(
+              onPressed: () => ref.invalidate(studentsProvider),
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Coba Lagi'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, _touch),
+                foregroundColor: SibasColors.leaf,
+                side: BorderSide(color: SibasColors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -170,44 +213,55 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
         final data = saringMahasiswa(semua, _query);
         if (data.isEmpty) {
           return [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              sliver: SliverToBoxAdapter(
-                child: _kartuPesan(
-                  icon: _query.trim().isEmpty
-                      ? Icons.people_outline_rounded
-                      : Icons.search_off_rounded,
-                  judul: _query.trim().isEmpty
-                      ? 'Belum ada mahasiswa'
-                      : 'Mahasiswa tidak ditemukan',
-                  pesan: _query.trim().isEmpty
-                      ? 'Akun mahasiswa yang mendaftar akan tampil di sini.'
-                      : 'Coba kata kunci lain: nama, NIM, email, atau WA.',
-                ),
+            _stateSliver(
+              _kartuPesan(
+                icon: _query.trim().isEmpty
+                    ? Icons.people_outline_rounded
+                    : Icons.search_off_rounded,
+                judul: _query.trim().isEmpty
+                    ? 'Belum ada mahasiswa'
+                    : 'Mahasiswa tidak ditemukan',
+                pesan: _query.trim().isEmpty
+                    ? 'Akun mahasiswa yang mendaftar akan tampil di sini.'
+                    : 'Coba kata kunci lain: nama, NIM, email, atau WA.',
               ),
             ),
           ];
         }
 
         return [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-            sliver: SliverToBoxAdapter(
-              child: Text(
-                '${data.length} mahasiswa',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textMuted,
+          SliverToBoxAdapter(
+            child: ContentWidth(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 20, 0, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Daftar mahasiswa',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _sectionTitle,
+                      ),
+                    ),
+                    Text(
+                      '${data.length} akun',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: SibasColors.muted,
+                        fontFeatures: _numbers,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-            sliver: SliverList.builder(
-              itemCount: data.length,
-              itemBuilder: (_, i) => _kartuMahasiswa(data[i]),
+          SliverList.builder(
+            itemCount: data.length,
+            itemBuilder: (_, i) => ContentWidth(
+              child: _kartuMahasiswa(data[i]),
             ),
           ),
         ];
@@ -215,32 +269,44 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
     );
   }
 
+  /// Keadaan kosong/gagal dibatasi 560 px agar tetap terbaca di desktop.
+  Widget _stateSliver(Widget child) {
+    return SliverToBoxAdapter(
+      child: ContentWidth(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _kartuMahasiswa(StudentModel m) {
     final nim = (m.nim ?? '').trim();
-    final phone = (m.phone ?? '').trim();
 
-    return Container(
+    return SurfaceCard(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLine),
-      ),
+      padding: EdgeInsets.zero,
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => _bukaDetail(m),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    _avatar(m.fullName, radius: 21),
-                    const SizedBox(width: 10),
+                    _avatar(m.fullName, radius: 20),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,11 +318,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                                   m.fullName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textPrimary,
-                                  ),
+                                  style: _sectionTitle,
                                 ),
                               ),
                               if (m.terhapus) ...[
@@ -267,40 +329,33 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            _nilaiAtauStrip(nim),
+                            nim.isEmpty ? 'NIM belum diisi' : 'NIM $nim',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textMuted,
+                              color: SibasColors.muted,
+                              fontFeatures: _numbers,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(
+                    const SizedBox(width: 8),
+                    Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: AppColors.textMuted,
+                      color: SibasColors.muted,
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                _barisInfo(
-                  Icons.alternate_email_rounded,
-                  _nilaiAtauStrip(m.email),
-                ),
-                const SizedBox(height: 6),
-                _barisInfo(Icons.chat_outlined, _nilaiAtauStrip(phone)),
                 const SizedBox(height: 12),
-                Container(
+                SurfaceCard(
+                  tone: SurfaceTone.subtle,
+                  radius: 12,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.mintSoftBackground,
-                    borderRadius: BorderRadius.circular(12),
+                    vertical: 12,
                   ),
                   child: Row(
                     children: [
@@ -308,7 +363,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                         child: _statistik(
                           'Saldo',
                           _currency.format(m.balance),
-                          AppColors.primaryDark,
+                          SibasColors.primary,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -316,7 +371,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                         child: _statistik(
                           'Total berat',
                           '${_berat.format(m.totalWeight)} kg',
-                          AppColors.textPrimary,
+                          SibasColors.text,
                         ),
                       ),
                     ],
@@ -336,7 +391,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11, color: SibasColors.muted),
         ),
         const SizedBox(height: 2),
         Text(
@@ -344,26 +399,10 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
             color: warna,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _barisInfo(IconData icon, String teks) {
-    return Row(
-      children: [
-        Icon(icon, size: 15, color: AppColors.textMuted),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            teks,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+            fontFeatures: _numbers,
           ),
         ),
       ],
@@ -374,13 +413,13 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
     final huruf = nama.trim().isEmpty ? '?' : nama.trim()[0].toUpperCase();
     return CircleAvatar(
       radius: radius,
-      backgroundColor: AppColors.mintSoftBackground,
+      backgroundColor: SibasColors.mintWash,
       child: Text(
         huruf,
         style: TextStyle(
           fontSize: radius * 0.85,
           fontWeight: FontWeight.w800,
-          color: AppColors.primaryDark,
+          color: SibasColors.primary,
         ),
       ),
     );
@@ -390,15 +429,41 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.statusRejectedBg,
+        color: SibasColors.status.rejectedBackground,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Text(
+      child: Text(
         'Terhapus',
         style: TextStyle(
           fontSize: 10.5,
           fontWeight: FontWeight.w700,
-          color: AppColors.statusRejectedText,
+          color: SibasColors.status.rejectedText,
+        ),
+      ),
+    );
+  }
+
+  Widget _badgeStatus(StudentModel m) {
+    final aktif = m.deletedAt == null;
+    final ink = aktif
+        ? SibasColors.status.approvedText
+        : SibasColors.status.rejectedText;
+    final surface = aktif
+        ? SibasColors.status.approvedBackground
+        : SibasColors.status.rejectedBackground;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        aktif ? 'Aktif' : 'Terhapus',
+        style: TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+          color: ink,
         ),
       ),
     );
@@ -410,43 +475,37 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
     required String pesan,
     Widget? aksi,
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderLine),
-      ),
+    return SurfaceCard(
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       child: Column(
         children: [
           Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: AppColors.mintSoftBackground,
-              shape: BoxShape.circle,
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: SibasColors.mintWash,
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, size: 24, color: AppColors.primaryMain),
+            child: Icon(icon, size: 26, color: SibasColors.leaf),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Text(
             judul,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+              color: SibasColors.text,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             pesan,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               height: 1.4,
-              color: AppColors.textMuted,
+              color: SibasColors.muted,
             ),
           ),
           if (aksi != null) ...[const SizedBox(height: 16), aksi],
@@ -455,94 +514,234 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
     );
   }
 
+  Widget _loadingCard() {
+    return SurfaceCard(
+      padding: EdgeInsets.all(28),
+      child: Column(
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Memuat data mahasiswa...',
+            style: TextStyle(fontSize: 12.5, color: SibasColors.muted),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _bukaDetail(StudentModel m) {
     return showModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
       isScrollControlled: true,
-      builder: (ctx) {
-        return SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              0,
-              20,
-              20 + MediaQuery.viewInsetsOf(ctx).bottom,
+      backgroundColor: Colors.transparent,
+      barrierColor: SibasColors.text.withValues(alpha: 0.36),
+      builder: (ctx) => _detailSheet(ctx, m),
+    );
+  }
+
+  Widget _detailSheet(BuildContext ctx, StudentModel m) {
+    final insets = MediaQuery.viewInsetsOf(ctx);
+    final height = MediaQuery.sizeOf(ctx).height - insets.bottom;
+    final maxHeight = height * 0.9;
+    final terhapus = m.deletedAt;
+    final statusAkun = terhapus == null
+        ? 'Aktif'
+        : 'Terhapus · ${_tanggal.format(terhapus.toLocal())}';
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: insets.bottom),
+      child: SafeArea(
+        top: false,
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: _sheetWidth,
+              maxHeight: maxHeight,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    _avatar(m.fullName),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: GlassPanel(
+                tone: GlassTone.dense,
+                radius: 24,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: SibasColors.border,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
                         children: [
-                          Text(
-                            m.fullName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
+                          _avatar(m.fullName),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  m.fullName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: _sectionTitle,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _nilaiAtauStrip(m.email),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: SibasColors.muted,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _nilaiAtauStrip(m.email),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              color: AppColors.textMuted,
+                          const SizedBox(width: 8),
+                          _badgeStatus(m),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _ringkasan(
+                              'Saldo',
+                              _currency.format(m.balance),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _ringkasan(
+                              'Total berat',
+                              '${_berat.format(m.totalWeight)} kg',
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      SurfaceCard(
+                        tone: SurfaceTone.subtle,
+                        radius: 16,
+                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 2),
+                        child: Column(
+                          children: [
+                            _barisDetail('NIM', _nilaiAtauStrip(m.nim)),
+                            _barisDetail('Email', _nilaiAtauStrip(m.email)),
+                            _barisDetail('Nomor WA', _nilaiAtauStrip(m.phone)),
+                            _barisDetail(
+                              'Tanggal daftar',
+                              m.createdAt == null
+                                  ? '-'
+                                  : _tanggal.format(m.createdAt!.toLocal()),
+                            ),
+                            _barisDetail('Status akun', statusAkun),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _openUbah(ctx, m);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 48),
+                          foregroundColor: SibasColors.leaf,
+                          side: BorderSide(color: SibasColors.border),
+                        ),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: const Text('Ubah data mahasiswa'),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: SibasColors.leaf,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            minimumSize: const Size(0, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Tutup'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                const Divider(height: 1, color: AppColors.borderLine),
-                const SizedBox(height: 14),
-                _barisDetail('Nama', m.fullName),
-                _barisDetail('NIM', _nilaiAtauStrip(m.nim)),
-                _barisDetail('Email', _nilaiAtauStrip(m.email)),
-                _barisDetail('Nomor WA', _nilaiAtauStrip(m.phone)),
-                _barisDetail('Saldo', _currency.format(m.balance)),
-                _barisDetail(
-                  'Total berat',
-                  '${_berat.format(m.totalWeight)} kg',
-                ),
-                _barisDetail(
-                  'Tanggal daftar',
-                  m.createdAt == null
-                      ? '-'
-                      : _tanggal.format(m.createdAt!.toLocal()),
-                ),
-                _barisDetail(
-                  'Status akun',
-                  m.deletedAt == null
-                      ? 'Aktif'
-                      : 'Terhapus · ${_tanggal.format(m.deletedAt!.toLocal())}',
-                  warna: m.deletedAt == null
-                      ? AppColors.statusApprovedText
-                      : AppColors.statusRejectedText,
-                ),
-              ],
+              ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _barisDetail(String label, String nilai, {Color? warna}) {
+  /// Form koreksi identitas mahasiswa oleh admin (nama, NIM, nomor WA).
+  Future<void> _openUbah(BuildContext ctx, StudentModel m) async {
+    final berhasil = await showModalBottomSheet<bool>(
+      context: ctx,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: SibasColors.scrim,
+      builder: (_) => _UbahMahasiswaSheet(mahasiswa: m),
+    );
+    if (berhasil == true && ctx.mounted) {
+      ref.invalidate(studentsProvider);
+    }
+  }
+
+  Widget _ringkasan(String label, String nilai) {
+    return SurfaceCard(
+      tone: SurfaceTone.subtle,
+      radius: 12,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: SibasColors.muted),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            nilai,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: SibasColors.text,
+              fontFeatures: _numbers,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _barisDetail(String label, String nilai) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -552,9 +751,9 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
             width: 110,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
-                color: AppColors.textMuted,
+                color: SibasColors.muted,
               ),
             ),
           ),
@@ -564,7 +763,8 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,
-                color: warna ?? AppColors.textPrimary,
+                color: SibasColors.text,
+                fontFeatures: _numbers,
               ),
             ),
           ),
@@ -578,4 +778,207 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
 String _nilaiAtauStrip(String? value) {
   final teks = value?.trim() ?? '';
   return teks.isEmpty ? '-' : teks;
+}
+
+
+/// Sheet koreksi identitas mahasiswa. Hanya nama, NIM, dan nomor WhatsApp;
+/// peran, saldo, dan status akun tetap diatur server.
+class _UbahMahasiswaSheet extends ConsumerStatefulWidget {
+  const _UbahMahasiswaSheet({required this.mahasiswa});
+
+  final StudentModel mahasiswa;
+
+  @override
+  ConsumerState<_UbahMahasiswaSheet> createState() =>
+      _UbahMahasiswaSheetState();
+}
+
+class _UbahMahasiswaSheetState extends ConsumerState<_UbahMahasiswaSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nama;
+  late final TextEditingController _nim;
+  late final TextEditingController _wa;
+
+  bool _menyimpan = false;
+  String? _pesan;
+
+  @override
+  void initState() {
+    super.initState();
+    _nama = TextEditingController(text: widget.mahasiswa.fullName);
+    _nim = TextEditingController(text: widget.mahasiswa.nim ?? '');
+    _wa = TextEditingController(text: widget.mahasiswa.phone ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nama.dispose();
+    _nim.dispose();
+    _wa.dispose();
+    super.dispose();
+  }
+
+  Future<void> _simpan() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() {
+      _menyimpan = true;
+      _pesan = null;
+    });
+    try {
+      await ref.read(studentRepositoryProvider).ubahMahasiswa(
+            id: widget.mahasiswa.id,
+            fullName: _nama.text.trim(),
+            nim: _nim.text.trim().isEmpty ? null : _nim.text.trim(),
+            phone: _wa.text.trim().isEmpty ? null : _wa.text.trim(),
+          );
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _menyimpan = false;
+        _pesan = pesanKesalahan(error);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final inset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: inset),
+      child: GlassPanel(
+        tone: GlassTone.dense,
+        radius: 28,
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Ubah data mahasiswa',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                      color: SibasColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Peran, saldo, dan status akun tidak dapat diubah di sini.',
+                    style: TextStyle(fontSize: 12.5, color: SibasColors.muted),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _nama,
+                    textCapitalization: TextCapitalization.words,
+                    style: TextStyle(fontSize: 16, color: SibasColors.text),
+                    decoration: const InputDecoration(labelText: 'Nama lengkap'),
+                    validator: (value) {
+                      final nama = (value ?? '').trim();
+                      if (nama.length < 2 || nama.length > 80) {
+                        return 'Nama harus 2 sampai 80 karakter.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _nim,
+                    style: TextStyle(fontSize: 16, color: SibasColors.text),
+                    decoration: const InputDecoration(labelText: 'NIM'),
+                    validator: (value) {
+                      final nim = (value ?? '').trim();
+                      if (nim.isEmpty) return null;
+                      if (!RegExp(r'^[A-Za-z0-9]{3,20}$').hasMatch(nim)) {
+                        return 'NIM hanya huruf dan angka, 3 sampai 20.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _wa,
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(fontSize: 16, color: SibasColors.text),
+                    decoration: const InputDecoration(
+                      labelText: 'Nomor WhatsApp',
+                      hintText: '081234567890',
+                    ),
+                    validator: (value) {
+                      final wa = (value ?? '').trim();
+                      if (wa.isEmpty) return null;
+                      if (!RegExp(r'^[0-9+][0-9 -]{7,19}$').hasMatch(wa)) {
+                        return 'Nomor WhatsApp tidak valid.';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (_pesan != null) ...[
+                    const SizedBox(height: 12),
+                    SurfaceCard(
+                      tone: SurfaceTone.subtle,
+                      radius: 12,
+                      color: SibasColors.status.rejectedBackground,
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        _pesan!,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: SibasColors.status.rejectedText,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed:
+                              _menyimpan ? null : () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                            side: BorderSide(color: SibasColors.border),
+                          ),
+                          child: const Text('Batal'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: _menyimpan ? null : _simpan,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: SibasColors.leaf,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(0, 48),
+                          ),
+                          child: _menyimpan
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Simpan'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

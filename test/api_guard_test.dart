@@ -5,6 +5,19 @@ import 'package:sibas/core/network/api_guard.dart';
 
 void main() {
   group('pesanKesalahan', () {
+    test('saat offline semua kegagalan memakai pesan wajib online', () {
+      offlineNotifier.value = true;
+      addTearDown(() => offlineNotifier.value = false);
+      expect(
+        pesanKesalahan(const JaringanException('apa saja')),
+        'apa saja',
+      );
+      expect(
+        pesanKesalahan(PostgrestException(message: 'gagal', code: '500')),
+        pesanWajibOnline,
+      );
+    });
+
     test('meneruskan pesan jaringan apa adanya', () {
       expect(
         pesanKesalahan(

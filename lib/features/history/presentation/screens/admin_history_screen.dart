@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../../../../core/constants/colors.dart';
 import '../../../../core/utils/status_helper.dart';
-import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/content_width.dart';
+import '../../../../core/widgets/hero_header.dart';
+import '../../../../core/widgets/surface_card.dart';
+import '../../../../core/widgets/skeleton.dart';
+import '../../../../core/widgets/tx_list_item.dart';
 import '../../../verification/data/csv_export.dart';
 import '../../../verification/data/csv_download_stub.dart'
     if (dart.library.js_interop) '../../../verification/data/csv_download_web.dart';
@@ -12,6 +14,18 @@ import '../../../verification/presentation/providers/verification_provider.dart'
 import '../../../verification/presentation/widgets/verification_bottom_sheet.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
+import '../../../../core/theme/sibas_colors.dart';
+
+/// Target sentuh minimum (§1, §4).
+const double _touchTarget = 44;
+
+/// Judul seksi: 15.5 w700, tracking -0.2 (§3).
+TextStyle get _sectionTitle => TextStyle(
+  fontSize: 15.5,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -0.2,
+  color: SibasColors.text,
+);
 
 /// Riwayat seluruh penyetoran (semua status) untuk Admin,
 /// dengan filter status & filter tanggal cepat sesuai prd.md.
@@ -121,268 +135,597 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
     return '${now.year}${dua(now.month)}${dua(now.day)}';
   }
 
+  void _clearQuery() {
+    _searchController.clear();
+    ref.read(adminFilterProvider.notifier).update(
+          (f) => f.copyWith(query: ''),
+        );
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _status = null;
+      _days = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final txState = ref.watch(adminTransactionsProvider);
     final filter = ref.watch(adminFilterProvider);
-    final searching = filter.query.trim().isNotEmpty;
-    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
-    final currency =
-        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Riwayat Penyetoran'),
-        backgroundColor: AppColors.primaryMain,
-        foregroundColor: Colors.white,
-        actions: [
-          PopupMenuButton<String>(
-            tooltip: 'Ekspor CSV',
-            icon: const Icon(Icons.download_rounded),
-            onSelected: (jenis) {
-              if (jenis == 'penarikan') {
-                _eksporPenarikan();
-                return;
-              }
-              final semua =
-                  ref.read(adminTransactionsProvider).valueOrNull ?? const [];
-              _eksporSetoran(semua.where(_match).toList());
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'setoran', child: Text('Rekap setoran')),
-              PopupMenuItem(value: 'penarikan', child: Text('Rekap penarikan')),
-            ],
-          ),
-        ],
-      ),
+      backgroundColor: SibasColors.background,
       body: SafeArea(
+        bottom: false,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.cardSurface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.borderLine),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  textInputAction: TextInputAction.search,
-                  onChanged: (val) {
-                    ref.read(adminFilterProvider.notifier).update(
-                          (f) => f.copyWith(query: val),
-                        );
-                  },
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    hintText: 'Cari nama, NIM, atau kode transaksi...',
-                    hintMaxLines: 1,
-                    hintStyle: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textMuted,
+            _WidthLimit(
+              child: HeroHeader(
+                title: 'Riwayat Penyetoran',
+                subtitle: 'Semua setoran dan statusnya',
+                trailing: PopupMenuButton<String>(
+                  tooltip: 'Ekspor CSV',
+                  padding: EdgeInsets.zero,
+                  icon: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: AppColors.primaryMain,
+                    child: const Icon(
+                      Icons.download_rounded,
+                      color: Colors.white,
+                      size: 20,
                     ),
-                    suffixIcon: filter.query.isEmpty
-                        ? null
-                        : IconButton(
-                            tooltip: 'Hapus pencarian',
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              size: 18,
-                              color: AppColors.textMuted,
-                            ),
-                            onPressed: () {
-                              _searchController.clear();
-                              ref.read(adminFilterProvider.notifier).update(
-                                    (f) => f.copyWith(query: ''),
-                                  );
-                            },
-                          ),
                   ),
+                  onSelected: (jenis) {
+                    if (jenis == 'penarikan') {
+                      _eksporPenarikan();
+                      return;
+                    }
+                    final semua =
+                        ref.read(adminTransactionsProvider).valueOrNull ??
+                            const [];
+                    _eksporSetoran(semua.where(_match).toList());
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'setoran',
+                      child: Text('Rekap setoran'),
+                    ),
+                    PopupMenuItem(
+                      value: 'penarikan',
+                      child: Text('Rekap penarikan'),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            SizedBox(
-              height: 54,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                itemCount: _dayFilters.length + _statuses.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final isDayChip = index < _dayFilters.length;
-                  String label;
-                  bool isSelected;
-                  if (isDayChip) {
-                    final days = _dayFilters[index];
-                    label = _dayLabel(days);
-                    isSelected = _days == days;
-                  } else {
-                    final status = _statuses[index - _dayFilters.length];
-                    label = status == null
-                        ? 'Semua status'
-                        : TransactionStatusHelper.toDisplayLabel(status);
-                    isSelected = _status == status;
-                  }
-
-                  return ChoiceChip(
-                    label: Text(label),
-                    selected: isSelected,
-                    selectedColor: AppColors.primaryMain,
-                    backgroundColor: AppColors.cardSurface,
-                    labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                      fontSize: 13,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(
-                        color: isSelected
-                            ? AppColors.primaryMain
-                            : AppColors.borderLine,
-                      ),
-                    ),
-                    onSelected: (selected) {
-                      if (!selected) return;
-                      setState(() {
-                        if (isDayChip) {
-                          _days = _dayFilters[index];
-                        } else {
-                          _status = _statuses[index - _dayFilters.length];
-                        }
-                      });
-                    },
-                  );
-                },
               ),
             ),
             Expanded(
-              child: txState.when(
-                data: (all) {
-                  final list = all.where(_match).toList();
-                  if (list.isEmpty) {
-                    return Center(
-                      child: Text(
-                        searching
-                            ? 'Tidak ada riwayat yang cocok dengan pencarian.'
-                            : 'Belum ada riwayat penyetoran pada filter ini.',
-                        style: const TextStyle(color: AppColors.textMuted),
+              child: ContentWidth(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 16),
+                    _searchField(showClear: filter.query.isNotEmpty),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: _touchTarget,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _dayFilters.length + _statuses.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) => _filterChip(index),
                       ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: list.length,
-                    itemBuilder: (context, index) {
-                      final item = list[index];
-                      final profile = item['profiles'] as Map<String, dynamic>?;
-                      final category = item['trash_types'] as Map<String, dynamic>?;
-                      final name = (profile?['full_name'] as String?) ?? 'Mahasiswa';
-                      final nim = (profile?['nim'] as String?) ?? '-';
-                      final catName = (category?['name'] as String?) ?? 'Sampah';
-                      final weight = (item['weight'] != null)
-                          ? (item['weight'] as num).toDouble()
-                          : 0.0;
-                      final amount =
-                          item['final_amount'] ?? item['estimated_amount'];
-                      final status = (item['status'] as String?) ?? 'PENDING';
-                      final created = DateTime.tryParse(
-                          (item['created_at'] as String?) ?? '');
-                      final isPending = status.toUpperCase() == 'PENDING';
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardSurface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.borderLine),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(14),
-                          // Admin boleh membuka detail untuk melihat verifikator & alasan.
-                          onTap: () => context.push('/transaction/${item['id']}'),
-
-                          leading: const CircleAvatar(
-                            backgroundColor: AppColors.mintSoftBackground,
-                            child: Icon(Icons.recycling_rounded,
-                                color: AppColors.primaryMain),
-                          ),
-                          title: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  name,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w700, fontSize: 14),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: txState.when(
+                        data: (all) {
+                          final list = all.where(_match).toList();
+                          if (list.isEmpty) {
+                            return _centeredState(
+                              _EmptyState(
+                                searching: filter.query.trim().isNotEmpty,
+                                hasFilter: _status != null || _days != null,
+                                onClearQuery: _clearQuery,
+                                onResetFilters: _resetFilters,
+                                onReload: () {
+                                  ref.invalidate(
+                                    adminTransactionsProvider,
+                                  );
+                                },
                               ),
-                              StatusBadge(status: status),
-                            ],
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Text(
-                                'NIM: $nim • $catName',
-                                style: const TextStyle(
-                                    fontSize: 12, color: AppColors.textMuted),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${weight.toStringAsFixed(1)} kg'
-                                '${amount != null ? ' • ${currency.format(amount)}' : ''}'
-                                '${created != null ? ' • ${dateFormat.format(created)}' : ''}',
-                                style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primaryDark),
-                              ),
-                              if (item['rejection_reason'] != null)
-                                Text(
-                                  'Alasan: ${item['rejection_reason']}',
-                                  style: const TextStyle(
-                                      fontSize: 11, color: AppColors.danger),
-                                ),
-                            ],
-                          ),
-                          trailing: isPending
-                              ? TextButton(
-                                  onPressed: () => VerificationBottomSheet.show(
-                                    context,
-                                    transactionData: item,
-                                    onVerificationComplete: () {
-                                      ref.invalidate(adminMetricsProvider);
-                                      ref.invalidate(adminTransactionsProvider);
-                                    },
+                            );
+                          }
+                          final limit =
+                              ref.watch(adminPageLimitProvider);
+                          final adaLagi = list.length >= limit;
+                          return ListView.builder(
+                            padding: EdgeInsets.only(
+                              bottom: 96 + bottomInset,
+                            ),
+                            itemCount: list.length + (adaLagi ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == list.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 4,
+                                    bottom: 8,
                                   ),
-                                  child: const Text('Validasi'),
-                                )
-                              : null,
+                                  child: OutlinedButton(
+                                    onPressed: () => ref
+                                        .read(
+                                          adminPageLimitProvider.notifier,
+                                        )
+                                        .state += 50,
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(0, 48),
+                                      foregroundColor: SibasColors.leaf,
+                                      side: BorderSide(
+                                        color: SibasColors.border,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Muat ${limit} riwayat lagi',
+                                    ),
+                                  ),
+                                );
+                              }
+                              return _historyRow(list[index]);
+                            },
+                          );
+                        },
+                        loading: () => _centeredState(const _LoadingCard()),
+                        error: (_, __) => _centeredState(
+                          _StateCard(
+                            icon: Icons.cloud_off_rounded,
+                            title: 'Riwayat gagal dimuat',
+                            message: 'Periksa koneksi Anda, lalu muat '
+                                'ulang riwayat.',
+                            actionLabel: 'Coba lagi',
+                            onAction: () {
+                              ref.invalidate(adminTransactionsProvider);
+                            },
+                          ),
                         ),
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Gagal memuat riwayat: $e')),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Keadaan pendek diletakkan di tengah dengan lebar baca terbatas.
+  Widget _centeredState(Widget child) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _filterChip(int index) {
+    final isDayChip = index < _dayFilters.length;
+    final String label;
+    final bool isSelected;
+
+    if (isDayChip) {
+      final days = _dayFilters[index];
+      label = _dayLabel(days);
+      isSelected = _days == days;
+    } else {
+      final status = _statuses[index - _dayFilters.length];
+      label = status == null
+          ? 'Semua status'
+          : TransactionStatusHelper.toDisplayLabel(status);
+      isSelected = _status == status;
+    }
+
+    return _FilterChip(
+      label: label,
+      selected: isSelected,
+      onTap: () {
+        setState(() {
+          if (isDayChip) {
+            _days = _dayFilters[index];
+          } else {
+            _status = _statuses[index - _dayFilters.length];
+          }
+        });
+      },
+    );
+  }
+
+  Widget _searchField({required bool showClear}) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 52),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: SibasColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: SibasColors.border),
+      ),
+      child: TextField(
+        controller: _searchController,
+        textInputAction: TextInputAction.search,
+        onChanged: (val) {
+          ref.read(adminFilterProvider.notifier).update(
+                (f) => f.copyWith(query: val),
+              );
+        },
+        // 16 px agar Safari iOS tidak memperbesar halaman (§9).
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: SibasColors.text,
+        ),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          hintText: 'Cari nama, NIM, atau kode',
+          hintMaxLines: 1,
+          hintStyle: TextStyle(
+            fontSize: 15,
+            color: SibasColors.muted,
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: SibasColors.leaf,
+            size: 20,
+          ),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 44,
+            minHeight: 44,
+          ),
+          suffixIcon: showClear
+              ? IconButton(
+                  tooltip: 'Hapus pencarian',
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: SibasColors.muted,
+                  ),
+                  onPressed: _clearQuery,
+                )
+              : null,
+        ),
+      ),
+    );
+  }
+
+  /// Satu baris riwayat: `TxListItem` (kolom kanan tidak terpotong) dengan
+  /// catatan nama mahasiswa dan aksi validasi di bawahnya.
+  Widget _historyRow(Map<String, dynamic> item) {
+    final profile = item['profiles'] as Map<String, dynamic>?;
+    final category = item['trash_types'] as Map<String, dynamic>?;
+    final name = (profile?['full_name'] as String?) ?? 'Mahasiswa';
+    final nim = (profile?['nim'] as String?) ?? '-';
+    final catName = (category?['name'] as String?) ?? 'Sampah';
+    final weight = (item['weight'] != null)
+        ? (item['weight'] as num).toDouble()
+        : 0.0;
+    final amount = (item['final_amount'] ?? item['estimated_amount']) as num?;
+    final status = (item['status'] as String?) ?? 'PENDING';
+    final created = DateTime.tryParse(
+          (item['created_at'] as String?) ?? '',
+        )?.toLocal() ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+    final isPending = status.toUpperCase() == 'PENDING';
+    final reason = (item['rejection_reason'] as String?)?.trim() ?? '';
+    final id = item['id'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TxListItem(
+          categoryName: catName,
+          weightKg: weight,
+          amountRp: amount?.toDouble(),
+          status: status,
+          createdAt: created,
+          nim: nim,
+          showNim: true,
+          onTap: () => context.push('/transaction/$id'),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              Icon(
+                Icons.person_outline_rounded,
+                size: 14,
+                color: SibasColors.muted,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: SibasColors.muted,
+                  ),
+                ),
+              ),
+              if (isPending) ...[
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: _touchTarget,
+                  child: OutlinedButton.icon(
+                    onPressed: () => VerificationBottomSheet.show(
+                      context,
+                      transactionData: item,
+                      onVerificationComplete: () {
+                        ref.invalidate(adminMetricsProvider);
+                        ref.invalidate(adminTransactionsProvider);
+                      },
+                    ),
+                    icon: const Icon(Icons.fact_check_outlined, size: 16),
+                    label: const Text('Validasi'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: SibasColors.leaf,
+                      side: BorderSide(color: SibasColors.border),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (reason.isNotEmpty)
+          SurfaceCard(
+            margin: const EdgeInsets.only(bottom: 12),
+            tone: SurfaceTone.subtle,
+            radius: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            color: SibasColors.status.rejectedBackground,
+            child: Text(
+              'Alasan ditolak: $reason',
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.4,
+                color: SibasColors.status.rejectedText,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// --------------------------------------------------------------------- Widget
+
+/// Batas lebar 1120 px agar hero sejajar dengan daftar di desktop (§4).
+class _WidthLimit extends StatelessWidget {
+  const _WidthLimit({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1120),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Chip filter 44 px; gulir hanya di dalam baris ini, bukan halaman (§8).
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: ShapeDecoration(
+            color: selected
+                ? SibasColors.leaf
+                : SibasColors.mintWash,
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: selected
+                    ? SibasColors.leaf
+                    : SibasColors.border,
+              ),
+            ),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const StadiumBorder(),
+            child: Container(
+              height: _touchTarget,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: selected ? Colors.white : SibasColors.text,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Keadaan kosong: ikon, satu kalimat, satu aksi yang relevan (§6).
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({
+    required this.searching,
+    required this.hasFilter,
+    required this.onClearQuery,
+    required this.onResetFilters,
+    required this.onReload,
+  });
+
+  final bool searching;
+  final bool hasFilter;
+  final VoidCallback onClearQuery;
+  final VoidCallback onResetFilters;
+  final VoidCallback onReload;
+
+  @override
+  Widget build(BuildContext context) {
+    if (searching) {
+      return _StateCard(
+        icon: Icons.search_off_rounded,
+        title: 'Tidak ada hasil',
+        message: 'Tidak ada riwayat yang cocok dengan pencarian Anda.',
+        actionLabel: 'Hapus pencarian',
+        onAction: onClearQuery,
+      );
+    }
+    if (!hasFilter) {
+      return _StateCard(
+        icon: Icons.receipt_long_rounded,
+        title: 'Belum ada riwayat',
+        message: 'Setoran mahasiswa akan tampil di sini setelah dikirim.',
+        actionLabel: 'Muat ulang',
+        onAction: onReload,
+      );
+    }
+    return _StateCard(
+      icon: Icons.filter_alt_rounded,
+      title: 'Tidak ada pada filter ini',
+      message: 'Coba pilih tanggal atau status lain.',
+      actionLabel: 'Tampilkan semua',
+      onAction: onResetFilters,
+    );
+  }
+}
+
+/// Kartu keadaan: ikon, satu kalimat, aksi 44 px (§6).
+class _StateCard extends StatelessWidget {
+  const _StateCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = actionLabel;
+
+    return SizedBox(
+      width: double.infinity,
+      child: SurfaceCard(
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+        child: Column(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: SibasColors.mintWash,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(icon, size: 30, color: SibasColors.leaf),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: _sectionTitle,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.5,
+                color: SibasColors.muted,
+              ),
+            ),
+            if (label != null && onAction != null) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                height: _touchTarget,
+                child: OutlinedButton.icon(
+                  onPressed: onAction,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: Text(label),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: SibasColors.leaf,
+                    side: BorderSide(color: SibasColors.border),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Keadaan memuat: satu baris penjelas, tanpa teks mentah.
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SkeletonList(items: 3, lines: 3);
   }
 }

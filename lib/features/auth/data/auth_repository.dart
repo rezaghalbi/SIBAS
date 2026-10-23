@@ -8,6 +8,8 @@ import '../domain/models/user_model.dart';
 /// Pesan error auth dalam bahasa Indonesia. Kode `email_not_confirmed` perlu
 /// penanganan khusus di UI karena bisa dibereskan lewat kirim ulang email.
 String authErrorMessage(Object error) {
+  if (offlineNotifier.value) return pesanWajibOnline;
+  if (error is JaringanException) return error.pesan;
   if (error is AuthException) {
     switch (error.code) {
       case 'email_not_confirmed':

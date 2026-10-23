@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../constants/colors.dart';
 import '../network/api_guard.dart';
+import '../theme/sibas_colors.dart';
 
-/// Bar tipis di atas layar saat permintaan terakhir gagal karena jaringan.
+/// Bar di atas layar saat permintaan terakhir gagal karena jaringan.
+///
+/// SIBAS wajib online: tidak ada data tersimpan yang ditampilkan, jadi pesannya
+/// menjelaskan bahwa koneksi harus disambungkan lebih dulu.
 class OfflineBanner extends StatelessWidget {
   const OfflineBanner({super.key});
 
@@ -17,20 +20,30 @@ class OfflineBanner extends StatelessWidget {
         return SafeArea(
           bottom: false,
           child: Container(
-            height: 28,
             width: double.infinity,
-            color: AppColors.statusPendingBg,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: const Text(
-              'Tidak ada koneksi — data mungkin tidak terbaru',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.statusPendingText,
-                fontWeight: FontWeight.w600,
-              ),
+            color: SibasColors.status.pendingBackground,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.wifi_off_rounded,
+                  size: 16,
+                  color: SibasColors.status.pendingText,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Maaf, Anda sedang offline. SIBAS memerlukan koneksi '
+                    'internet.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.3,
+                      color: SibasColors.status.pendingText,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );

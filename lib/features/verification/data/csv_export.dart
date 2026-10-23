@@ -4,10 +4,10 @@ import '../../withdrawal/domain/models/withdrawal_model.dart';
 const _pemisahBaris = '\r\n';
 
 const _headerSetoran = 'Kode,Tanggal,Mahasiswa,NIM,Jenis Sampah,'
-    'Berat (kg),Harga/kg,Total,Status,Alasan Ditolak';
+    'Berat (kg),Harga/kg,Total,Status,Alasan Ditolak,Lokasi';
 
 const _headerPenarikan = 'ID,Tanggal,Mahasiswa,NIM,'
-    'Jumlah,Status,Alasan Ditolak';
+    'Jumlah,Status,Alasan Ditolak,Lokasi';
 
 /// Rekap setoran dari baris mentah repository (sudah berisi relasi join).
 String bangunCsvSetoran(List<Map<String, dynamic>> data) {
@@ -29,6 +29,9 @@ String bangunCsvSetoran(List<Map<String, dynamic>> data) {
         _desimal(total, 0),
         _teks(row['status']),
         _teks(row['rejection_reason']),
+        // Nama lokasi dari relasi `location`; kolom terakhir agar urutan
+        // kolom lama tidak bergeser.
+        _lokasi(row['location']),
       ].map(_escape).join(','),
     );
   }
@@ -49,6 +52,7 @@ String bangunCsvPenarikan(List<WithdrawalModel> data) {
         _desimal(w.amount, 0),
         _teks(w.status),
         _teks(w.rejectionReason),
+        _lokasiDariNama(w.locationName),
       ].map(_escape).join(','),
     );
   }
@@ -57,6 +61,12 @@ String bangunCsvPenarikan(List<WithdrawalModel> data) {
 
 Map<String, dynamic> _peta(Object? nilai) =>
     nilai is Map ? Map<String, dynamic>.from(nilai) : const <String, dynamic>{};
+
+/// Nama lokasi dari objek relasi `location`; kosong bila tidak ada.
+String _lokasi(Object? nilai) => _lokasiDariNama(_peta(nilai)['name']);
+
+/// Trim nama lokasi agar sel kosong berisi string kosong, bukan spasi.
+String _lokasiDariNama(Object? nilai) => nilai?.toString().trim() ?? '';
 
 String _teks(Object? nilai) => nilai?.toString() ?? '';
 
