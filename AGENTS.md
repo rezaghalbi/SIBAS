@@ -12,12 +12,13 @@
 - **Peran ikut hierarki.** Lencana, chip status, dan tautan memakai ukuran/bobot, bukan warna acak. Angka uang, berat, dan rekap wajib `FontFeature.tabularFigures()`.
 - **Frosted Effect:** Gunakan `BackdropFilter` dengan `ImageFilter.blur(sigmaX: 12, sigmaY: 12)`; tone `hero` boleh 8–12.
 - **Background Translucency:** Gradien per tone — `subtle` putih `.20` → `.06` (dark `.13` → `.03`); `dense` (nav/sheet) putih `.88` → `.74` (dark `surfaceAlt`/`surface`); `hero` putih `.14` → `.08`.
-- **Borders:** `Border.all(color: <glassBorder>, width: 1.2)`; tone `subtle` putih `.24`, `dense` dark `.16`. Plus inset highlight 1 px di sisi atas.
+- **Borders:** semua kaca dan kartu memakai `Border.all(width: 1.0)` (tipis, seragam) plus inset highlight 1 px di sisi atas. Warna: `subtle` putih `.20` (light) / `.14` (dark), `dense` `palette.border` (light) / putih `.12` (dark), `hero` putih `.25`.
 - **Elevation:** `BoxShadow` blur besar dengan opacity rendah (token `sm/md/lg` §5). Jangan gabungkan shadow tebal dengan border tebal.
 - **Corners:** skala tetap — `12` ikon/badge, `16` field, `20` kartu, `24` nav, `28` hero/sheet, `pill` 999.
 - **API:** `withOpacity` deprecated sejak Flutter 3.27 — wajib `withValues(alpha:)`.
-- **Satu sumber efek:** semua efek kaca lewat `lib/core/widgets/glass_panel.dart` (`GlassPanel` dengan `tone: subtle | dense | hero`). Dilarang membuat widget kaca duplikat.
-- **Performa:** maksimal 1–2 `BackdropFilter` per layar (mahal di build web/CanvasKit). Tidak ada kaca di dalam kaca.
+- **Satu bahasa visual:** `GlassPanel` hanya untuk lapisan mengambang (hero, nav, sheet; maks 1–2 `BackdropFilter` per layar). Semua kartu konten memakai `SurfaceCard` (`lib/core/widgets/surface_card.dart`) dengan `tone: card` untuk kartu dan `tone: subtle` untuk panel di dalam kartu. Dilarang membuat `Container` ber-`BoxDecoration` sendiri untuk kartu konten bila `SurfaceCard` cukup, dan dilarang membuat widget kaca duplikat.
+- **Resep `SurfaceCard`** (tanpa blur, alfa dipasang langsung di atas latar halaman): `card` putih `.72 → .52` (light) / `.06 → .02` (dark), border `palette.border` / putih `.14`, shadow `sm`; `subtle` putih `.42 → .28` (light) / `.04 → .015` (dark), border `palette.border` @ `.07` / putih `.10`, tanpa shadow. `color` hanya mengganti lapisan permukaan (panel status); border dan shadow tetap netral.
+- **Performa:** maksimal 1–2 `BackdropFilter` per layar (mahal di build web/CanvasKit). Tidak ada kaca di dalam kaca dan tidak ada blur di kartu konten.
 - **Fallback:** `disableAnimations` / `prefers-reduced-motion` → solid tanpa blur; safe area wajib di hero, nav, dan sheet.
 - **Mode gelap:** `AppTheme.darkTheme` sudah ada, tetapi `themeMode` masih `light` sampai layar selesai dimigrasi (tahap 5). Jangan mengandalkan `Theme.of(context).brightness` di layar yang belum dimigrasi.
 

@@ -192,10 +192,12 @@ Aturan: bayangan hanya untuk pemisahan lapisan. Kartu konten memakai border tipi
 
 | Boleh | Tidak |
 |---|---|
-| Hero saldo di atas gradien hero | Kartu riwayat, form, tabel |
+| Hero saldo di atas gradien hero | Blur pada kartu riwayat, form, tabel |
 | Nav bawah / rail mengambang | Kaca di dalam kaca |
 | Sheet + scrim | Kaca penuh layar |
 | Panel ringkasan yang menutupi konten | Kaca tanpa konten di belakangnya |
+
+Kartu konten tetap "kaca" secara visual, tetapi lewat `SurfaceCard` statis — bukan `BackdropFilter`.
 
 Maksimal **1–2 `BackdropFilter` per layar**. Contoh sah: hero + nav = 2; sheet + nav di belakang scrim = 2. Rail desktop solid, tanpa blur.
 
@@ -203,11 +205,24 @@ Maksimal **1–2 `BackdropFilter` per layar**. Contoh sah: hero + nav = 2; sheet
 
 | Tone | Light | Dark | Blur |
 |---|---|---|---|
-| `subtle` | putih .20 → .06, border .24 | putih .13 → .03, border .16 | 12 |
-| `dense` (nav/sheet) | putih .88 → .74, border `border` | `#152720` .92 → `#111F1A` .84, border .12 | 12 |
-| `hero` (dalam hero) | putih .14 → .08, border .25 | sama | 8–12 |
+| `subtle` | putih .20 → .06, border putih .20 | putih .13 → .03, border putih .14 | 12 |
+| `dense` (nav/sheet) | putih .88 → .74, border `border` | `#152720` .92 → `#111F1A` .84, border putih .12 | 12 |
+| `hero` (dalam hero) | putih .14 → .08, border putih .25 | sama | 8–12 |
 
 Semua tone memakai inset highlight 1 px di atas dan shadow luar rendah. Radius mengikuti §4. `tint` hanya untuk variasi terkontrol, bukan warna acak.
+
+**Border semua kaca dan kartu: 1.0 px** (seragam, tipis). Nilai 1.2 px pada versi awal dokumen ini sudah tidak berlaku.
+
+#### 7.2.1 `SurfaceCard` — kaca statis untuk kartu konten
+
+Semua kartu konten memakai `lib/core/widgets/surface_card.dart` (`SurfaceCard`) agar bahasa visualnya sama di seluruh halaman tanpa menambah `BackdropFilter`:
+
+| Tone | Light | Dark | Shadow |
+|---|---|---|---|
+| `card` | putih .72 → .52, border `border` | putih .06 → .02, border putih .14 | `sm` |
+| `subtle` | putih .42 → .28, border `border` @ .07 | putih .04 → .015, border putih .10 | tanpa |
+
+`color:` hanya mengganti lapisan permukaan (mis. panel status), border dan shadow tetap netral.
 
 ### 7.3 Fallback
 

@@ -73,7 +73,8 @@ class GlassPanel extends StatelessWidget {
         // Fallback solid: tetap terbaca di atas gradien/foto apa pun (§7.3).
         color: reduceEffects ? _solidColor(tone, palette, tint) : null,
         borderRadius: corner,
-        border: Border.all(color: colors.border, width: 1.2),
+        // Border tipis 1 px, seragam dengan `SurfaceCard` (§2).
+        border: Border.all(color: colors.border, width: 1.0),
       ),
       child: Padding(
         padding: padding ?? EdgeInsets.zero,
@@ -230,13 +231,20 @@ class _Recipe {
     final isDark = palette.brightness == Brightness.dark;
     final dense = tone == GlassTone.dense;
 
+    // Border tipis 1 px. `subtle` memakai putih `.20` (light) dan `.14`
+    // (dark); `dense` tetap `border`/putih `.12`; `hero` putih `.25`.
+    final subtleBorder = Colors.white.withValues(alpha: isDark ? 0.14 : 0.20);
+    final denseBorder = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : palette.border;
+
     // `tint` tetap jadi override terkontrol: alfa memakai nilai lama agar
     // panel kamera di `admin_scan_screen` tidak berubah rupa.
     if (tint != null) {
       return _Recipe(
         top: tint.withValues(alpha: isDark ? 0.10 : 0.15),
         bottom: tint.withValues(alpha: isDark ? 0.04 : 0.05),
-        border: dense ? palette.border : palette.glassBorder,
+        border: dense ? denseBorder : subtleBorder,
       );
     }
 
@@ -244,7 +252,7 @@ class _Recipe {
       return _Recipe(
         top: palette.glassTop,
         bottom: palette.glassBottom,
-        border: palette.glassBorder,
+        border: subtleBorder,
       );
     }
 
@@ -260,7 +268,7 @@ class _Recipe {
       return _Recipe(
         top: palette.surfaceAlt.withValues(alpha: 0.92),
         bottom: palette.surface.withValues(alpha: 0.84),
-        border: Colors.white.withValues(alpha: 0.12),
+        border: denseBorder,
       );
     }
 

@@ -106,6 +106,11 @@ class AppTheme {
           side: const BorderSide(color: AppColors.borderLine, width: 1.0),
         ),
       ),
+      // Garis pemisah tipis 1 px, sewarna border kaca.
+      dividerTheme: DividerThemeData(
+        color: AppPalette.light.border,
+        thickness: 1.0,
+      ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
@@ -257,6 +262,8 @@ class AppTheme {
           side: BorderSide(color: p.border, width: 1.0),
         ),
       ),
+      // Garis pemisah tipis 1 px, sewarna border kaca.
+      dividerTheme: DividerThemeData(color: p.border, thickness: 1.0),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: p.elevated,
         surfaceTintColor: Colors.transparent,
