@@ -181,9 +181,15 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 1.25,
+                        // Lebar sel dibatasi 240 px dan tinggi dipatok 108 px:
+                        // 2 kolom di 360, 3 di 768, 5 di 1280 tanpa kartu
+                        // melebar. `ceil(extent / (240 + 10))` yang menentukan
+                        // jumlah kolom, jadi nilai 232 akan menghasilkan 6
+                        // kolom di 1280.
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 240,
+                          mainAxisExtent: 108,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                         ),
@@ -227,6 +233,7 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
                                   ),
                                   Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
                                         cat.name,
@@ -248,6 +255,8 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
                                           fontWeight: FontWeight.w600,
                                           color: isSelected ? AppColors.primaryMain : AppColors.textMuted,
                                         ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),
