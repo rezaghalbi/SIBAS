@@ -626,7 +626,7 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(width: 120, child: Text(label, style: _rowLabel)),
+          SizedBox(width: 120, child: Text(label, style: _rowLabel)),
           Expanded(
             child: Text(
               value,
@@ -1314,17 +1314,14 @@ class _LoadingCard extends StatelessWidget {
 class _ContentSection extends StatelessWidget {
   final Widget child;
 
-  /// Jarak atas dari seksi sebelumnya pada skala 4 pt.
-  final double top;
-
-  const _ContentSection({required this.child, this.top = _sectionGap});
+  const _ContentSection({required this.child});
 
   @override
   Widget build(BuildContext context) {
     return ContentWidth(
       maxWidth: _maxContentWidth,
       child: Padding(
-        padding: EdgeInsets.only(top: top),
+        padding: const EdgeInsets.only(top: _sectionGap),
         child: child,
       ),
     );
