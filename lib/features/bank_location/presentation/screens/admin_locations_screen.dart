@@ -6,6 +6,7 @@ import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
+import '../../domain/koordinat_tautan.dart';
 import '../../domain/models/bank_location_model.dart';
 import '../providers/bank_location_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
@@ -769,10 +770,12 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
   late final TextEditingController _address;
   late final TextEditingController _latitude;
   late final TextEditingController _longitude;
+  final _tautan = TextEditingController();
 
   late bool _isActive;
   bool _saving = false;
   String? _error;
+  String? _pesanKoordinat;
 
   bool get _isEdit => widget.initial != null;
 
@@ -797,6 +800,7 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
     _address.dispose();
     _latitude.dispose();
     _longitude.dispose();
+    _tautan.dispose();
     super.dispose();
   }
 
@@ -959,6 +963,52 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
     );
   }
 
+  void _ambilKoordinat() {
+    final hasil = koordinatDariTautan(_tautan.text);
+    if (hasil == null) {
+      setState(() {
+        _pesanKoordinat =
+            'Koordinat tidak ditemukan. Tempel tautan Google Maps yang '
+            'memuat titik lokasi, atau isi manual.';
+      });
+      return;
+    }
+    _latitude.text = hasil.latitude;
+    _longitude.text = hasil.longitude;
+    setState(() => _pesanKoordinat = 'Koordinat terisi dari tautan.');
+  }
+
+  Widget _tautanField() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _tautan,
+            style: TextStyle(fontSize: 16, color: SibasColors.text),
+            decoration: const InputDecoration(
+              labelText: 'Tautan Google Maps (opsional)',
+              hintText: 'Tempel tautan berbagi lokasi di sini',
+            ),
+            onChanged: (_) {
+              if (_pesanKoordinat != null) {
+                setState(() => _pesanKoordinat = null);
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          height: 56,
+          child: OutlinedButton(
+            onPressed: _ambilKoordinat,
+            child: const Text('Ambil'),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _koordinatGroup() {
     final petunjuk = Text(
       'Isi latitude dan longitude bersamaan, atau kosongkan keduanya.',
@@ -980,6 +1030,15 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
             color: SibasColors.text,
           ),
         ),
+        const SizedBox(height: 8),
+        _tautanField(),
+        if (_pesanKoordinat != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            _pesanKoordinat!,
+            style: TextStyle(fontSize: 11.5, color: SibasColors.muted),
+          ),
+        ],
         const SizedBox(height: 4),
         petunjuk,
         const SizedBox(height: 8),

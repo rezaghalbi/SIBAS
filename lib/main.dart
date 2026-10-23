@@ -109,6 +109,10 @@ class SibasApp extends ConsumerWidget {
     aturLatarWeb(SibasColors.background.toARGB32());
 
     return MaterialApp.router(
+      // Kunci ikut mode: saat tema berganti, seluruh pohon dibangun ulang
+      // supaya widget yang membaca SibasColors ikut berubah tanpa reload.
+      // Navigasi tetap karena GoRouter hidup di provider.
+      key: ValueKey(mode),
       title: 'SIBAS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
