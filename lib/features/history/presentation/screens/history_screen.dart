@@ -1,15 +1,18 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../../core/widgets/glass_panel.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../../domain/models/transaction_model.dart';
 
 /// Provider seluruh riwayat transaksi mahasiswa (limit 100)
-final allStudentTransactionsProvider = FutureProvider<List<TransactionModel>>((ref) async {
+final allStudentTransactionsProvider =
+    FutureProvider<List<TransactionModel>>((ref) async {
   final user = ref.watch(currentUserProvider).valueOrNull;
   if (user == null) return [];
 
@@ -56,157 +59,440 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Riwayat Setoran Saya'),
-        backgroundColor: AppColors.primaryMain,
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.go('/dashboard'),
-        ),
-      ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Filter Status Chips di atas panel kaca
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: GlassPanel(
-                radius: 18,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: SizedBox(
-                  height: 42,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    itemCount: _filters.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 6),
-                    itemBuilder: (context, index) {
-                      final filter = _filters[index];
-                      final isSelected = _selectedFilter == filter;
-
-                      return Center(
-                        child: ChoiceChip(
-                          label: Text(filter),
-                          selected: isSelected,
-                          selectedColor: AppColors.primaryMain,
-                          backgroundColor: Colors.white.withValues(alpha: 0.30),
-                          side: BorderSide(
-                            color: isSelected
-                                ? AppColors.primaryMain
-                                : Colors.white.withValues(alpha: 0.45),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : AppColors.textPrimary,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                            fontSize: 12.5,
-                          ),
-                          onSelected: (selected) {
-                            if (selected) setState(() => _selectedFilter = filter);
-                          },
-                        ),
-                      );
-                    },
+        bottom: false,
+        child: ContentWidth(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 12),
+              const _HistoryHead(),
+              const SizedBox(height: 20),
+              _StatusFilterBar(
+                filters: _filters,
+                selected: _selectedFilter,
+                onSelected: (filter) {
+                  setState(() => _selectedFilter = filter);
+                },
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: historyState.when(
+                  data: _buildList,
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryMain,
+                    ),
+                  ),
+                  error: (error, stackTrace) => RefreshIndicator(
+                    onRefresh: _refresh,
+                    color: AppColors.primaryMain,
+                    child: _centeredScrollable(
+                      _HistoryError(
+                        onRetry: () {
+                          _refresh();
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-            // Daftar Riwayat Transaksi
-            Expanded(
-              child: historyState.when(
-                data: (transactions) {
-                  final filtered = transactions.where(_matchesFilter).toList();
+  Widget _buildList(List<TransactionModel> transactions) {
+    final filtered = transactions.where(_matchesFilter).toList();
 
-                  if (filtered.isEmpty) {
-                    return RefreshIndicator(
-                      onRefresh: _refresh,
-                      color: AppColors.primaryMain,
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        children: [
-                          const SizedBox(height: 110),
-                          Column(
-                            children: [
-                              Container(
-                                width: 64,
-                                height: 64,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.mintSoftBackground,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.folder_open_rounded,
-                                  size: 32,
-                                  color: AppColors.primaryMain,
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                'Tidak ada setoran dengan status "$_selectedFilter"',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: AppColors.primaryMain,
+      child: filtered.isEmpty
+          ? _centeredScrollable(
+              _HistoryEmpty(
+                filter: _selectedFilter,
+                onResetFilter: _selectedFilter == 'Semua'
+                    ? null
+                    : () => setState(() => _selectedFilter = 'Semua'),
+              ),
+            )
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(top: 4, bottom: 96),
+              itemCount: filtered.length,
+              itemBuilder: (context, index) {
+                final tx = filtered[index];
+                // QR bisa dibuka ulang selama masih PENDING; kedaluwarsa
+                // ditandai watermark oleh QrDisplayScreen.
+                final canShowQr =
+                    tx.isPending && (tx.qrToken?.isNotEmpty ?? false);
 
-                  return RefreshIndicator(
-                    onRefresh: _refresh,
-                    color: AppColors.primaryMain,
-                    child: ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final tx = filtered[index];
-                        // QR bisa dibuka ulang selama masih PENDING; kedaluwarsa
-                        // ditandai watermark oleh QrDisplayScreen.
-                        final canShowQr =
-                            tx.isPending && (tx.qrToken?.isNotEmpty ?? false);
-                        return TxListItem(
-                          categoryName: tx.categoryName,
-                          weightKg: tx.weight,
-                          amountRp: tx.finalAmount ?? tx.estimatedAmount,
-                          status: tx.status,
-                          createdAt: tx.createdAt,
-                          onTap: () => context.push('/transaction/${tx.id}'),
-                          canShowQr: canShowQr,
-                          onShowQr: canShowQr
-                              ? () => context.push('/qr/${tx.id}')
-                              : null,
-                        );
-                      },
-                    ),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, _) => RefreshIndicator(
-                  onRefresh: _refresh,
-                  color: AppColors.primaryMain,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      const SizedBox(height: 110),
-                      Center(child: Text('Gagal memuat riwayat: $err')),
-                    ],
+                // `TxListItem` milik `core/widgets` (lane lain) dan belum
+                // memasang tabular figures. Warisan gaya ini membuat nominal
+                // dan berat tetap rata kolom tanpa mengubah widget bersama.
+                return DefaultTextStyle.merge(
+                  style: const TextStyle(
+                    fontFeatures: [FontFeature.tabularFigures()],
                   ),
-                ),
+                  child: TxListItem(
+                    categoryName: tx.categoryName,
+                    weightKg: tx.weight,
+                    amountRp: tx.finalAmount ?? tx.estimatedAmount,
+                    status: tx.status,
+                    createdAt: tx.createdAt,
+                    onTap: () => context.push('/transaction/${tx.id}'),
+                    canShowQr: canShowQr,
+                    onShowQr:
+                        canShowQr ? () => context.push('/qr/${tx.id}') : null,
+                  ),
+                );
+              },
+            ),
+    );
+  }
+
+  /// Isi pendek (kosong atau gagal) tetap bisa ditarik untuk muat ulang dan
+  /// diletakkan di tengah pada layar tinggi.
+  Widget _centeredScrollable(Widget child) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: child,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Kepala halaman: label mikro, judul, dan satu baris penjelas (§3).
+class _HistoryHead extends StatelessWidget {
+  const _HistoryHead();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: AppColors.primaryMain,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'TRANSAKSI',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+                color: AppColors.primaryMain,
               ),
             ),
           ],
         ),
+        const SizedBox(height: 8),
+        const Text(
+          'Riwayat Setoran',
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.6,
+            height: 1.1,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Pantau status verifikasi setiap setoran sampah Anda.',
+          style: TextStyle(
+            fontSize: 13,
+            height: 1.5,
+            color: AppColors.textMuted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Baris chip status. Gulirannya hanya milik baris ini, bukan halaman (§8).
+class _StatusFilterBar extends StatelessWidget {
+  const _StatusFilterBar({
+    required this.filters,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<String> filters;
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: filters.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final filter = filters[index];
+          return _StatusFilterChip(
+            label: filter,
+            selected: filter == selected,
+            onTap: () => onSelected(filter),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _StatusFilterChip extends StatelessWidget {
+  const _StatusFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: ShapeDecoration(
+            color: selected
+                ? AppColors.primaryMain
+                : AppColors.mintSoftBackground,
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: selected
+                    ? AppColors.primaryMain
+                    : AppColors.borderLine,
+              ),
+            ),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const StadiumBorder(),
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  letterSpacing: 0.1,
+                  color: selected ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Keadaan kosong: ikon, satu kalimat, dan aksi lanjut ke layar setor.
+class _HistoryEmpty extends StatelessWidget {
+  const _HistoryEmpty({required this.filter, this.onResetFilter});
+
+  final String filter;
+  final VoidCallback? onResetFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final isAll = filter == 'Semua';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLine),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.mintSoftBackground,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.receipt_long_rounded,
+              size: 30,
+              color: AppColors.primaryMain,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            isAll ? 'Belum ada setoran' : 'Belum ada setoran "$filter"',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isAll
+                ? 'Setoran yang Anda kirim akan muncul di sini beserta '
+                    'status verifikasinya.'
+                : 'Coba pilih status lain untuk melihat setoran Anda.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 44,
+            child: FilledButton.icon(
+              onPressed: () => context.go('/setor'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryMain,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Setor Sampah'),
+            ),
+          ),
+          if (onResetFilter != null) ...[
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: onResetFilter,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryMain,
+                minimumSize: const Size(0, 44),
+              ),
+              child: const Text(
+                'Tampilkan semua status',
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Gagal memuat: pesan singkat + coba lagi, tanpa membocorkan detail error.
+class _HistoryError extends StatelessWidget {
+  const _HistoryError({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLine),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: const BoxDecoration(
+              color: AppColors.statusRejectedBg,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.cloud_off_rounded,
+              size: 26,
+              color: AppColors.danger,
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Riwayat gagal dimuat',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Periksa koneksi Anda, lalu muat ulang riwayat.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.5,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 44,
+            child: OutlinedButton.icon(
+              onPressed: onRetry,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryMain,
+                side: const BorderSide(color: AppColors.borderLine),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Coba Lagi'),
+            ),
+          ),
+        ],
       ),
     );
   }
