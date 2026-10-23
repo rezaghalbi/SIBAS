@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -13,6 +14,25 @@ import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 import '../providers/verification_provider.dart';
 
 enum _SubmissionTab { setoran, penarikan }
+
+/// Target sentuh minimum (§1, §4).
+const double _touchTarget = 44;
+
+/// Ukuran ikon dalam kartu pengajuan.
+const double _iconBox = 44;
+
+/// Angka uang, berat, dan jumlah memakai lebar digit tetap (§3).
+const List<FontFeature> _numbers = <FontFeature>[
+  FontFeature.tabularFigures(),
+];
+
+/// Judul seksi: 15.5 w700, tracking -0.2 (§3).
+const TextStyle _sectionTitle = TextStyle(
+  fontSize: 15.5,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -0.2,
+  color: AppColors.textPrimary,
+);
 
 /// Pusat pengelolaan pengajuan admin: verifikasi setoran & penarikan saldo.
 class AdminSubmissionsScreen extends ConsumerStatefulWidget {
@@ -60,55 +80,41 @@ class _AdminSubmissionsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: HeroHeader(
-              title: 'Kelola Pengajuan',
-              subtitle: 'Verifikasi setoran & pencairan saldo',
-              trailing: IconButton(
-                tooltip: 'Muat ulang',
-                onPressed: () {
-                  ref.invalidate(adminMetricsProvider);
-                  ref.invalidate(adminTransactionsProvider);
-                  ref.invalidate(adminWithdrawalsProvider(null));
-                },
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.refresh_rounded,
-                    color: Colors.white,
-                    size: 20,
+            child: _WidthLimit(
+              child: HeroHeader(
+                title: 'Kelola Pengajuan',
+                subtitle: 'Setoran & pencairan saldo',
+                trailing: IconButton(
+                  tooltip: 'Muat ulang',
+                  onPressed: () {
+                    ref.invalidate(adminMetricsProvider);
+                    ref.invalidate(adminTransactionsProvider);
+                    ref.invalidate(adminWithdrawalsProvider(null));
+                  },
+                  icon: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.refresh_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
-              ),
-              bottomContent: SegmentedButton<_SubmissionTab>(
-                segments: const [
-                  ButtonSegment(
-                    value: _SubmissionTab.setoran,
-                    label: Text('Setoran'),
-                    icon: Icon(Icons.inventory_2_outlined, size: 18),
-                  ),
-                  ButtonSegment(
-                    value: _SubmissionTab.penarikan,
-                    label: Text('Penarikan'),
-                    icon: Icon(Icons.account_balance_wallet_outlined, size: 18),
-                  ),
-                ],
-                selected: {_tab},
-                showSelectedIcon: false,
-                onSelectionChanged: (s) => setState(() => _tab = s.first),
-                style: SegmentedButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.14),
-                  foregroundColor: Colors.white,
-                  selectedBackgroundColor: Colors.white,
-                  selectedForegroundColor: AppColors.primaryDark,
+                bottomContent: _TabSwitch(
+                  value: _tab,
+                  onChanged: (tab) => setState(() => _tab = tab),
                 ),
               ),
             ),
@@ -117,7 +123,10 @@ class _AdminSubmissionsScreenState
             ..._setoranSlivers()
           else
             ..._penarikanSlivers(),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          // Nav mengambang tidak boleh menutup aksi terakhir (§4, §8).
+          SliverToBoxAdapter(
+            child: SizedBox(height: 96 + bottomInset),
+          ),
         ],
       ),
     );
@@ -129,91 +138,47 @@ class _AdminSubmissionsScreenState
     final txState = ref.watch(adminTransactionsProvider);
     final filter = ref.watch(adminFilterProvider);
     final searching = filter.query.trim().isNotEmpty;
+    final total = txState.valueOrNull?.length;
 
     return [
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-        sliver: SliverToBoxAdapter(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.cardSurface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.borderLine),
-            ),
-            child: TextField(
-              controller: _searchController,
-              textInputAction: TextInputAction.search,
-              onChanged: (val) {
-                ref.read(adminFilterProvider.notifier).update(
-                      (f) => f.copyWith(query: val),
-                    );
-              },
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                hintText: 'Cari nama, NIM, atau kode transaksi...',
-                hintMaxLines: 1,
-                hintStyle: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textMuted,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                  color: AppColors.primaryMain,
-                ),
-                suffixIcon: filter.query.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Hapus pencarian',
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          size: 18,
-                          color: AppColors.textMuted,
-                        ),
-                        onPressed: () {
-                          _searchController.clear();
-                          ref.read(adminFilterProvider.notifier).update(
-                                (f) => f.copyWith(query: ''),
-                              );
-                        },
-                      ),
-              ),
-            ),
+      SliverToBoxAdapter(
+        child: ContentWidth(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 20),
+            child: _searchField(showClear: filter.query.isNotEmpty),
           ),
         ),
       ),
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-        sliver: SliverToBoxAdapter(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+      SliverToBoxAdapter(
+        child: ContentWidth(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: _statusBar(selected: filter.status),
+          ),
+        ),
+      ),
+      SliverToBoxAdapter(
+        child: ContentWidth(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, 20, 0, 12),
             child: Row(
               children: [
-                for (final entry in _statusFilters.entries)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(entry.value),
-                      selected: filter.status == entry.key,
-                      selectedColor: AppColors.primaryMain,
-                      backgroundColor: AppColors.cardSurface,
-                      side: const BorderSide(color: AppColors.borderLine),
-                      labelStyle: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: filter.status == entry.key
-                            ? Colors.white
-                            : AppColors.textPrimary,
-                      ),
-                      onSelected: (_) {
-                        ref.read(adminFilterProvider.notifier).update(
-                              (f) => entry.key == null
-                                  ? f.copyWith(clearStatus: true)
-                                  : f.copyWith(status: entry.key),
-                            );
-                      },
+                const Expanded(
+                  child: Text(
+                    'Daftar setoran',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _sectionTitle,
+                  ),
+                ),
+                if (total != null)
+                  Text(
+                    '$total pengajuan',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textMuted,
+                      fontFeatures: _numbers,
                     ),
                   ),
               ],
@@ -224,44 +189,173 @@ class _AdminSubmissionsScreenState
       txState.when(
         data: (list) {
           if (list.isEmpty) {
-            return SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverToBoxAdapter(
-                child: _emptyCard(
-                  icon: Icons.inbox_rounded,
-                  title: 'Belum ada setoran',
-                  message: searching
-                      ? 'Tidak ada setoran yang cocok dengan pencarian.'
-                      : 'Tidak ada setoran pada filter status ini.',
-                ),
+            return _stateSliver(
+              _emptySetoran(
+                searching: searching,
+                hasStatus: filter.status != null,
               ),
             );
           }
-          return SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList.builder(
-              itemCount: list.length,
-              itemBuilder: (_, i) => _setoranCard(list[i]),
+          return SliverList.builder(
+            itemCount: list.length,
+            itemBuilder: (_, i) => ContentWidth(
+              child: _setoranCard(list[i]),
             ),
           );
         },
-        loading: () => const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ),
-        error: (_, __) => SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _errorCard(
-              message: 'Gagal memuat daftar setoran. Periksa koneksi Anda.',
-              onRetry: () => ref.invalidate(adminTransactionsProvider),
-            ),
+        loading: () => _stateSliver(const _LoadingCard()),
+        error: (_, __) => _stateSliver(
+          _StateCard(
+            icon: Icons.cloud_off_rounded,
+            title: 'Gagal memuat setoran',
+            message: 'Periksa koneksi Anda, lalu muat ulang daftar.',
+            actionLabel: 'Coba lagi',
+            onAction: () => ref.invalidate(adminTransactionsProvider),
           ),
         ),
       ),
     ];
+  }
+
+  Widget _stateSliver(Widget child) {
+    return SliverToBoxAdapter(
+      child: ContentWidth(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _searchField({required bool showClear}) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 52),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderLine),
+      ),
+      child: TextField(
+        controller: _searchController,
+        textInputAction: TextInputAction.search,
+        onChanged: (val) {
+          ref.read(adminFilterProvider.notifier).update(
+                (f) => f.copyWith(query: val),
+              );
+        },
+        // 16 px agar Safari iOS tidak memperbesar halaman (§9).
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary,
+        ),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          hintText: 'Cari nama, NIM, atau kode',
+          hintMaxLines: 1,
+          hintStyle: const TextStyle(
+            fontSize: 15,
+            color: AppColors.textMuted,
+          ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppColors.primaryMain,
+            size: 20,
+          ),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 44,
+            minHeight: 44,
+          ),
+          suffixIcon: showClear
+              ? IconButton(
+                  tooltip: 'Hapus pencarian',
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: AppColors.textMuted,
+                  ),
+                  onPressed: _clearQuery,
+                )
+              : null,
+        ),
+      ),
+    );
+  }
+
+  /// Chip status menggulir sendiri di dalam barisnya, bukan halaman (§8).
+  Widget _statusBar({required String? selected}) {
+    return SizedBox(
+      height: _touchTarget,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _statusFilters.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final entry = _statusFilters.entries.elementAt(index);
+          return _FilterChip(
+            label: entry.value,
+            selected: selected == entry.key,
+            onTap: () {
+              ref.read(adminFilterProvider.notifier).update(
+                    (f) => entry.key == null
+                        ? f.copyWith(clearStatus: true)
+                        : f.copyWith(status: entry.key),
+                  );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  void _clearQuery() {
+    _searchController.clear();
+    ref.read(adminFilterProvider.notifier).update(
+          (f) => f.copyWith(query: ''),
+        );
+  }
+
+  Widget _emptySetoran({
+    required bool searching,
+    required bool hasStatus,
+  }) {
+    if (searching) {
+      return _StateCard(
+        icon: Icons.search_off_rounded,
+        title: 'Tidak ada hasil',
+        message: 'Tidak ada setoran yang cocok dengan pencarian Anda.',
+        actionLabel: 'Hapus pencarian',
+        onAction: _clearQuery,
+      );
+    }
+    if (!hasStatus) {
+      return _StateCard(
+        icon: Icons.inbox_rounded,
+        title: 'Belum ada setoran',
+        message: 'Pengajuan setoran mahasiswa akan tampil di sini.',
+        actionLabel: 'Muat ulang',
+        onAction: () => ref.invalidate(adminTransactionsProvider),
+      );
+    }
+    return _StateCard(
+      icon: Icons.filter_alt_rounded,
+      title: 'Tidak ada pada status ini',
+      message: 'Coba pilih status lain untuk melihat pengajuan.',
+      actionLabel: 'Tampilkan semua',
+      onAction: () {
+        ref.read(adminFilterProvider.notifier).update(
+              (f) => f.copyWith(clearStatus: true),
+            );
+      },
+    );
   }
 
   Widget _setoranCard(Map<String, dynamic> item) {
@@ -278,6 +372,8 @@ class _AdminSubmissionsScreenState
     final nim = (profile?['nim'] as String?) ?? '-';
     final categoryName = (category?['name'] as String?) ?? 'Sampah';
     final weight = (item['weight'] as num?)?.toDouble() ?? 0.0;
+    final amount =
+        (item['final_amount'] ?? item['estimated_amount']) as num?;
     final txCode = (item['tx_code'] as String?) ?? '-';
     final createdAt = item['created_at'] != null
         ? DateTime.tryParse(item['created_at'] as String)
@@ -285,21 +381,19 @@ class _AdminSubmissionsScreenState
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderLine),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const CircleAvatar(
-                backgroundColor: AppColors.mintSoftBackground,
-                child: Icon(Icons.eco_rounded, color: AppColors.primaryMain),
-              ),
+              const _IconBox(icon: Icons.eco_rounded),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -310,14 +404,29 @@ class _AdminSubmissionsScreenState
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
                         color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'NIM: $nim • $categoryName',
+                      'NIM $nim',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textMuted,
+                        fontFeatures: _numbers,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      categoryName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textMuted,
@@ -326,8 +435,21 @@ class _AdminSubmissionsScreenState
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
               StatusBadge(status: status),
+              const Spacer(),
+              Text(
+                createdAt == null ? '-' : _date.format(createdAt),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textMuted,
+                  fontFeatures: _numbers,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -338,28 +460,39 @@ class _AdminSubmissionsScreenState
                 size: 16,
                 color: AppColors.primaryMain,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Text(
                 '${weight.toStringAsFixed(2)} kg',
                 style: const TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
+                  fontFeatures: _numbers,
                 ),
               ),
               const Spacer(),
-              Text(
-                createdAt == null ? '-' : _date.format(createdAt),
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textMuted,
+              if (amount != null)
+                Flexible(
+                  child: Text(
+                    _currency.format(amount),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryDark,
+                      fontFeatures: _numbers,
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             'Kode: $txCode',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontFamily: 'monospace',
               fontSize: 11,
@@ -367,52 +500,19 @@ class _AdminSubmissionsScreenState
             ),
           ),
           if (status.toUpperCase() == 'REJECTED' && reason.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.statusRejectedBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                'Alasan ditolak: $reason',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.statusRejectedText,
-                ),
-              ),
-            ),
+            const SizedBox(height: 12),
+            _ReasonNote(reason: reason),
           ],
           if (isPending) ...[
             const SizedBox(height: 12),
             if (busy)
-              const Row(
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    'Memproses...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              )
+              const _BusyNote()
             else
               Row(
                 children: [
                   Expanded(
                     child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primaryMain,
-                        foregroundColor: Colors.white,
-                      ),
+                      style: _approveStyle,
                       onPressed: () => _approveSetoran(item),
                       child: const Text('Setujui'),
                     ),
@@ -420,10 +520,7 @@ class _AdminSubmissionsScreenState
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.danger,
-                        side: const BorderSide(color: AppColors.danger),
-                      ),
+                      style: _rejectStyle,
                       onPressed: () => _rejectSetoran(item),
                       child: const Text('Tolak'),
                     ),
@@ -521,17 +618,34 @@ class _AdminSubmissionsScreenState
 
   List<Widget> _penarikanSlivers() {
     final state = ref.watch(adminWithdrawalsProvider(null));
+    final total = state.valueOrNull?.length;
 
     return [
-      const SliverPadding(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
-        sliver: SliverToBoxAdapter(
-          child: Text(
-            'Pengajuan pencairan saldo mahasiswa',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textMuted,
+      SliverToBoxAdapter(
+        child: ContentWidth(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, 20, 0, 12),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Pengajuan pencairan',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _sectionTitle,
+                  ),
+                ),
+                if (total != null)
+                  Text(
+                    '$total pengajuan',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textMuted,
+                      fontFeatures: _numbers,
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -539,38 +653,35 @@ class _AdminSubmissionsScreenState
       state.when(
         data: (list) {
           if (list.isEmpty) {
-            return SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverToBoxAdapter(
-                child: _emptyCard(
-                  icon: Icons.account_balance_wallet_outlined,
-                  title: 'Belum ada penarikan',
-                  message: 'Pengajuan pencairan saldo akan tampil di sini.',
-                ),
+            return _stateSliver(
+              _StateCard(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'Belum ada penarikan',
+                message: 'Pengajuan pencairan saldo akan tampil di sini.',
+                actionLabel: 'Muat ulang',
+                onAction: () {
+                  ref.invalidate(adminWithdrawalsProvider(null));
+                },
               ),
             );
           }
-          return SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList.builder(
-              itemCount: list.length,
-              itemBuilder: (_, i) => _penarikanCard(list[i]),
+          return SliverList.builder(
+            itemCount: list.length,
+            itemBuilder: (_, i) => ContentWidth(
+              child: _penarikanCard(list[i]),
             ),
           );
         },
-        loading: () => const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ),
-        error: (_, __) => SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _errorCard(
-              message: 'Gagal memuat daftar penarikan. Periksa koneksi Anda.',
-              onRetry: () => ref.invalidate(adminWithdrawalsProvider(null)),
-            ),
+        loading: () => _stateSliver(const _LoadingCard()),
+        error: (_, __) => _stateSliver(
+          _StateCard(
+            icon: Icons.cloud_off_rounded,
+            title: 'Gagal memuat penarikan',
+            message: 'Periksa koneksi Anda, lalu muat ulang daftar.',
+            actionLabel: 'Coba lagi',
+            onAction: () {
+              ref.invalidate(adminWithdrawalsProvider(null));
+            },
           ),
         ),
       ),
@@ -587,24 +698,21 @@ class _AdminSubmissionsScreenState
         color: AppColors.cardSurface,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           side: const BorderSide(color: AppColors.borderLine),
         ),
         child: InkWell(
           onTap: () => context.push('/withdrawal/${w.id}'),
           child: Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const CircleAvatar(
-                      backgroundColor: AppColors.mintSoftBackground,
-                      child: Icon(
-                        Icons.account_balance_wallet_outlined,
-                        color: AppColors.primaryMain,
-                      ),
+                    const _IconBox(
+                      icon: Icons.account_balance_wallet_outlined,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -616,97 +724,70 @@ class _AdminSubmissionsScreenState
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
                               color: AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'NIM: ${w.studentNim ?? '-'}',
+                            'NIM ${w.studentNim ?? '-'}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 12,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textMuted,
+                              fontFeatures: _numbers,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    StatusBadge(status: w.status),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Text(
-                      _currency.format(w.amount),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
+                    StatusBadge(status: w.status),
                     const Spacer(),
                     Text(
                       _date.format(w.createdAt),
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textMuted,
+                        fontFeatures: _numbers,
                       ),
                     ),
                   ],
                 ),
-                if (reason.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.statusRejectedBg,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Alasan ditolak: $reason',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.statusRejectedText,
-                      ),
-                    ),
+                const SizedBox(height: 12),
+                Text(
+                  _currency.format(w.amount),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primaryDark,
+                    fontFeatures: _numbers,
                   ),
+                ),
+                if (reason.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _ReasonNote(reason: reason),
                 ],
                 if (w.isPending) ...[
                   const SizedBox(height: 12),
                   if (busy)
-                    const Row(
-                      children: [
-                        SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          'Memproses...',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    )
+                    const _BusyNote()
                   else
                     Row(
                       children: [
                         Expanded(
                           child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primaryMain,
-                              foregroundColor: Colors.white,
-                            ),
+                            style: _approveStyle,
                             onPressed: () => _approveWithdrawal(w.id),
                             child: const Text('Setujui'),
                           ),
@@ -714,10 +795,7 @@ class _AdminSubmissionsScreenState
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.danger,
-                              side: const BorderSide(color: AppColors.danger),
-                            ),
+                            style: _rejectStyle,
                             onPressed: () => _rejectWithdrawal(w.id),
                             child: const Text('Tolak'),
                           ),
@@ -797,7 +875,7 @@ class _AdminSubmissionsScreenState
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
         ),
         title: Text(
           title,
@@ -837,7 +915,7 @@ class _AdminSubmissionsScreenState
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20),
           ),
           title: Text(
             title,
@@ -910,73 +988,384 @@ class _AdminSubmissionsScreenState
     final lower = raw.toLowerCase();
     return triggers.any((t) => lower.contains(t)) ? raw : fallback;
   }
+}
 
-  Widget _emptyCard({
-    required IconData icon,
-    required String title,
-    required String message,
-  }) {
+// ---------------------------------------------------------------- Widget
+
+/// Batas lebar 1120 px agar kartu sejajar dengan hero di desktop (§4).
+class _WidthLimit extends StatelessWidget {
+  const _WidthLimit({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1120),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Gaya tombol setujui: hijau, tinggi 44 px, radius 12.
+final ButtonStyle _approveStyle = FilledButton.styleFrom(
+  backgroundColor: AppColors.primaryMain,
+  foregroundColor: Colors.white,
+  elevation: 0,
+  minimumSize: const Size(0, _touchTarget),
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(12),
+  ),
+  textStyle: const TextStyle(
+    fontSize: 13.5,
+    fontWeight: FontWeight.w700,
+  ),
+);
+
+/// Gaya tombol tolak: garis merah, tinggi 44 px, radius 12.
+final ButtonStyle _rejectStyle = OutlinedButton.styleFrom(
+  foregroundColor: AppColors.danger,
+  minimumSize: const Size(0, _touchTarget),
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  side: const BorderSide(color: AppColors.danger),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(12),
+  ),
+  textStyle: const TextStyle(
+    fontSize: 13.5,
+    fontWeight: FontWeight.w700,
+  ),
+);
+
+/// Ikon kategori dalam kotak 44 px dengan isian mint.
+class _IconBox extends StatelessWidget {
+  const _IconBox({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: _iconBox,
+      height: _iconBox,
+      decoration: BoxDecoration(
+        color: AppColors.mintSoftBackground,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: AppColors.primaryMain, size: 22),
+    );
+  }
+}
+
+/// Catatan alasan penolakan, lembut tanpa bayangan.
+class _ReasonNote extends StatelessWidget {
+  const _ReasonNote({required this.reason});
+
+  final String reason;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderLine),
+        color: AppColors.statusRejectedBg,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: Text(
+        'Alasan ditolak: $reason',
+        style: const TextStyle(
+          fontSize: 12,
+          height: 1.4,
+          color: AppColors.statusRejectedText,
+        ),
+      ),
+    );
+  }
+}
+
+/// Indikator proses singkat saat aksi berjalan.
+class _BusyNote extends StatelessWidget {
+  const _BusyNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: _touchTarget,
+      child: Row(
         children: [
-          Icon(icon, size: 36, color: AppColors.textMuted),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
           ),
-          const SizedBox(height: 4),
+          SizedBox(width: 10),
           Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            'Memproses...',
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _errorCard({
-    required String message,
-    required VoidCallback onRetry,
-  }) {
+/// Sub-tab Setoran/Penarikan: dua pil penuh, tinggi 44 px, tanpa label
+/// terpotong di 360 px (§3).
+class _TabSwitch extends StatelessWidget {
+  const _TabSwitch({required this.value, required this.onChanged});
+
+  final _SubmissionTab value;
+  final ValueChanged<_SubmissionTab> onChanged;
+
+  static const _labels = <_SubmissionTab, String>{
+    _SubmissionTab.setoran: 'Setoran',
+    _SubmissionTab.penarikan: 'Penarikan',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        children: [
+          for (final tab in _SubmissionTab.values)
+            Expanded(
+              child: _TabSegment(
+                label: _labels[tab] ?? '',
+                selected: tab == value,
+                onTap: () => onChanged(tab),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabSegment extends StatelessWidget {
+  const _TabSegment({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: ShapeDecoration(
+            color: selected ? Colors.white : Colors.transparent,
+            shape: const StadiumBorder(),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const StadiumBorder(),
+            child: Container(
+              height: _touchTarget,
+              alignment: Alignment.center,
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: selected
+                      ? AppColors.primaryDark
+                      : Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Chip filter status 44 px; gulir hanya di dalam barisnya (§4, §8).
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: ShapeDecoration(
+            color: selected
+                ? AppColors.primaryMain
+                : AppColors.mintSoftBackground,
+            shape: StadiumBorder(
+              side: BorderSide(
+                color: selected
+                    ? AppColors.primaryMain
+                    : AppColors.borderLine,
+              ),
+            ),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const StadiumBorder(),
+            child: Container(
+              height: _touchTarget,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: selected ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Keadaan kosong/gagal: ikon, satu kalimat, dan aksi (§6).
+class _StateCard extends StatelessWidget {
+  const _StateCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = actionLabel;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.statusRejectedBg),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLine),
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.cloud_off_rounded,
-            size: 34,
-            color: AppColors.danger,
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.mintSoftBackground,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(icon, size: 30, color: AppColors.primaryMain),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: _sectionTitle,
+          ),
+          const SizedBox(height: 6),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+            style: const TextStyle(
+              fontSize: 12.5,
+              height: 1.5,
+              color: AppColors.textMuted,
+            ),
           ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Coba Lagi'),
+          if (label != null && onAction != null) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              height: _touchTarget,
+              child: OutlinedButton.icon(
+                onPressed: onAction,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(label),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryMain,
+                  side: const BorderSide(color: AppColors.borderLine),
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Keadaan memuat: satu baris penjelas, tanpa teks mentah.
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderLine),
+      ),
+      child: const Column(
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Memuat pengajuan...',
+            style: TextStyle(fontSize: 12.5, color: AppColors.textMuted),
           ),
         ],
       ),
