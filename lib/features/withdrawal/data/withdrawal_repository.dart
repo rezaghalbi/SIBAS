@@ -74,15 +74,36 @@ class WithdrawalRepository {
     });
   }
 
-  /// Daftar pengajuan untuk admin, opsional difilter status.
-  Future<List<WithdrawalModel>> getAllWithdrawals({String? statusFilter}) {
+  /// Daftar pengajuan untuk admin.
+  ///
+  /// Status, lokasi, dan pencarian (nama/NIM) difilter di server agar tidak
+  /// terpotong batas baris; `limit` dipakai untuk paginasi bertahap.
+  Future<List<WithdrawalModel>> getAllWithdrawals({
+    String? statusFilter,
+    String? locationId,
+    String query = '',
+    int limit = 50,
+  }) {
     return guardRequest(() async {
       var builder = _client.from('withdrawals').select(_selectWithRelations);
       if (statusFilter != null && statusFilter.isNotEmpty) {
         builder = builder.eq('status', statusFilter.toUpperCase());
       }
+      if (locationId != null && locationId.isNotEmpty) {
+        builder = builder.eq('location_id', locationId);
+      }
 
-      final res = await builder.order('created_at', ascending: false).limit(200);
+      final needle = query.trim().replaceAll(RegExp(r'[,()*]'), ' ').trim();
+      if (needle.isNotEmpty) {
+        final pola = '%$needle%';
+        builder = builder.or(
+          'profiles.full_name.ilike.$pola,profiles.nim.ilike.$pola',
+        );
+      }
+
+      final res = await builder
+          .order('created_at', ascending: false)
+          .limit(limit.clamp(1, 200));
       return (res as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(WithdrawalModel.fromJson)

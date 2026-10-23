@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/supabase_client.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../verification/presentation/providers/verification_provider.dart';
 import '../../data/withdrawal_repository.dart';
 import '../../domain/models/withdrawal_model.dart';
 
@@ -28,12 +29,20 @@ final studentWithdrawalsProvider =
 });
 
 /// Daftar penarikan untuk admin. Argumen = filter status (null = semua).
+/// Pencarian, lokasi, dan batas baris mengikuti provider yang sama dengan
+/// daftar setoran agar paginasi konsisten.
 final adminWithdrawalsProvider =
     FutureProvider.family<List<WithdrawalModel>, String?>((ref, status) async {
   final repo = ref.watch(withdrawalRepositoryProvider);
+  final filter = ref.watch(adminFilterProvider);
   // Cache admin dibuang saat sesi berganti.
   ref.watch(sessionEpochProvider);
-  return repo.getAllWithdrawals(statusFilter: status);
+  return repo.getAllWithdrawals(
+    statusFilter: status,
+    locationId: filter.locationId,
+    query: filter.query,
+    limit: ref.watch(adminPageLimitProvider),
+  );
 });
 
 /// Detail penarikan dari RPC server: nama pengaju, admin penyetuju, dan audit.

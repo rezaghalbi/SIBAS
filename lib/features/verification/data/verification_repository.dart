@@ -16,53 +16,73 @@ class VerificationRepository {
   /// Statistik metrik dashboard admin, dihitung di server lewat RPC
   /// `admin_metrics` (klien tidak lagi menarik seluruh baris transaksi).
   /// Tanpa angka pengganti: kegagalan query jadi AsyncError di provider.
-  Future<AdminMetricsModel> getAdminMetrics() {
+  Future<AdminMetricsModel> getAdminMetrics({String? locationId}) {
     return guardRequest(() async {
-      final res = await _client.rpc('admin_metrics');
+      final res = await _client.rpc(
+        'admin_metrics',
+        params: {'p_location_id': locationId},
+      );
       final map = res is Map ? Map<String, dynamic>.from(res) : <String, dynamic>{};
 
       double asDouble(Object? value) =>
           value is num ? value.toDouble() : 0.0;
       int asInt(Object? value) => value is num ? value.toInt() : 0;
 
+      final lokasi = (map['locations'] as List<dynamic>? ?? const [])
+          .whereType<Map<dynamic, dynamic>>()
+          .map((row) => LocationMetric.fromJson(Map<String, dynamic>.from(row)))
+          .toList();
+
       return AdminMetricsModel(
         totalWeightKg: asDouble(map['total_weight_kg']),
         pendingCount: asInt(map['pending_count']),
         approvedCount: asInt(map['approved_count']),
         rejectedCount: asInt(map['rejected_count']),
+        locationId: map['location_id'] as String?,
+        locations: lokasi,
       );
     });
   }
 
-  /// Daftar transaksi untuk admin. Filter status di server, pencarian di klien
-  /// agar bisa mencocokkan nama/NIM hasil join tanpa query PostgREST bertingkat.
+  /// Daftar transaksi untuk admin.
+  ///
+  /// Pencarian, status, dan lokasi difilter **di server** supaya hasil tidak
+  /// terpotong oleh batas baris. `limit` dipakai untuk paginasi bertahap.
   Future<List<Map<String, dynamic>>> getAllTransactions({
     String query = '',
     String? statusFilter,
+    String? locationId,
+    int limit = 50,
   }) {
     return guardRequest(() async {
       var builder = _client.from('transactions').select(_selectWithRelations);
       if (statusFilter != null && statusFilter.isNotEmpty) {
         builder = builder.eq('status', statusFilter.toUpperCase());
       }
+      if (locationId != null && locationId.isNotEmpty) {
+        builder = builder.eq('location_id', locationId);
+      }
 
-      final res = await builder.order('created_at', ascending: false).limit(200);
-      final rows = (res as List<dynamic>).cast<Map<String, dynamic>>();
+      final needle = _bersihkanCari(query);
+      if (needle.isNotEmpty) {
+        final pola = '%$needle%';
+        builder = builder.or(
+          'tx_code.ilike.$pola,'
+          'profiles.full_name.ilike.$pola,'
+          'profiles.nim.ilike.$pola',
+        );
+      }
 
-      final needle = query.trim().toLowerCase();
-      if (needle.isEmpty) return rows;
-
-      return rows.where((row) {
-        final profile = row['profiles'] as Map<String, dynamic>?;
-        return (profile?['full_name'] as String? ?? '')
-                .toLowerCase()
-                .contains(needle) ||
-            (profile?['nim'] as String? ?? '').toLowerCase().contains(needle) ||
-            (row['tx_code'] as String? ?? '').toLowerCase().contains(needle) ||
-            (row['id'] as String? ?? '').toLowerCase().contains(needle);
-      }).toList();
+      final res = await builder
+          .order('created_at', ascending: false)
+          .limit(limit.clamp(1, 200));
+      return (res as List<dynamic>).cast<Map<String, dynamic>>();
     });
   }
+
+  /// Membuang karakter yang bermakna khusus di filter PostgREST.
+  static String _bersihkanCari(String value) =>
+      value.trim().replaceAll(RegExp(r'[,()*]'), ' ').trim();
 
   /// Membuka transaksi dari hasil scan QR. Validasi role, token, dan status
   /// dilakukan di server oleh RPC get_transaction_by_qr.
