@@ -43,7 +43,7 @@ TextStyle get _sectionTitle => TextStyle(
 );
 
 /// Label baris sebagai metadata kecil (§3), bukan teks utama.
-TextStyle _rowLabel = TextStyle(
+TextStyle get _rowLabel => TextStyle(
   fontSize: 12,
   fontWeight: FontWeight.w600,
   letterSpacing: 0.1,

@@ -34,7 +34,7 @@ TextStyle get _sectionTitle => TextStyle(
 );
 
 /// Field 16 px agar Safari iOS tidak memperbesar halaman (§9).
-TextStyle _fieldText = TextStyle(
+TextStyle get _fieldText => TextStyle(
   fontSize: 16,
   color: SibasColors.text,
 );
@@ -321,7 +321,7 @@ class _TrashTypeManagementScreenState
           color: SibasColors.leaf,
         ),
       ),
-    )
+    );
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
@@ -1003,7 +1003,7 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
     final placeholder = ColoredBox(
       color: SibasColors.mintWash,
       child: Icon(Icons.image_outlined, size: 28, color: SibasColors.muted),
-    )
+    );
 
     Widget preview;
     if (_fotoBytes != null) {

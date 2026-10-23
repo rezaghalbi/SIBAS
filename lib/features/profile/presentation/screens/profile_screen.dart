@@ -35,7 +35,7 @@ TextStyle get _sectionTitle => TextStyle(
 );
 
 /// Label baris sebagai metadata kecil (§3), bukan teks utama.
-TextStyle _rowLabel = TextStyle(
+TextStyle get _rowLabel => TextStyle(
   fontSize: 12,
   fontWeight: FontWeight.w600,
   letterSpacing: 0.1,
@@ -415,7 +415,7 @@ class _ProfileCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(
+                SizedBox(
                   width: 120,
                   child: Text('Status Email', style: _rowLabel),
                 ),

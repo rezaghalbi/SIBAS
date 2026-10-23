@@ -30,7 +30,7 @@ TextStyle get _sectionTitle => TextStyle(
 );
 
 /// Field 16 px agar Safari iOS tidak memperbesar halaman (§9).
-TextStyle _fieldText = TextStyle(
+TextStyle get _fieldText => TextStyle(
   fontSize: 16,
   color: SibasColors.text,
 );
@@ -967,7 +967,7 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
         height: 1.35,
         color: SibasColors.muted,
       ),
-    )
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

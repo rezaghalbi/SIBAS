@@ -18,7 +18,7 @@ const double _touch = 44;
 const double _maxContentWidth = 1120;
 
 /// Field 16 px agar Safari iOS tidak memperbesar halaman (§9).
-TextStyle _fieldText = TextStyle(
+TextStyle get _fieldText => TextStyle(
   fontSize: 16,
   color: SibasColors.text,
 );

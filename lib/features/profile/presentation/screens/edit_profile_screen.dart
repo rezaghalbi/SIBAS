@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/theme.dart';
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/hero_header.dart';
