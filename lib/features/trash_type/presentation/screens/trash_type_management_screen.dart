@@ -26,7 +26,7 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
@@ -175,7 +175,7 @@ class _TrashTypeManagementScreenState
                 padding: const EdgeInsets.fromLTRB(0, 24, 0, 8),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Daftar jenis sampah',
                         maxLines: 1,
@@ -310,7 +310,7 @@ class _TrashTypeManagementScreenState
   }
 
   Widget _thumbCard(String? imagePath) {
-    const fallback = ColoredBox(
+    final fallback = ColoredBox(
       color: SibasColors.mintWash,
       child: SizedBox(
         width: 40,
@@ -321,7 +321,7 @@ class _TrashTypeManagementScreenState
           color: SibasColors.leaf,
         ),
       ),
-    );
+    )
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
@@ -1000,10 +1000,10 @@ class _TrashTypeFormSheetState extends ConsumerState<_TrashTypeFormSheet> {
     final url = _hapusFoto
         ? null
         : ref.watch(fotoJenisSampahUrlProvider(_initialFoto));
-    const placeholder = ColoredBox(
+    final placeholder = ColoredBox(
       color: SibasColors.mintWash,
       child: Icon(Icons.image_outlined, size: 28, color: SibasColors.muted),
-    );
+    )
 
     Widget preview;
     if (_fotoBytes != null) {

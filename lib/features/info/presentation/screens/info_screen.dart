@@ -34,7 +34,7 @@ const double _cardRadius = 20;
 const double _touchTarget = 44;
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
@@ -458,7 +458,7 @@ class _ComplaintFormCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Formulir Pengaduan', style: _sectionTitle),
+          Text('Formulir Pengaduan', style: _sectionTitle),
           const SizedBox(height: 6),
           Text(
             'Pengaduan ditanggapi maksimal 1×24 jam pada hari kerja.',

@@ -27,7 +27,7 @@ final _dateTime = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 const List<FontFeature> _tabularFigures = [FontFeature.tabularFigures()];
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,

@@ -27,7 +27,7 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
@@ -236,7 +236,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                 padding: const EdgeInsets.fromLTRB(0, 20, 0, 8),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Daftar mahasiswa',
                         maxLines: 1,

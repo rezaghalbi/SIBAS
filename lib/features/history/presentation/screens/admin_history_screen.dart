@@ -19,7 +19,7 @@ import '../../../../core/theme/sibas_colors.dart';
 const double _touchTarget = 44;
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,

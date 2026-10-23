@@ -26,7 +26,7 @@ const double _cardRadius = 20;
 const double _touchTarget = 44;
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
@@ -403,7 +403,7 @@ class _ProfileCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Data Akun', style: _sectionTitle),
+          Text('Data Akun', style: _sectionTitle),
           const SizedBox(height: 16),
           _InfoRow(label: 'Nama Lengkap', value: user.fullName),
           _InfoRow(
@@ -529,13 +529,13 @@ class _MenuTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
-  final Color color;
+  final Color? color;
 
   _MenuTile({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = SibasColors.leaf,
+    this.color,
   });
 
   @override
@@ -565,7 +565,7 @@ class _MenuTile extends StatelessWidget {
                   child: Icon(
                     icon,
                     size: 18,
-                    color: enabled ? color : SibasColors.muted,
+                    color: enabled ? (color ?? SibasColors.leaf) : SibasColors.muted,
                   ),
                 ),
                 const SizedBox(width: 12),

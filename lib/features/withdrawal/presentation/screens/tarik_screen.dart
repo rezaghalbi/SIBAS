@@ -26,7 +26,7 @@ final _currency = NumberFormat.currency(
 final _shortDate = DateFormat('dd MMM yyyy', 'id_ID');
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
@@ -197,7 +197,7 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
               ),
             ),
           ),
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: ContentWidth(
               maxWidth: _contentMaxWidth,
               child: Padding(
@@ -273,7 +273,7 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Ajukan Penarikan', style: _sectionTitle),
+            Text('Ajukan Penarikan', style: _sectionTitle),
             const SizedBox(height: 4),
             Text(
               'Masukkan nominal yang ingin ditarik.',

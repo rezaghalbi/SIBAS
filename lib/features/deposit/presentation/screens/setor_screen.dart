@@ -15,7 +15,7 @@ import '../providers/deposit_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
@@ -255,15 +255,15 @@ class _SetorScreenState extends ConsumerState<SetorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Lokasi Bank Sampah', style: _sectionTitle),
+        Text('Lokasi Bank Sampah', style: _sectionTitle),
         const SizedBox(height: 12),
         const _LocationSection(),
         const SizedBox(height: 24),
-        const Text('1. Pilih Jenis Sampah', style: _sectionTitle),
+        Text('1. Pilih Jenis Sampah', style: _sectionTitle),
         const SizedBox(height: 12),
         _buildCategoryCard(categoriesState),
         const SizedBox(height: 24),
-        const Text('2. Berat Sampah (kg)', style: _sectionTitle),
+        Text('2. Berat Sampah (kg)', style: _sectionTitle),
         const SizedBox(height: 12),
         _buildWeightCard(),
       ],
@@ -565,7 +565,7 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Ringkasan Setoran', style: _sectionTitle),
+          Text('Ringkasan Setoran', style: _sectionTitle),
           const SizedBox(height: 16),
           _SummaryRow(
             label: 'Lokasi',

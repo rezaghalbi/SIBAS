@@ -523,9 +523,9 @@ class _Inisial extends StatelessWidget {
 
 class _IkonSheet extends StatelessWidget {
   final IconData icon;
-  final Color warna;
+  final Color? warna;
 
-  _IkonSheet({required this.icon, this.warna = SibasColors.leaf});
+  const _IkonSheet({required this.icon, this.warna});
 
   @override
   Widget build(BuildContext context) {

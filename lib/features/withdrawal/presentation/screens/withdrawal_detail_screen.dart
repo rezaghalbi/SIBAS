@@ -32,7 +32,7 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
@@ -863,7 +863,7 @@ class _ApprovalActionsState extends ConsumerState<_ApprovalActions> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Tindakan Admin', style: _sectionTitle),
+            Text('Tindakan Admin', style: _sectionTitle),
             const SizedBox(height: 4),
             Text(
               'Periksa pengajuan sebelum menyetujui atau menolak.',

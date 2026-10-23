@@ -22,7 +22,7 @@ const List<FontFeature> _numbers = <FontFeature>[
 ];
 
 /// Judul seksi: 15.5 w700, tracking -0.2 (§3).
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
@@ -209,7 +209,7 @@ class _AdminLocationsScreenState extends ConsumerState<AdminLocationsScreen> {
         padding: const EdgeInsets.fromLTRB(0, 24, 0, 8),
         child: Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 'Daftar lokasi',
                 maxLines: 1,
@@ -960,14 +960,14 @@ class _LocationFormSheetState extends ConsumerState<_LocationFormSheet> {
   }
 
   Widget _koordinatGroup() {
-    const petunjuk = Text(
+    final petunjuk = Text(
       'Isi latitude dan longitude bersamaan, atau kosongkan keduanya.',
       style: TextStyle(
         fontSize: 11.5,
         height: 1.35,
         color: SibasColors.muted,
       ),
-    );
+    )
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

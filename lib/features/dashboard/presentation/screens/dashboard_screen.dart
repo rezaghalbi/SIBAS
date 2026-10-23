@@ -29,7 +29,7 @@ const double _rowRadius = 16;
 const double _touchTarget = 44;
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
-TextStyle _sectionTitle = TextStyle(
+TextStyle get _sectionTitle => TextStyle(
   fontSize: 15.5,
   fontWeight: FontWeight.w700,
   letterSpacing: -0.2,
@@ -427,7 +427,7 @@ class _ActivitySection extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     'Aktivitas Setor Terakhir',
                     maxLines: 1,
@@ -493,7 +493,7 @@ class _EmptyActivity extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const Text('Belum Ada Setoran', style: _sectionTitle),
+          Text('Belum Ada Setoran', style: _sectionTitle),
           const SizedBox(height: 4),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 300),
