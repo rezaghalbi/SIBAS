@@ -59,7 +59,7 @@ class _LocationSectionState extends ConsumerState<LocationSection> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.32),
+      barrierColor: SibasColors.scrim,
       builder: (_) => _LocationSheet(
         lokasi: aktif,
         terpilihId: ref.read(selectedLocationProvider)?.id,

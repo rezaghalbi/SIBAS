@@ -19,7 +19,7 @@ Future<void> showNotificationSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withValues(alpha: 0.30),
+    barrierColor: SibasColors.scrim,
     builder: (sheetContext) => _NotificationSheet(
       onOpenTransaction: (transactionId) {
         Navigator.of(sheetContext).pop();

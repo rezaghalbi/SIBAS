@@ -108,27 +108,71 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: SibasColors.glassBorder),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Column(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Panel hero sempit di ponsel: tombol turun ke bawah
+                    // supaya tidak bertumpuk dengan teks (§8).
+                    final sempit = constraints.maxWidth < 340;
+
+                    const info = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Mode Petugas', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        Text('Pemindai QR Siap', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                        Text(
+                          'Mode Petugas',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Pemindai QR Siap',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
                       ],
-                    ),
-                    ElevatedButton.icon(
+                    );
+
+                    final tombol = ElevatedButton.icon(
                       onPressed: () => context.push('/admin/scan'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: SibasColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        minimumSize: const Size(0, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
-                      label: const Text('Buka Pemindai QR', style: TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ],
+                      label: const Text(
+                        'Buka Pemindai QR',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    );
+
+                    if (sempit) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          info,
+                          const SizedBox(height: 12),
+                          tombol,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: info),
+                        const SizedBox(width: 12),
+                        tombol,
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

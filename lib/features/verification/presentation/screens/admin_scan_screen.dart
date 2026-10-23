@@ -428,7 +428,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
 
   Widget _modeSelector(double gutter) {
     return Container(
-      color: Colors.black,
+      color: SibasColors.background,
       padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 12),
       child: Center(
         child: ConstrainedBox(
@@ -463,11 +463,15 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
               backgroundColor: WidgetStateProperty.resolveWith((states) {
                 return states.contains(WidgetState.selected)
                     ? SibasColors.leaf
-                    : Colors.black.withValues(alpha: 0.6);
+                    : SibasColors.surfaceAlt;
               }),
-              foregroundColor: const WidgetStatePropertyAll(Colors.white),
+              foregroundColor: WidgetStateProperty.resolveWith((states) {
+                return states.contains(WidgetState.selected)
+                    ? Colors.white
+                    : SibasColors.text;
+              }),
               side: WidgetStatePropertyAll(
-                BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                BorderSide(color: SibasColors.border),
               ),
             ),
           ),
@@ -518,10 +522,10 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     final gutter = ContentWidth.gutterFor(MediaQuery.sizeOf(context).width);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: SibasColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: SibasColors.background,
+        foregroundColor: SibasColors.text,
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: gutter,
@@ -529,9 +533,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
           _isWithdrawal ? 'Pindai QR Penarikan' : 'Pindai QR Setoran',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          // Tegaskan warna agar judul tidak ikut warna teks tema gelap/terang.
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: SibasColors.text,
             fontSize: 17,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.2,
@@ -697,12 +700,17 @@ class _HintCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gelap = SibasColors.palette.brightness == Brightness.dark;
+
     return SurfaceCard(
-      // Panel pratinjau kamera: tetap gelap agar teks putih terbaca.
+      // Di atas pratinjau kamera panel tetap gelap; di mode terang memakai
+      // permukaan tema agar tidak menjadi balok hitam.
       tone: SurfaceTone.subtle,
       radius: 16,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.black.withValues(alpha: 0.72),
+      color: gelap
+          ? Colors.black.withValues(alpha: 0.72)
+          : SibasColors.elevated,
       child: Column(
         children: [
           Text(
@@ -712,8 +720,8 @@ class _HintCard extends StatelessWidget {
                 : 'Arahkan kamera ke QR mahasiswa, atau masukkan '
                     'kode/unggah gambar',
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: gelap ? Colors.white : SibasColors.text,
               fontSize: 12.5,
               height: 1.45,
               fontWeight: FontWeight.w600,
@@ -725,7 +733,9 @@ class _HintCard extends StatelessWidget {
               'Peramban akan meminta izin kamera.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.86),
+                color: gelap
+                    ? Colors.white.withValues(alpha: 0.86)
+                    : SibasColors.muted,
                 fontSize: 11.5,
                 height: 1.4,
               ),

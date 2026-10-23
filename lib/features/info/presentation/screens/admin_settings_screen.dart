@@ -10,6 +10,7 @@ import '../../domain/models/app_settings_model.dart';
 import '../../domain/validasi_pengaturan.dart';
 import '../providers/app_settings_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
+import '../../../../core/widgets/theme_mode_card.dart';
 
 /// Target sentuh minimum (§4).
 const double _touch = 44;
@@ -152,6 +153,8 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             _kartuKontak(),
           ],
           const SizedBox(height: 20),
+          const ThemeModeCard(),
+          const SizedBox(height: 20),
           if (_pesan != null) ...[
             _pesanBanner(),
             const SizedBox(height: 16),
@@ -162,45 +165,48 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     );
   }
 
-  /// CTA 48 px; di mobile mengisi lebar form, di desktop dibatasi 280 px.
+  /// CTA 48 px; di ponsel mengisi lebar form, di desktop dibatasi 280 px.
   Widget _tombolSimpan() {
+    final sempit = MediaQuery.sizeOf(context).width < 600;
+
+    final tombol = FilledButton(
+      onPressed: _menyimpan ? null : _simpan,
+      style: FilledButton.styleFrom(
+        backgroundColor: SibasColors.leaf,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: SibasColors.leaf.withValues(alpha: 0.5),
+        disabledForegroundColor: Colors.white,
+        elevation: 0,
+        minimumSize: const Size(0, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        textStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      child: _menyimpan
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Text('Simpan Pengaturan'),
+    );
+
+    if (sempit) {
+      return SizedBox(width: double.infinity, child: tombol);
+    }
     return Align(
       alignment: Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 280),
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: _menyimpan ? null : _simpan,
-            style: FilledButton.styleFrom(
-              backgroundColor: SibasColors.leaf,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor:
-                  SibasColors.leaf.withValues(alpha: 0.5),
-              disabledForegroundColor: Colors.white,
-              elevation: 0,
-              minimumSize: const Size(0, 48),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              textStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            child: _menyimpan
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Simpan Pengaturan'),
-          ),
-        ),
+        child: SizedBox(width: double.infinity, child: tombol),
       ),
     );
   }

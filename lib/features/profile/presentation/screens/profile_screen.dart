@@ -11,7 +11,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/domain/models/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
-import '../../../../core/theme/theme_mode_controller.dart';
+import '../../../../core/widgets/theme_mode_card.dart';
 
 /// Lebar konten halaman pengaturan. Lebih sempit dari 1120 px (§4) agar baris
 /// teks tidak melebar di desktop dengan rail.
@@ -302,7 +302,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
           SliverToBoxAdapter(
             child: _ContentSection(
-              child: _TampilanCard(),
+              child: ThemeModeCard(),
             ),
           ),
           SliverToBoxAdapter(
@@ -1361,64 +1361,4 @@ String _initials(String name) {
   if (parts.isEmpty) return 'S';
   final letters = parts.take(2).map((p) => p.substring(0, 1)).join();
   return letters.toUpperCase();
-}
-
-
-/// Pemilih tema: terang, gelap, atau ikut sistem (§12 dokumen desain).
-class _TampilanCard extends ConsumerWidget {
-  const _TampilanCard();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final mode = ref.watch(themeModeProvider);
-
-    return SurfaceCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Tampilan', style: _sectionTitle),
-          const SizedBox(height: 4),
-          Text(
-            'Pilih tema terang, gelap, atau ikuti pengaturan perangkat.',
-            style: TextStyle(
-              fontSize: 12.5,
-              height: 1.45,
-              color: SibasColors.muted,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SegmentedButton<ThemeMode>(
-            segments: const [
-              ButtonSegment<ThemeMode>(
-                value: ThemeMode.light,
-                icon: Icon(Icons.light_mode_outlined, size: 18),
-                label: Text('Terang'),
-              ),
-              ButtonSegment<ThemeMode>(
-                value: ThemeMode.dark,
-                icon: Icon(Icons.dark_mode_outlined, size: 18),
-                label: Text('Gelap'),
-              ),
-              ButtonSegment<ThemeMode>(
-                value: ThemeMode.system,
-                icon: Icon(Icons.brightness_auto_outlined, size: 18),
-                label: Text('Sistem'),
-              ),
-            ],
-            selected: {mode},
-            showSelectedIcon: false,
-            style: const ButtonStyle(
-              minimumSize: WidgetStatePropertyAll(Size(0, 44)),
-              textStyle: WidgetStatePropertyAll(
-                TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-              ),
-            ),
-            onSelectionChanged: (values) =>
-                ref.read(themeModeProvider.notifier).ubah(values.first),
-          ),
-        ],
-      ),
-    );
-  }
 }

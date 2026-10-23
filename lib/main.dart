@@ -15,6 +15,8 @@ import 'core/widgets/offline_banner.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'core/theme/sibas_colors.dart';
 import 'core/theme/theme_mode_controller.dart';
+import 'core/theme/web_background_stub.dart'
+    if (dart.library.js_interop) 'core/theme/web_background_web.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -104,6 +106,7 @@ class SibasApp extends ConsumerWidget {
           : (mode == ThemeMode.dark ? Brightness.dark : Brightness.light),
       platformDark: MediaQuery.platformBrightnessOf(context) == Brightness.dark,
     );
+    aturLatarWeb(SibasColors.background.toARGB32());
 
     return MaterialApp.router(
       title: 'SIBAS',
