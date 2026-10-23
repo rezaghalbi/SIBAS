@@ -1,7 +1,89 @@
 import 'package:flutter/material.dart';
 
-import '../constants/colors.dart';
+import '../theme/app_palette.dart';
 import 'glass_panel.dart';
+
+/// Satu tab navigasi SIBAS: ikon dan label.
+///
+/// Daftar ini dipakai bersama oleh [AppBottomNav] (layar <900 px) dan rail
+/// samping di `adaptive_shell.dart` (layar ≥900 px), supaya urutan tab tidak
+/// pernah berbeda antar tata letak.
+@immutable
+class AppNavItem {
+  const AppNavItem({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  /// Indeks item "Pengajuan" pada [admin]: satu-satunya item berbadge.
+  static const int adminPendingIndex = 1;
+
+  static const List<AppNavItem> student = <AppNavItem>[
+    AppNavItem(icon: Icons.home_rounded, label: 'Beranda'),
+    AppNavItem(icon: Icons.recycling_rounded, label: 'Setor'),
+    AppNavItem(icon: Icons.account_balance_wallet_outlined, label: 'Tarik'),
+    AppNavItem(icon: Icons.history_rounded, label: 'Riwayat'),
+    AppNavItem(icon: Icons.person_outline_rounded, label: 'Profil'),
+  ];
+
+  static const List<AppNavItem> admin = <AppNavItem>[
+    AppNavItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
+    AppNavItem(icon: Icons.fact_check_outlined, label: 'Pengajuan'),
+    AppNavItem(icon: Icons.qr_code_scanner_rounded, label: 'Pindai'),
+    AppNavItem(icon: Icons.history_rounded, label: 'Riwayat'),
+    AppNavItem(icon: Icons.category_rounded, label: 'Kelola'),
+  ];
+
+  /// Item sesuai peran yang sedang masuk.
+  static List<AppNavItem> forRole({required bool isAdmin}) =>
+      isAdmin ? admin : student;
+
+  /// Angka badge untuk sebuah indeks; 0 berarti badge disembunyikan.
+  static int badgeFor({
+    required int index,
+    required bool isAdmin,
+    required int pendingCount,
+  }) {
+    if (!isAdmin || index != adminPendingIndex || pendingCount <= 0) {
+      return 0;
+    }
+    return pendingCount;
+  }
+}
+
+/// Badge angka kecil di sisi item nav (mis. pengajuan yang menunggu).
+///
+/// Dipakai nav bawah dan rail agar keduanya tampil sama.
+class AppNavBadge extends StatelessWidget {
+  const AppNavBadge({super.key, required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    final status = AppStatusColors.of(palette.brightness);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      constraints: const BoxConstraints(minWidth: 16),
+      decoration: BoxDecoration(
+        color: status.pendingBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: status.pendingBorder, width: 1),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          color: status.pendingText,
+        ),
+      ),
+    );
+  }
+}
 
 /// Navigasi bawah bergaya kaca SIBAS.
 ///
@@ -21,30 +103,16 @@ class AppBottomNav extends StatelessWidget {
     this.pendingCount = 0,
   });
 
-  static const _studentItems = <({IconData icon, String label})>[
-    (icon: Icons.home_rounded, label: 'Beranda'),
-    (icon: Icons.recycling_rounded, label: 'Setor'),
-    (icon: Icons.account_balance_wallet_outlined, label: 'Tarik'),
-    (icon: Icons.history_rounded, label: 'Riwayat'),
-    (icon: Icons.person_outline_rounded, label: 'Profil'),
-  ];
-
-  static const _adminItems = <({IconData icon, String label})>[
-    (icon: Icons.dashboard_rounded, label: 'Dashboard'),
-    (icon: Icons.fact_check_outlined, label: 'Pengajuan'),
-    (icon: Icons.qr_code_scanner_rounded, label: 'Pindai'),
-    (icon: Icons.history_rounded, label: 'Riwayat'),
-    (icon: Icons.category_rounded, label: 'Kelola'),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final items = isAdmin ? _adminItems : _studentItems;
+    final items = AppNavItem.forRole(isAdmin: isAdmin);
 
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.only(bottom: 2),
+      // Tone dense: nav harus tetap terbaca di atas konten apa pun (§7.2).
       child: GlassPanel(
+        tone: GlassTone.dense,
         radius: 24,
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -60,7 +128,11 @@ class AppBottomNav extends StatelessWidget {
                       icon: items[index].icon,
                       label: items[index].label,
                       isActive: index == currentIndex,
-                      badgeCount: isAdmin && index == 1 ? pendingCount : 0,
+                      badgeCount: AppNavItem.badgeFor(
+                        index: index,
+                        isAdmin: isAdmin,
+                        pendingCount: pendingCount,
+                      ),
                       onTap: () => onTap(index),
                     ),
                   ),
@@ -90,12 +162,13 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppColors.primaryMain : AppColors.textMuted;
+    final palette = AppPalette.of(context);
+    final color = isActive ? palette.primary : palette.muted;
 
     return Semantics(
       button: true,
       selected: isActive,
-      label: label,
+      label: badgeCount > 0 ? '$label, $badgeCount menunggu' : label,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
@@ -113,7 +186,7 @@ class _NavButton extends StatelessWidget {
                   ),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: AppColors.primaryMain.withValues(alpha: 0.12),
+                      color: palette.mintWash,
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
@@ -135,29 +208,8 @@ class _NavButton extends StatelessWidget {
                         Positioned(
                           top: -4,
                           right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1,
-                            ),
-                            constraints: const BoxConstraints(minWidth: 16),
-                            decoration: BoxDecoration(
-                              color: AppColors.statusPendingBg,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: AppColors.statusPendingText,
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              badgeCount > 99 ? '99+' : '$badgeCount',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.statusPendingText,
-                              ),
-                            ),
+                          child: ExcludeSemantics(
+                            child: AppNavBadge(count: badgeCount),
                           ),
                         ),
                     ],

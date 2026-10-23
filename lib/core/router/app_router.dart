@@ -25,7 +25,7 @@ import '../../features/verification/presentation/screens/admin_scan_screen.dart'
 import '../../features/verification/presentation/screens/admin_submissions_screen.dart';
 import '../../features/withdrawal/presentation/screens/tarik_screen.dart';
 import '../../features/withdrawal/presentation/screens/withdrawal_detail_screen.dart';
-import '../widgets/app_bottom_nav.dart';
+import '../widgets/adaptive_shell.dart';
 
 /// Konfigurasi GoRouter resmi SIBAS lengkap dengan seluruh rute aplikasi.
 ///
@@ -265,7 +265,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-/// Membungkus shell tab dengan bottom nav. Scaffold berada di luar
+/// Membungkus shell tab dengan navigasi adaptif ([AdaptiveShell]): nav bawah
+/// di layar sempit, rail samping mulai 900 px. Scaffold berada di luar
 /// [navigationShell], jadi nav tidak ikut transisi dan state tab tetap hidup.
 class _NavScaffold extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -283,17 +284,15 @@ class _NavScaffold extends ConsumerWidget {
         ? (ref.watch(adminMetricsProvider).valueOrNull?.pendingCount ?? 0)
         : 0;
 
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: navigationShell.currentIndex,
-        isAdmin: isAdmin,
-        pendingCount: pendingCount,
-        onTap: (target) => navigationShell.goBranch(
-          target,
-          // Tap tab yang sedang aktif mengembalikan ke lokasi awal tab itu.
-          initialLocation: target == navigationShell.currentIndex,
-        ),
+    return AdaptiveShell(
+      navigationShell: navigationShell,
+      currentIndex: navigationShell.currentIndex,
+      isAdmin: isAdmin,
+      pendingCount: pendingCount,
+      onTap: (target) => navigationShell.goBranch(
+        target,
+        // Tap tab yang sedang aktif mengembalikan ke lokasi awal tab itu.
+        initialLocation: target == navigationShell.currentIndex,
       ),
     );
   }
