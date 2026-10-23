@@ -745,9 +745,7 @@ class _StickyCta extends StatelessWidget {
 /// aktif diturunkan lewat [activeLocationsProvider] yang bernilai kosong saat
 /// memuat, jadi tidak boleh dipakai sendirian untuk mendeteksi loading.
 class _LocationSection extends ConsumerStatefulWidget {
-  final SurfaceTone tone;
-
-  const _LocationSection({this.tone = SurfaceTone.card});
+  const _LocationSection();
 
   @override
   ConsumerState<_LocationSection> createState() => _LocationSectionState();
@@ -811,7 +809,7 @@ class _LocationSectionState extends ConsumerState<_LocationSection> {
 
     return SurfaceCard(
       radius: _innerRadius,
-      tone: widget.tone,
+      tone: SurfaceTone.card,
       padding: EdgeInsets.zero,
       child: _buildIsi(state, aktif, terpilih),
     );
