@@ -1,5 +1,35 @@
 # LOG PROGRESS
 
+## 2026-10-23 — Glass 2.0 tahap 1–2: meta web, token tema, dark theme
+
+**Branch** `feat/glass-2-token-tema` (dari `main` `5a2f262`), tiga commit.
+
+**Dokumentasi**
+- `docs/DESIGN_SYSTEM_V2.md` (549 baris) dan prototipe
+  `reference/sibas-glass-2.html` masuk repo. Isinya token light/dark, tipografi,
+  aturan kaca, pemetaan Flutter, dan migrasi enam tahap.
+
+**Tahap 1 — web**
+- `web/index.html`: `<meta name="viewport">` dengan `viewport-fit=cover`, dua
+  `theme-color` (`#005746` light, `#0A1411` dark), splash `min-height: 100dvh`
+  plus `env(safe-area-inset-*)`, dan blok `prefers-color-scheme: dark` untuk
+  splash. Skrip service worker tidak diubah.
+
+**Tahap 2 — token tema**
+- `lib/core/theme/app_palette.dart` (baru): `AppPalette extends
+  ThemeExtension<AppPalette>` 29 field + `light`/`dark` dari §2.1/§2.2,
+  `of()`, `copyWith()`, `lerp()`; `AppStatusColors` untuk warna status.
+- `lib/core/constants/theme.dart`: `extensions: [AppPalette.light]` di
+  `lightTheme` (0 baris light dihapus) dan getter `darkTheme` baru.
+- `lib/main.dart`: `darkTheme` dipasang, tetapi `themeMode` **tetap `light`**
+  karena layar masih membaca `AppColors` hardcoded — `system` baru aman setelah
+  tahap 5. Keputusan dicatat di §11.
+- `test/app_palette_test.dart`: token light sama dengan `AppColors`, kontras dark,
+  dan perilaku `lerp`.
+
+**Blocked**
+- `flutter analyze`/`test` hanya bisa lewat CI; push menunggu persetujuan user.
+
 ## 2026-10-23 — Pengaturan aplikasi, data mahasiswa, pencarian admin
 
 **Database**

@@ -97,6 +97,11 @@ class SibasApp extends ConsumerWidget {
       title: 'SIBAS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      // Layar masih membaca AppColors hardcoded, jadi mode gelap belum utuh.
+      // Tema gelap disiapkan, tetapi baru dipasang ke sistem pada tahap 5
+      // (docs/DESIGN_SYSTEM_V2.md §11).
+      themeMode: ThemeMode.light,
       routerConfig: router,
       builder: (context, child) => Column(
         children: [

@@ -504,7 +504,7 @@ Daftarkan untuk semua platform. Hapus `CupertinoPageTransitionsBuilder` setelah 
 |---|---|---|---|
 | 0 | Baseline screenshot 360/768/1280, light/dark | — | Simpan bukti |
 | 1 | Meta web: viewport, theme-color media, safe area | `web/index.html` | CI `Analyze & Test` |
-| 2 | Token + `AppPalette` + dark theme + `ThemeMode.system` | `colors.dart`, `theme.dart`, `main.dart` | Light tidak berubah perilaku |
+| 2 | Token + `AppPalette` + dark theme; `ThemeMode` dipegang `light` sampai tahap 5 | `core/theme/app_palette.dart`, `theme.dart`, `main.dart` | Light tidak berubah perilaku |
 | 3 | `GlassPanel` tone + hero saldo | `glass_panel.dart`, hero | Maks. 2 blur/layar |
 | 4 | `AdaptiveShell` + rail + sheet Tarik | `app_router.dart`, nav | 900 px, deep link |
 | 5 | Layar: dashboard, setor, riwayat, profil | `features/*/presentation` | 360/768/1280 |
