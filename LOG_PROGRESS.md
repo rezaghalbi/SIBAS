@@ -1,5 +1,37 @@
 # LOG PROGRESS
 
+## 2026-10-23 — Paginasi admin, penjaga pengajuan ganda, rekap lokasi, koreksi mahasiswa
+
+**Database** (migration `20261035000000_penjaga_dan_laporan.sql`, diterapkan ke remote)
+- Partial unique index `withdrawals_satu_pending_per_mhs`: satu penarikan
+  menunggu per mahasiswa.
+- `create_deposit` menolak duplikat jenis + berat dalam 2 menit;
+  `create_withdrawal` menolak saat masih ada penarikan PENDING (pesan jelas).
+- `admin_metrics(p_location_id)` mengembalikan metrik terfilter + `locations`
+  berisi rekap tiap lokasi.
+- `admin_ubah_mahasiswa(p_id, p_full_name, p_nim, p_phone)` untuk koreksi
+  identitas, memakai guard `sibas.ubah_profil`.
+
+**Flutter**
+- Daftar setoran/penarikan/riwayat admin memfilter status, lokasi, dan
+  pencarian **di server**; `adminPageLimitProvider` menaikkan batas 50 baris
+  lewat tombol "Muat … lagi". Batas 200 yang memotong diam-diam hilang.
+- Dashboard admin menampilkan **Rekap per lokasi**; mengetuk baris memasang
+  filter lokasi untuk metrik + daftar, "Semua lokasi" menghapusnya.
+- Data Mahasiswa: tombol **Ubah data mahasiswa** (nama, NIM, nomor WA) memanggil
+  RPC baru lalu menyegarkan daftar.
+- `SkeletonList` menggantikan spinner pada daftar pengajuan dan riwayat admin.
+
+**Verifikasi**
+- `Analyze & Test` hijau pada `4835ae0`, `63f231a`, `511ecba`, `5dd10de`;
+  build APK/web hijau pada tiap commit.
+
+**Ditunda (sesuai keputusan)**
+- Offline cache (rencana Opsi A) dan notifikasi realtime belum dikerjakan.
+- Auto-pilih lokasi berbasis radius ditunda; admin sudah bisa mengisi koordinat
+  dari tautan Google Maps.
+
+
 ## 2026-10-23 — Revisi tampilan: tema reaktif, tombol admin, koordinat dari Maps
 
 **Tema**
