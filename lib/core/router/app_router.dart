@@ -6,6 +6,7 @@ import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
+import '../../features/bank_location/presentation/screens/admin_locations_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/deposit/presentation/screens/qr_display_screen.dart';
 import '../../features/deposit/presentation/screens/setor_screen.dart';
@@ -212,6 +213,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/settings',
         builder: (context, state) => const AdminSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/admin/locations',
+        builder: (context, state) => const AdminLocationsScreen(),
       ),
 
       // Admin — shell terpisah agar tiap peran punya riwayat tab sendiri.

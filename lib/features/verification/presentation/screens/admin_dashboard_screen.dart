@@ -256,6 +256,57 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
           ),
 
+          // Pintasan pengelolaan lokasi bank sampah
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            sliver: SliverToBoxAdapter(
+              child: SurfaceCard(
+                child: Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    onTap: () => context.push('/admin/locations'),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    leading: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.mintSoftBackground,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.location_on_rounded,
+                        size: 18,
+                        color: AppColors.primaryMain,
+                      ),
+                    ),
+                    title: const Text(
+                      'Lokasi Bank Sampah',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Atur titik setor dan tarik sampah',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           // 3. Search & Filter Bar (Nama/NIM)
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
