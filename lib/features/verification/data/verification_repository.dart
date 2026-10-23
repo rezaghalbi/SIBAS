@@ -10,7 +10,8 @@ class VerificationRepository {
 
   static const _selectWithRelations =
       '*, profiles:profiles!transactions_mahasiswa_id_fkey(full_name, nim), '
-      'trash_types(name, price_per_kg)';
+      'trash_types(name, price_per_kg), '
+      'location:bank_locations(name, address, latitude, longitude)';
 
   /// Statistik metrik dashboard admin, dihitung di server lewat RPC
   /// `admin_metrics` (klien tidak lagi menarik seluruh baris transaksi).

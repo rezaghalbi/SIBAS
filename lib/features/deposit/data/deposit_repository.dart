@@ -53,7 +53,10 @@ class DepositRepository {
     return guardRequest(() async {
       final response = await _client
           .from('transactions')
-          .select('*, trash_types(name)')
+          .select(
+            '*, trash_types(name), '
+            'location:bank_locations(name, address, latitude, longitude)',
+          )
           .eq('id', transactionId)
           .maybeSingle();
 

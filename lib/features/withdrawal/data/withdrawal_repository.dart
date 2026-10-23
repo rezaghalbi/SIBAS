@@ -9,7 +9,8 @@ class WithdrawalRepository {
   WithdrawalRepository(this._client);
 
   static const _selectWithRelations =
-      '*, profiles:profiles!withdrawals_mahasiswa_id_fkey(full_name, nim)';
+      '*, profiles:profiles!withdrawals_mahasiswa_id_fkey(full_name, nim), '
+      'location:bank_locations(name, address, latitude, longitude)';
 
   /// Saldo yang boleh ditarik. Dihitung server lewat RPC available_balance.
   Future<double> getAvailableBalance(String userId) {
