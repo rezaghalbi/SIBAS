@@ -1,8 +1,8 @@
 # LOG PROGRESS
 
-## 2026-10-23 — Glass 2.0 tahap 1–2: meta web, token tema, dark theme
+## 2026-10-23 — Glass 2.0 tahap 1–3: meta web, token tema, kaca bertone
 
-**Branch** `feat/glass-2-token-tema` (dari `main` `5a2f262`), tiga commit.
+**Branch** `feat/glass-2-token-tema` (dari `main` `5a2f262`), PR #19.
 
 **Dokumentasi**
 - `docs/DESIGN_SYSTEM_V2.md` (549 baris) dan prototipe
@@ -26,6 +26,22 @@
   tahap 5. Keputusan dicatat di §11.
 - `test/app_palette_test.dart`: token light sama dengan `AppColors`, kontras dark,
   dan perilaku `lerp`.
+
+**Tahap 3 — kaca bertone & hero**
+- `GlassPanel`: `GlassTone { subtle, dense, hero }`, warna dari `AppPalette`,
+  radius `null` → 20 (subtle/hero) atau 24 (dense), inset highlight 1 px,
+  shadow §5 dipindah ke luar `ClipRRect` (sebelumnya terpotong klip), fallback
+  solid per tone. `tint` dan `blurSigma` tetap; 25 pemanggil lama tidak diubah.
+- `HeroHeader` jadi hero inset radius 28 dengan gradien/glow dari token hero;
+  signature tidak berubah, `bottomBorderRadius` tidak dipakai lagi.
+- `SaldoHeroCard` memakai `GlassTone.hero`; nominal, kg, dan rekap memakai
+  `FontFeature.tabularFigures()`.
+- `ContentWidth` baru (§10.5): 1120 px, gutter 16/32.
+- `theme.dart`: `cardRadius` 18 → 20, `inputRadius` 12 → 16.
+- `test/glass_panel_test.dart`: tiga tone ter-build, `disableAnimations` tanpa
+  blur, radius dense 24 / subtle 20.
+- `AGENTS.md` §2 dan skill `sibas-glass-ui` diselaraskan ke V2 (tint `.20→.06`,
+  tone kaca, skala radius, larangan kaca bersarang).
 
 **Blocked**
 - `flutter analyze`/`test` hanya bisa lewat CI; push menunggu persetujuan user.

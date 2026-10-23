@@ -7,15 +7,19 @@
 - **Routing:** GoRouter
 - **Backend Services:** Supabase (Auth, Database RPC, Storage)
 
-## 2. Design System: Apple Glassmorphism
-- **Frosted Effect:** Gunakan `BackdropFilter` dengan `ImageFilter.blur(sigmaX: 12, sigmaY: 12)`.
-- **Background Translucency:** Gunakan gradien tipis transparan (`Colors.white.withValues(alpha: 0.15)` ke `Colors.white.withValues(alpha: 0.05)` atau variasi dark mode setara).
-- **Borders:** Terapkan garis tepi halus `Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.2)`.
-- **Elevation:** Gunakan `BoxShadow` ber-radius blur besar (20–30) dengan opacity rendah (0.05–0.1).
-- **Corners:** Radius sudut wajib tumpul dan konsisten (`BorderRadius.circular(16-24)`).
+## 2. Design System: Apple Glassmorphism (Glass 2.0)
+- **Spesifikasi mengikat:** `docs/DESIGN_SYSTEM_V2.md`. Prototipe visual: `reference/sibas-glass-2.html`. Token runtime: `lib/core/theme/app_palette.dart` (`AppPalette.of(context)`).
+- **Peran ikut hierarki.** Lencana, chip status, dan tautan memakai ukuran/bobot, bukan warna acak. Angka uang, berat, dan rekap wajib `FontFeature.tabularFigures()`.
+- **Frosted Effect:** Gunakan `BackdropFilter` dengan `ImageFilter.blur(sigmaX: 12, sigmaY: 12)`; tone `hero` boleh 8–12.
+- **Background Translucency:** Gradien per tone — `subtle` putih `.20` → `.06` (dark `.13` → `.03`); `dense` (nav/sheet) putih `.88` → `.74` (dark `surfaceAlt`/`surface`); `hero` putih `.14` → `.08`.
+- **Borders:** `Border.all(color: <glassBorder>, width: 1.2)`; tone `subtle` putih `.24`, `dense` dark `.16`. Plus inset highlight 1 px di sisi atas.
+- **Elevation:** `BoxShadow` blur besar dengan opacity rendah (token `sm/md/lg` §5). Jangan gabungkan shadow tebal dengan border tebal.
+- **Corners:** skala tetap — `12` ikon/badge, `16` field, `20` kartu, `24` nav, `28` hero/sheet, `pill` 999.
 - **API:** `withOpacity` deprecated sejak Flutter 3.27 — wajib `withValues(alpha:)`.
-- **Satu sumber efek:** semua efek kaca lewat `lib/core/widgets/glass_panel.dart` (`GlassPanel`). Dilarang membuat widget kaca duplikat.
-- **Performa:** maksimal 1–2 `BackdropFilter` per layar (mahal di build web/CanvasKit).
+- **Satu sumber efek:** semua efek kaca lewat `lib/core/widgets/glass_panel.dart` (`GlassPanel` dengan `tone: subtle | dense | hero`). Dilarang membuat widget kaca duplikat.
+- **Performa:** maksimal 1–2 `BackdropFilter` per layar (mahal di build web/CanvasKit). Tidak ada kaca di dalam kaca.
+- **Fallback:** `disableAnimations` / `prefers-reduced-motion` → solid tanpa blur; safe area wajib di hero, nav, dan sheet.
+- **Mode gelap:** `AppTheme.darkTheme` sudah ada, tetapi `themeMode` masih `light` sampai layar selesai dimigrasi (tahap 5). Jangan mengandalkan `Theme.of(context).brightness` di layar yang belum dimigrasi.
 
 ## 3. Reference Files Context
 - Buka dan pelajari file spesifikasi (DOCX) dan rancangan tata letak visual (HTML) di folder `reference/` sebelum merancang fungsi atau layar baru.

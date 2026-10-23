@@ -8,9 +8,10 @@ import 'colors.dart';
 class AppTheme {
   AppTheme._();
 
-  static const double cardRadius = 18.0;
+  /// Skala radius Glass 2.0 (§4): kartu 20, field 16, tombol 14, sheet 28.
+  static const double cardRadius = 20.0;
   static const double buttonRadius = 14.0;
-  static const double inputRadius = 12.0;
+  static const double inputRadius = 16.0;
   static const double bottomSheetRadius = 28.0;
 
   static ThemeData get lightTheme {
