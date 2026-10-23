@@ -1,5 +1,33 @@
 # LOG PROGRESS
 
+## 2026-10-23 — Glass 2.0 tahap 4 + perbaikan setor & dashboard admin
+
+**Tahap 4 — `AdaptiveShell`**
+- `lib/core/widgets/adaptive_shell.dart` (baru): <900 px nav bawah,
+  ≥900 px rail 268 px solid (`surface` + border kanan, tanpa blur), merek
+  SIBAS + penanda peran, item 46 px, indikator aktif 3×24 px, badge
+  "Pengajuan" untuk admin.
+- `app_bottom_nav.dart`: `AppNavItem`/`AppNavBadge` dipakai bersama nav dan
+  rail; nav bawah jadi `GlassTone.dense`; warna item pindah ke `AppPalette`.
+- `app_router.dart`: hanya `_NavScaffold.build` yang berubah; rute, redirect,
+  dan `goBranch` tetap. "Tarik lewat bottom sheet" (§10.6) ditunda.
+
+**Setor — kartu jenis sampah**
+- Grid 2 kolom selebar layar (kartu 600×480 px di desktop) diganti
+  `SliverGridDelegateWithMaxCrossAxisExtent(240, mainAxisExtent: 108)`:
+  2 kolom di 360, 3 di 768, 5 di 1280, tinggi tetap. Harga `maxLines: 1`.
+
+**Dashboard admin — kotak ringkasan**
+- Empat kotak kosong diganti pintasan yang bisa diketuk: Menunggu Validasi →
+  `/admin/submissions`, Riwayat Transaksi → `/admin/history`, Data Mahasiswa →
+  `/admin/students`, Pengaturan → `/admin/settings`. Tinggi 108 px, 2 kolom
+  di ponsel, 4 di desktop. Total berat pindah ke keterangan judul "Ringkasan".
+
+**Verifikasi**
+- `Analyze & Test` run `39885846126` hijau, `Build + Vercel` `39885846127`
+  hijau untuk commit `5d7e2cf`. Preview
+  `https://sibas-49p7vjqij-rezaghalbis-projects.vercel.app`.
+
 ## 2026-10-23 — Glass 2.0 tahap 1–3: meta web, token tema, kaca bertone
 
 **Branch** `feat/glass-2-token-tema` (dari `main` `5a2f262`), PR #19.
