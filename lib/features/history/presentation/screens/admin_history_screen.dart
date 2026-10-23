@@ -5,6 +5,7 @@ import '../../../../core/utils/status_helper.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
+import '../../../../core/widgets/skeleton.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../verification/data/csv_export.dart';
 import '../../../verification/data/csv_download_stub.dart'
@@ -725,25 +726,6 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: SurfaceCard(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Memuat riwayat...',
-              style: TextStyle(fontSize: 12.5, color: SibasColors.muted),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const SkeletonList(items: 3, lines: 3);
   }
 }

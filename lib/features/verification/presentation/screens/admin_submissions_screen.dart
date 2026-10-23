@@ -7,6 +7,7 @@ import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
+import '../../../../core/widgets/skeleton.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
@@ -1372,25 +1373,6 @@ class _LoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: SurfaceCard(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Memuat pengajuan...',
-              style: TextStyle(fontSize: 12.5, color: SibasColors.muted),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const SkeletonList(items: 3, lines: 3);
   }
 }
