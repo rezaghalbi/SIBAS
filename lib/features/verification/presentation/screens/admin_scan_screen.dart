@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../core/constants/colors.dart';
 import '../../../../core/network/api_guard.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
@@ -18,6 +19,18 @@ final _currency = NumberFormat.currency(
   symbol: 'Rp ',
   decimalDigits: 0,
 );
+
+/// Lebar maksimum kendali pemindai di layar lebar (§8).
+const double _chromeMaxWidth = 560;
+
+/// Panel izin kamera tidak perlu selebar layar desktop.
+const double _panelMaxWidth = 380;
+
+/// Ruang bawah agar nav mengambang tidak menutup tombol (§4).
+const double _bottomReserve = 96;
+
+/// Lebar maksimum isi sheet konfirmasi penarikan.
+const double _sheetMaxWidth = 560;
 
 enum _ScanMode { setoran, penarikan }
 
@@ -45,6 +58,9 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   String? _approvedToken;
 
   bool get _isWithdrawal => _mode == _ScanMode.penarikan;
+
+  IconData get _torchIcon =>
+      _torchEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded;
 
   @override
   void initState() {
@@ -77,43 +93,73 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   }
 
   /// Panel ramah saat kamera gagal/inisialisasi atau izin ditolak.
+  ///
+  /// Satu-satunya kaca di layar ini; `tint: Colors.black` menahan kontras
+  /// teks putih di atas pratinjau kamera (§7.2).
   Widget _cameraErrorPanel() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: GlassPanel(
-          tint: Colors.black,
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.no_photography_outlined,
-                size: 56,
-                color: AppColors.mintAccent,
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'Izin kamera diperlukan',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _panelMaxWidth),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: GlassPanel(
+            tint: Colors.black,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.18),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.no_photography_outlined,
+                    size: 26,
+                    color: AppColors.mintAccent,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Kamera tidak dapat diakses. Izinkan akses kamera di pengaturan '
-                'peramban/perangkat, lalu muat ulang halaman. Sementara itu '
-                'gunakan tombol ketik manual atau unggah gambar di bawah.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 12,
+                const SizedBox(height: 16),
+                const Text(
+                  'Izin kamera diperlukan',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'Izinkan akses kamera di pengaturan peramban atau '
+                  'perangkat, lalu muat ulang halaman.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.86),
+                    fontSize: 12.5,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Sementara itu, gunakan tombol ketik atau unggah gambar '
+                  'di bawah.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.86),
+                    fontSize: 12,
+                    height: 1.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -142,7 +188,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
       if (txData == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('ID Transaksi tidak ditemukan atau format QR tidak valid.'),
+            content: Text(
+                'ID Transaksi tidak ditemukan atau format QR tidak valid.'),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -163,7 +210,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Transaksi tidak dapat diproses. Periksa koneksi lalu coba lagi.'),
+            content: Text(
+                'Transaksi tidak dapat diproses. Periksa koneksi lalu coba lagi.'),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -174,7 +222,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   }
 
   /// Mode penarikan: token QR (UUID 36 karakter) → data pengajuan → setujui.
-  Future<void> _processWithdrawalQr(String rawValue, {bool notify = true}) async {
+  Future<void> _processWithdrawalQr(String rawValue,
+      {bool notify = true}) async {
     final token = rawValue.trim();
     if (token.isEmpty || _isProcessing) return;
 
@@ -227,7 +276,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   /// Fallback Pemindaian QR menggunakan Unggah File Gambar (Aturan PRD)
   Future<void> _pickImageFallback() async {
     try {
-      final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+      final XFile? image =
+          await _imagePicker.pickImage(source: ImageSource.gallery);
       if (image == null) return;
 
       // Gambar tidak didekode otomatis di perangkat ini; jangan mengarang kode.
@@ -243,7 +293,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal membuka galeri. Periksa izin penyimpanan lalu coba lagi.'),
+            content: Text(
+                'Gagal membuka galeri. Periksa izin penyimpanan lalu coba lagi.'),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -257,10 +308,19 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.cardSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
         title: Text(
           isWithdrawal ? 'Input Token QR Penarikan' : 'Input Kode QR',
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+            color: AppColors.textPrimary,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -273,124 +333,259 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                           'pada layar mahasiswa:'
                       : 'Masukkan kode QR (bukan UUID transaksi) yang tampil pada '
                           'layar mahasiswa:'),
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+              style: const TextStyle(
+                fontSize: 13,
+                height: 1.5,
+                color: AppColors.textMuted,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextField(
               controller: _uuidInputController,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+                color: AppColors.textPrimary,
+              ),
               decoration: InputDecoration(
                 hintText: isWithdrawal
                     ? 'Tempel token QR penarikan'
                     : 'Contoh: f7296dec17934e57a0dc79bb057da1ab',
-                border: const OutlineInputBorder(),
+                hintStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.textMuted,
+                ),
+                filled: true,
+                fillColor: AppColors.mintSoftBackground,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppColors.borderLine),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppColors.borderLine),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(
+                    color: AppColors.primaryMain,
+                    width: 1.4,
+                  ),
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal', style: TextStyle(color: AppColors.textMuted)),
+          SizedBox(
+            height: 44,
+            child: TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textMuted,
+                textStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              child: const Text('Batal'),
+            ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _processRawValue(_uuidInputController.text);
-            },
-            child: Text(isWithdrawal ? 'Cari Penarikan' : 'Cari Transaksi'),
+          SizedBox(
+            height: 44,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _processRawValue(_uuidInputController.text);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primaryMain,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              child: Text(isWithdrawal ? 'Cari Penarikan' : 'Cari Transaksi'),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _modeSelector() {
+  Widget _modeSelector(double gutter) {
     return Container(
       color: Colors.black,
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-      child: SegmentedButton<_ScanMode>(
-        // Bagi lebar penuh agar label "Penarikan" tidak terpotong di layar sempit.
-        expandedInsets: EdgeInsets.zero,
-        segments: const [
-          ButtonSegment<_ScanMode>(
-            value: _ScanMode.setoran,
-            label: Text('Setoran'),
-          ),
-          ButtonSegment<_ScanMode>(
-            value: _ScanMode.penarikan,
-            label: Text('Penarikan'),
-          ),
-        ],
-        selected: {_mode},
-        showSelectedIcon: false,
-        onSelectionChanged: _isProcessing
-            ? null
-            : (selection) => setState(() => _mode = selection.first),
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            return states.contains(WidgetState.selected)
-                ? AppColors.primaryMain
-                : Colors.black.withValues(alpha: 0.6);
-          }),
-          foregroundColor: const WidgetStatePropertyAll<Color>(Colors.white),
-          side: WidgetStatePropertyAll(
-            BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+      padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 12),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _chromeMaxWidth),
+          child: SegmentedButton<_ScanMode>(
+            // Lebar penuh agar label "Penarikan" tidak terpotong di layar kecil
+            expandedInsets: EdgeInsets.zero,
+            segments: const [
+              ButtonSegment<_ScanMode>(
+                value: _ScanMode.setoran,
+                label: Text('Setoran'),
+              ),
+              ButtonSegment<_ScanMode>(
+                value: _ScanMode.penarikan,
+                label: Text('Penarikan'),
+              ),
+            ],
+            selected: {_mode},
+            showSelectedIcon: false,
+            onSelectionChanged: _isProcessing
+                ? null
+                : (selection) => setState(() => _mode = selection.first),
+            style: ButtonStyle(
+              minimumSize: const WidgetStatePropertyAll<Size>(Size(0, 44)),
+              textStyle: const WidgetStatePropertyAll<TextStyle>(
+                TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.1,
+                ),
+              ),
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                return states.contains(WidgetState.selected)
+                    ? AppColors.primaryMain
+                    : Colors.black.withValues(alpha: 0.6);
+              }),
+              foregroundColor: const WidgetStatePropertyAll(Colors.white),
+              side: WidgetStatePropertyAll(
+                BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+              ),
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _bottomActions() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _HintCard(isWithdrawal: _isWithdrawal),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            // Tombol Unggah File Gambar (Fallback Kamera)
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.photo_library_outlined,
+                label: 'Unggah Gambar',
+                background: Colors.white,
+                foreground: AppColors.primaryDark,
+                onPressed: _isProcessing ? null : _pickImageFallback,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Tombol input kode QR manual
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.keyboard_outlined,
+                label: _isWithdrawal ? 'Ketik Token QR' : 'Ketik Kode QR',
+                background: AppColors.primaryMain,
+                foreground: Colors.white,
+                onPressed:
+                    _isProcessing ? null : () => _showManualInputDialog(),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final gutter = ContentWidth.gutterFor(MediaQuery.sizeOf(context).width);
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: gutter,
         title: Text(
           _isWithdrawal ? 'Pindai QR Penarikan' : 'Pindai QR Setoran',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           // Tegaskan warna agar judul tidak ikut warna teks tema gelap/terang.
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 17,
             fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
           ),
         ),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
         actions: [
           // Senter tidak tersedia di web; tombol hanya untuk Android/iOS.
           if (!kIsWeb)
             IconButton(
-              icon: Icon(_torchEnabled ? Icons.flash_on_rounded : Icons.flash_off_rounded),
+              tooltip: _torchEnabled ? 'Matikan senter' : 'Nyalakan senter',
+              icon: Icon(_torchIcon),
               onPressed: _toggleTorch,
             ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
         children: [
-          _modeSelector(),
+          _modeSelector(gutter),
           Expanded(
             child: Stack(
+              fit: StackFit.expand,
               children: [
                 // 1. Kamera Scanner View — mobile_scanner 5.x jalan di web (izin peramban).
                 MobileScanner(
                   controller: _scannerController,
                   errorBuilder: (context, error, child) => _cameraErrorPanel(),
                   placeholderBuilder: (context, child) => const Center(
-                    child: CircularProgressIndicator(color: AppColors.mintAccent),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 26,
+                          height: 26,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            color: AppColors.mintAccent,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'Menyiapkan kamera…',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   // Bingkai hanya tampil saat pratinjau kamera hidup, jadi
                   // panel izin kamera tidak tertutup garis bingkai.
-                  overlayBuilder: (context, constraints) => Center(
-                    child: Container(
-                      width: 260,
-                      height: 260,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.accent, width: 3),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                  ),
+                  overlayBuilder: (context, constraints) =>
+                      _ScanFrame(constraints: constraints),
                   onDetect: (capture) {
                     final barcodes = capture.barcodes;
                     for (final barcode in barcodes) {
@@ -403,102 +598,232 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
                   },
                 ),
 
-                // 2. Tombol Aksi Bawah (Manual Input & Upload Fallback)
-                Positioned(
-                  bottom: 30,
-                  left: 20,
-                  right: 20,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.7),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _isWithdrawal
-                                  ? 'Arahkan kamera ke QR penarikan di layar mahasiswa, '
-                                      'atau masukkan token/unggah gambar'
-                                  : 'Arahkan kamera ke QR mahasiswa, atau masukkan '
-                                      'kode/unggah gambar',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
-                            ),
-                            if (kIsWeb)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  'Peramban akan meminta izin kamera.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          // Tombol Unggah File Gambar (Fallback Kamera)
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _pickImageFallback,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: AppColors.primaryDark,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              icon: const Icon(Icons.photo_library_outlined, size: 20),
-                              label: const Text('Unggah Gambar', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-
-                          // Tombol input kode QR manual
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () => _showManualInputDialog(),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryMain,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              icon: const Icon(Icons.keyboard_outlined, size: 20),
-                              label: Text(
-                                _isWithdrawal ? 'Ketik Token QR' : 'Ketik Kode QR',
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                              ),
-                            ),
-                          ),
+                // 2. Fade gelap di bawah supaya teks kontrol tetap terbaca.
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.78),
                         ],
+                        stops: const [0.42, 1],
                       ),
-                    ],
+                    ),
                   ),
                 ),
 
-                if (_isProcessing)
-                  Container(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    child: const Center(
-                      child: CircularProgressIndicator(color: AppColors.mintAccent),
+                // 3. Tombol Aksi Bawah (Manual Input & Upload Fallback)
+                Positioned.fill(
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        gutter,
+                        12,
+                        gutter,
+                        _bottomReserve,
+                      ),
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: _chromeMaxWidth,
+                          ),
+                          // Layar pendek (mis. lanskap): kontrol digulir,
+                          // bukan meluber keluar area kamera.
+                          child: SingleChildScrollView(
+                            // Berlabuh di bawah: tombol utama selalu terlihat.
+                            reverse: true,
+                            child: _bottomActions(),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
+                ),
+
+                if (_isProcessing) const _ProcessingOverlay(),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Bingkai bidik: sisi mengikuti tinggi pratinjau agar tidak menabrak tombol.
+class _ScanFrame extends StatelessWidget {
+  final BoxConstraints constraints;
+
+  const _ScanFrame({required this.constraints});
+
+  @override
+  Widget build(BuildContext context) {
+    final side = (constraints.maxHeight * 0.34).clamp(160.0, 260.0).toDouble();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: _bottomReserve + 24),
+      child: Center(
+        child: Container(
+          width: side,
+          height: side,
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.accent, width: 3),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 14,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Petunjuk singkat di atas tombol aksi.
+class _HintCard extends StatelessWidget {
+  final bool isWithdrawal;
+
+  const _HintCard({required this.isWithdrawal});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            isWithdrawal
+                ? 'Arahkan kamera ke QR penarikan di layar mahasiswa, '
+                    'atau masukkan token/unggah gambar'
+                : 'Arahkan kamera ke QR mahasiswa, atau masukkan '
+                    'kode/unggah gambar',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12.5,
+              height: 1.45,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (kIsWeb) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Peramban akan meminta izin kamera.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.86),
+                fontSize: 11.5,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Tombol aksi kamera: tinggi 48 px, label satu baris.
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color background;
+  final Color foreground;
+  final VoidCallback? onPressed;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.background,
+    required this.foreground,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: background,
+          foregroundColor: foreground,
+          disabledBackgroundColor: background.withValues(alpha: 0.45),
+          disabledForegroundColor: foreground.withValues(alpha: 0.7),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        icon: Icon(icon, size: 18),
+        label: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
+/// Penanda proses: scrim + satu kalimat, tanpa kaca tambahan.
+class _ProcessingOverlay extends StatelessWidget {
+  const _ProcessingOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Colors.black.withValues(alpha: 0.62),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.mintAccent,
+                ),
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Memproses data QR…',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -589,171 +914,209 @@ class _WithdrawalConfirmSheetState
         MediaQuery.viewInsetsOf(context).bottom + 20,
       ),
       child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.borderLine,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _sheetMaxWidth),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Expanded(
-                  child: Text(
-                    'Konfirmasi Penarikan',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.borderLine,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                IconButton(
-                  tooltip: 'Tutup',
-                  onPressed: _busy ? null : () => Navigator.of(context).pop(),
-                  icon: const Icon(
-                    Icons.close_rounded,
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Konfirmasi Penarikan',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Tutup',
+                      onPressed:
+                          _busy ? null : () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.mintSoftBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderLine),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryMain,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.person_rounded,
+                          size: 22,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name.isEmpty ? 'Mahasiswa' : name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14.5,
+                                height: 1.3,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'NIM ${nim.isEmpty ? '-' : nim}',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                height: 1.4,
+                                color: AppColors.textMuted,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Nominal Penarikan',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
                     color: AppColors.textMuted,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.mintSoftBackground,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.mintAccent),
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    backgroundColor: AppColors.primaryMain,
-                    foregroundColor: Colors.white,
-                    child: Icon(Icons.person_rounded, size: 22),
+                const SizedBox(height: 4),
+                Text(
+                  _currency.format(_amount),
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.8,
+                    height: 1.1,
+                    color: AppColors.textPrimary,
+                    fontFeatures: [FontFeature.tabularFigures()],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
+                ),
+                if (_status != null) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: StatusBadge(status: _status!),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                const Text(
+                  'Saldo mahasiswa berkurang setelah penarikan disetujui.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    height: 1.5,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.statusRejectedBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.danger.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          name.isEmpty ? 'Mahasiswa' : name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14,
-                            color: AppColors.primaryDark,
-                          ),
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          size: 18,
+                          color: AppColors.danger,
                         ),
-                        Text(
-                          'NIM ${nim.isEmpty ? '-' : nim}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textMuted,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.45,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.danger,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Nominal Penarikan',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _currency.format(_amount),
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
-                letterSpacing: -0.5,
-              ),
-            ),
-            if (_status != null) ...[
-              Align(
-                alignment: Alignment.centerLeft,
-                child: StatusBadge(status: _status!),
-              ),
-              const SizedBox(height: 12),
-            ],
-            const Text(
-              'Saldo mahasiswa berkurang setelah penarikan disetujui.',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.statusRejectedBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.danger.withValues(alpha: 0.35),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: _busy ? null : _approve,
+                    icon: _busy
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 18,
+                          ),
+                    label: const Text('Setujui'),
                   ),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.error_outline_rounded,
-                      size: 18,
-                      color: AppColors.danger,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.danger,
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                    child: const Text('Tutup'),
+                  ),
                 ),
-              ),
-            ],
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 48,
-              child: ElevatedButton.icon(
-                onPressed: _busy ? null : _approve,
-                icon: _busy
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.check_circle_outline_rounded, size: 18),
-                label: const Text('Setujui'),
-              ),
+              ],
             ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 48,
-              child: OutlinedButton(
-                onPressed: _busy ? null : () => Navigator.of(context).pop(),
-                child: const Text('Tutup'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
