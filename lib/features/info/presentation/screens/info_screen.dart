@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../providers/app_settings_provider.dart';
 
@@ -18,118 +19,185 @@ const String _adminPhoneRaw = '081389021668';
 const String _responseNote =
     'Pengaduan ditanggapi maksimal 1×24 jam pada hari kerja';
 
+/// Lebar konten halaman informasi. Lebih sempit dari 1120 px (§4) agar baris
+/// teks tetap nyaman dibaca di desktop dengan rail.
+const double _maxContentWidth = 720;
+
+/// Jarak antar seksi pada skala 4 pt (§4).
+const double _sectionGap = 24;
+
+/// Radius kartu konten (r-20) sesuai §4.
+const double _cardRadius = 20;
+
+/// Target sentuh minimum 44 px (§1 butir 6, §4).
+const double _touchTarget = 44;
+
+/// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
+const TextStyle _sectionTitle = TextStyle(
+  fontSize: 15.5,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -0.2,
+  height: 1.25,
+  color: AppColors.textPrimary,
+);
+
+/// Label baris sebagai metadata kecil (§3), bukan teks utama.
+const TextStyle _rowLabel = TextStyle(
+  fontSize: 12,
+  fontWeight: FontWeight.w600,
+  letterSpacing: 0.1,
+  height: 1.4,
+  color: AppColors.textMuted,
+);
+
+/// Angka pada nomor telepon dan langkah memakai lebar digit tetap (§3).
+const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
+
 /// Pusat informasi statis: kontak admin, jam layanan, dan alur pengaduan.
+///
+/// Tanpa kaca sama sekali (§7.1): tidak ada lapisan mengambang di layar ini,
+/// jadi seluruh kartu memakai permukaan solid agar data mudah dibaca.
 class InfoScreen extends ConsumerWidget {
   const InfoScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Saat memuat atau gagal, nilai tampil "Belum diatur" — bukan data karangan.
-    final settings = ref.watch(appSettingsProvider).valueOrNull;
+    final settingsState = ref.watch(appSettingsProvider);
+
+    // Saat memuat atau gagal, nilai tampil "Belum diatur" — bukan karangan.
+    final settings = settingsState.valueOrNull;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: HeroHeader(
-              title: 'Pusat Informasi',
-              subtitle: 'Kontak admin & pengaduan',
-              mark: ClipRRect(
-                borderRadius: BorderRadius.circular(9),
-                child: Image.asset(
-                  'assets/images/sibas-logo.png',
-                  width: 32,
-                  height: 32,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              trailing: IconButton(
-                onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go('/dashboard');
-                  }
-                },
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
+            child: _WidthLimit(
+              child: HeroHeader(
+                title: 'Pusat Informasi',
+                subtitle: 'Kontak admin & pengaduan',
+                mark: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    'assets/images/sibas-logo.png',
+                    width: 32,
+                    height: 32,
+                    fit: BoxFit.cover,
                   ),
-                  child: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: Colors.white,
-                    size: 20,
+                ),
+                trailing: IconButton(
+                  tooltip: 'Kembali',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: _touchTarget,
+                    minHeight: _touchTarget,
+                  ),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/dashboard');
+                    }
+                  },
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _SectionCard(
-                  title: 'Kontak Admin',
-                  icon: Icons.support_agent_rounded,
-                  children: [
-                    const _InfoRow(
-                      label: 'Telepon/WhatsApp',
-                      value: _adminPhone,
-                      copyValue: _adminPhoneRaw,
+          SliverToBoxAdapter(
+            child: _ContentSection(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Memuat atau gagal: jelaskan keadaannya, jangan tampilkan
+                  // pesan galat mentah. Nilai kontak tetap "Belum diatur".
+                  if (settingsState.isLoading)
+                    const _SettingsNotice.loading()
+                  else if (settingsState.hasError)
+                    _SettingsNotice.error(
+                      onRetry: () => ref.invalidate(appSettingsProvider),
                     ),
-                    _InfoRow(
-                      label: 'Email',
-                      value: settings?.contactEmail ?? '',
-                    ),
-                    _InfoRow(
-                      label: 'Lokasi Unit',
-                      value: settings?.contactLocation ?? '',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _SectionCard(
-                  title: 'Jam Layanan',
-                  icon: Icons.schedule_rounded,
-                  children: [
-                    _InfoRow(
-                      label: 'Hari & Jam',
-                      value: settings?.contactHours ?? '',
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      _responseNote,
-                      style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const _SectionCard(
-                  title: 'Alur Pengaduan',
-                  icon: Icons.assignment_rounded,
-                  children: [
-                    _StepRow(
-                      number: '1',
-                      text: 'Sampaikan pengaduan lewat kontak admin di atas.',
-                    ),
-                    _StepRow(
-                      number: '2',
-                      text: 'Admin mencatat dan meninjau laporan Anda.',
-                    ),
-                    _StepRow(
-                      number: '3',
-                      text: 'Tanggapan dikirim balik ke kontak yang Anda pakai.',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const _ComplaintFormCard(),
-                const SizedBox(height: 24),
-              ]),
+                  const SizedBox(height: 16),
+                  _SectionCard(
+                    title: 'Kontak Admin',
+                    icon: Icons.support_agent_rounded,
+                    children: [
+                      const _InfoRow(
+                        label: 'Telepon/WhatsApp',
+                        value: _adminPhone,
+                        copyValue: _adminPhoneRaw,
+                      ),
+                      _InfoRow(
+                        label: 'Email',
+                        value: settings?.contactEmail ?? '',
+                      ),
+                      _InfoRow(
+                        label: 'Lokasi Unit',
+                        value: settings?.contactLocation ?? '',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: _sectionGap),
+                  _SectionCard(
+                    title: 'Jam Layanan',
+                    icon: Icons.schedule_rounded,
+                    children: [
+                      _InfoRow(
+                        label: 'Hari & Jam',
+                        value: settings?.contactHours ?? '',
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        _responseNote,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.45,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: _sectionGap),
+                  const _SectionCard(
+                    title: 'Alur Pengaduan',
+                    icon: Icons.assignment_rounded,
+                    children: [
+                      _StepRow(
+                        number: '1',
+                        text: 'Sampaikan pengaduan lewat kontak admin di atas.',
+                      ),
+                      _StepRow(
+                        number: '2',
+                        text: 'Admin mencatat dan meninjau laporan Anda.',
+                      ),
+                      _StepRow(
+                        number: '3',
+                        text: 'Tanggapan dikirim balik ke kontak yang Anda '
+                            'pakai.',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: _sectionGap),
+                  const _ComplaintFormCard(),
+                ],
+              ),
             ),
+          ),
+          // Ruang bawah 96 px + safe area (§4).
+          SliverToBoxAdapter(
+            child: SizedBox(height: 96 + bottomInset),
           ),
         ],
       ),
@@ -141,6 +209,79 @@ class InfoScreen extends ConsumerWidget {
 String _display(String value) {
   final text = value.trim();
   return text.isEmpty ? 'Belum diatur' : text;
+}
+
+/// Keterangan kecil di atas kartu kontak saat pengaturan belum siap.
+class _SettingsNotice extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback? onRetry;
+
+  const _SettingsNotice.loading()
+      : isLoading = true,
+        onRetry = null;
+
+  const _SettingsNotice.error({required this.onRetry}) : isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isError = !isLoading;
+    final accent = isError ? AppColors.danger : AppColors.primaryMain;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: isError
+            ? AppColors.statusRejectedBg
+            : AppColors.mintSoftBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isError
+              ? AppColors.danger.withValues(alpha: 0.24)
+              : AppColors.mintAccent,
+        ),
+      ),
+      child: Row(
+        children: [
+          if (isLoading)
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: accent,
+              ),
+            )
+          else
+            Icon(Icons.cloud_off_rounded, size: 18, color: accent),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              isLoading
+                  ? 'Memuat kontak admin…'
+                  : 'Kontak admin belum bisa dimuat. Nilai di bawah tampil '
+                      'sebagai "Belum diatur".',
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.45,
+                fontWeight: FontWeight.w500,
+                color: isError ? AppColors.danger : AppColors.textMuted,
+              ),
+            ),
+          ),
+          if (onRetry != null)
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.danger,
+                minimumSize: const Size(0, _touchTarget),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: const Text('Coba Lagi'),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SectionCard extends StatelessWidget {
@@ -161,7 +302,7 @@ class _SectionCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.cardSurface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(_cardRadius),
         border: Border.all(color: AppColors.borderLine),
       ),
       child: Column(
@@ -174,22 +315,15 @@ class _SectionCard extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   color: AppColors.mintSoftBackground,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, size: 20, color: AppColors.primaryMain),
               ),
-              const SizedBox(width: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(title, style: _sectionTitle)),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           ...children,
         ],
       ),
@@ -221,18 +355,19 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final shown = _display(value);
     final isUnset = shown == 'Belum diatur';
-    const labelStyle = TextStyle(fontSize: 13, color: AppColors.textMuted);
     final valueStyle = TextStyle(
-      fontSize: 13,
-      fontWeight: isUnset ? FontWeight.w500 : FontWeight.w700,
+      fontSize: 13.5,
+      fontWeight: isUnset ? FontWeight.w500 : FontWeight.w600,
       fontStyle: isUnset ? FontStyle.italic : FontStyle.normal,
+      height: 1.4,
       color: isUnset ? AppColors.textMuted : AppColors.textPrimary,
+      fontFeatures: _tabular,
     );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Label dan nilai dibaca sebagai satu kalimat oleh pembaca layar;
           // teks visual tidak memunculkan duplikat.
@@ -241,31 +376,33 @@ class _InfoRow extends StatelessWidget {
               container: true,
               label: '$label: $shown',
               excludeSemantics: true,
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 130,
-                    child: Text(label, style: labelStyle),
-                  ),
-                  Expanded(child: Text(shown, style: valueStyle)),
+                  Text(label, style: _rowLabel),
+                  const SizedBox(height: 4),
+                  Text(shown, style: valueStyle),
                 ],
               ),
             ),
           ),
-          if (copyValue != null)
+          if (copyValue != null) ...[
+            const SizedBox(width: 8),
             IconButton(
               onPressed: () => _copy(context),
+              tooltip: 'Salin nomor admin',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: _touchTarget,
+                minHeight: _touchTarget,
+              ),
               icon: const Icon(
                 Icons.copy_rounded,
-                size: 16,
+                size: 18,
                 color: AppColors.primaryMain,
               ),
-              tooltip: 'Salin nomor admin',
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
+          ],
         ],
       ),
     );
@@ -281,13 +418,13 @@ class _StepRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 22,
-            height: 22,
+            width: 24,
+            height: 24,
             alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: AppColors.mintSoftBackground,
@@ -299,17 +436,18 @@ class _StepRow extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 color: AppColors.primaryDark,
+                fontFeatures: _tabular,
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
               style: const TextStyle(
                 fontSize: 13,
                 color: AppColors.textPrimary,
-                height: 1.4,
+                height: 1.5,
               ),
             ),
           ),
@@ -329,41 +467,88 @@ class _ComplaintFormCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.mintSoftBackground,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(_cardRadius),
         border: Border.all(color: AppColors.mintAccent),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Formulir Pengaduan',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          const Text('Formulir Pengaduan', style: _sectionTitle),
           const SizedBox(height: 6),
           const Text(
             'Pengaduan ditanggapi maksimal 1×24 jam pada hari kerja.',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: AppColors.textMuted,
+            ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               // Belum tersedia: tombol sengaja mati agar tidak menyesatkan.
               onPressed: null,
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(0, 48),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
               icon: const Icon(Icons.edit_note_rounded, size: 18),
               label: const Text('Buka Formulir Pengaduan'),
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Formulir pengaduan belum tersedia. Sampaikan pengaduan melalui kontak admin di atas.',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+            'Formulir pengaduan belum tersedia. Sampaikan pengaduan melalui '
+            'kontak admin di atas.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: AppColors.textMuted,
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Seksi konten: lebar maksimal 720 px dengan gutter 16/32 (§4, §10.5).
+class _ContentSection extends StatelessWidget {
+  final Widget child;
+
+  /// Jarak atas dari seksi sebelumnya pada skala 4 pt.
+  final double top;
+
+  const _ContentSection({required this.child, this.top = _sectionGap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ContentWidth(
+      maxWidth: _maxContentWidth,
+      child: Padding(
+        padding: EdgeInsets.only(top: top),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Batas lebar yang sama untuk hero, agar tepi kartu sejajar dengan seksi.
+class _WidthLimit extends StatelessWidget {
+  final Widget child;
+
+  const _WidthLimit({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+        child: child,
       ),
     );
   }
