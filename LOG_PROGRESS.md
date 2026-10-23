@@ -1,5 +1,34 @@
 # LOG PROGRESS
 
+## 2026-10-23 — Revisi tampilan: tema reaktif, tombol admin, koordinat dari Maps
+
+**Tema**
+- `MaterialApp.router` diberi `key: ValueKey(mode)` supaya seluruh pohon
+  dibangun ulang saat mode berganti; sebelumnya widget yang hanya membaca
+  `SibasColors` tidak ikut berubah dan perlu reload.
+- `ThemeModeCard` (`lib/core/widgets/theme_mode_card.dart`) dipakai di Profil
+  dan **Pengaturan Aplikasi** (sebelumnya admin tidak punya sakelar).
+- Latar `body` web disamakan dengan tema via `aturLatarWeb` (stub untuk
+  non-web), scrim sheet memakai token `scrim`, dan layar Pindai memakai chrome
+  tema (area kamera tetap gelap).
+
+**Tata letak**
+- Tombol "Simpan Pengaturan" mengisi lebar di <600 px.
+- Hero dashboard admin memakai `LayoutBuilder`: tombol "Buka Pemindai QR" turun
+  ke bawah pada panel sempit sehingga tidak bertumpuk dengan teks.
+
+**Koordinat lokasi**
+- `koordinatDariTautan` (`features/bank_location/domain`) membaca
+  `@lat,lng`, `?q=`, `?ll=`, `?center=`, `?destination=`, dan teks polos.
+- Form lokasi menambah field "Tautan Google Maps" + tombol **Ambil** yang
+  mengisi latitude/longitude. Test: `test/koordinat_tautan_test.dart`.
+
+**Verifikasi**
+- `Analyze & Test` `39981459141` hijau; `Build + Vercel` `39981458980` hijau
+  (`476b35d`). Preview
+  `https://sibas-hlwhkpi2x-rezaghalbis-projects.vercel.app`.
+
+
 ## 2026-10-23 — Lokasi bank sampah, bahasa visual kaca, dan mode gelap
 
 **Lokasi bank sampah**
