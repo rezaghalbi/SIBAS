@@ -1,5 +1,13 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Splash Add to Home Screen iOS
+
+- Tambah 8 gambar `apple-touch-startup-image` portrait untuk ukuran iPhone
+  umum; latar `#F3F8F5` dengan logo SIBAS.
+- `web/index.html` memuat link media query per ukuran. Ini hanya memengaruhi
+  tampilan saat PWA dibuka dari ikon Home Screen, bukan browser biasa.
+- Belum diuji di iPhone nyata.
+
 ## 2026-10-28 — Hapus menu Log Error dari aplikasi
 
 - Log Error bukan untuk mahasiswa maupun petugas bank sampah; menu dan layar
