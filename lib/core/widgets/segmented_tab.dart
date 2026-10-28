@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/sibas_colors.dart';
+import '../theme/app_palette.dart';
 
 /// Sakelar dua/lebih tab dengan bahasa visual yang sama di seluruh aplikasi.
 ///
@@ -19,6 +19,7 @@ class SegmentedTab<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return SegmentedButton<T>(
       expandedInsets: EdgeInsets.zero,
       segments: [
@@ -42,16 +43,16 @@ class SegmentedTab<T> extends StatelessWidget {
         ),
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           return states.contains(WidgetState.selected)
-              ? SibasColors.leaf
-              : SibasColors.surfaceAlt;
+              ? palette.leaf
+              : palette.surfaceAlt;
         }),
         foregroundColor: WidgetStateProperty.resolveWith((states) {
           return states.contains(WidgetState.selected)
               ? Colors.white
-              : SibasColors.text;
+              : palette.text;
         }),
         side: WidgetStatePropertyAll(
-          BorderSide(color: SibasColors.border),
+          BorderSide(color: palette.border),
         ),
       ),
     );

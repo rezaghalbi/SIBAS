@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
-import '../../../../core/theme/sibas_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 
 /// Hub pengelolaan admin. Semua menu master data dan pengaturan masuk dari
 /// sini agar tidak ada dua pintu yang menampilkan daftar yang sama.
@@ -16,7 +16,7 @@ class AdminManageScreen extends StatelessWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: SibasColors.background,
+      backgroundColor: AppPalette.of(context).background,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -82,6 +82,7 @@ class _ManageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return ContentWidth(
       maxWidth: 720,
       child: SurfaceCard(
@@ -101,27 +102,27 @@ class _ManageTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: SibasColors.mintWash,
+                color: palette.mintWash,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 22, color: SibasColors.leaf),
+              child: Icon(icon, size: 22, color: palette.leaf),
             ),
             title: Text(
               title,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: SibasColors.text,
+                color: palette.text,
               ),
             ),
             subtitle: Text(
               subtitle,
-              style: TextStyle(fontSize: 12, color: SibasColors.muted),
+              style: TextStyle(fontSize: 12, color: palette.muted),
             ),
             trailing: Icon(
               Icons.chevron_right_rounded,
               size: 20,
-              color: SibasColors.muted,
+              color: palette.muted,
             ),
           ),
         ),

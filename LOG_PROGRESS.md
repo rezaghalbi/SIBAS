@@ -1,5 +1,12 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Perbaiki teks hilang di mode terang
+
+- Hub Kelola, kartu mode tampilan, dan tab Setoran/Penarikan kini membaca
+  `AppPalette` dari theme aktif, bukan `SibasColors` global, agar teks tetap
+  terbaca saat mode terang.
+- Warna foreground SegmentedButton mode dibuat eksplisit.
+
 ## 2026-10-28 — Rapikan teks login, splash, dan label teknis
 
 - Hapus kotak pemberitahuan "diarahkan otomatis sesuai akun" di login.
