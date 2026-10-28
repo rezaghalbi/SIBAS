@@ -1,5 +1,11 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Preconnect API dan preload logo web
+
+- `web/index.html` membuka koneksi awal ke Supabase dan memuat logo login
+  lebih awal. Berlaku untuk browser Android/desktop/iOS.
+- Tanpa service worker/offline dan tanpa perubahan APK tambahan.
+
 ## 2026-10-28 — Splash iOS mode gelap + cache aset
 
 - Tambah 8 `apple-touch-startup-image` mode gelap untuk iPhone umum.
