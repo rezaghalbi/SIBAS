@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/status_helper.dart';
@@ -7,12 +8,13 @@ import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/skeleton.dart';
+import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../verification/data/csv_export.dart';
 import '../../../verification/data/csv_download_stub.dart'
     if (dart.library.js_interop) '../../../verification/data/csv_download_web.dart';
 import '../../../verification/presentation/providers/verification_provider.dart';
-import '../../../verification/presentation/widgets/verification_bottom_sheet.dart';
+import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
 import '../../domain/models/admin_history_filter.dart';
@@ -29,23 +31,40 @@ TextStyle get _sectionTitle => TextStyle(
   color: SibasColors.text,
 );
 
-/// Riwayat seluruh penyetoran (semua status) untuk Admin,
-/// dengan filter status & filter tanggal cepat sesuai prd.md.
+/// Riwayat seluruh transaksi (setoran & penarikan) untuk Admin,
+/// dengan filter status dan filter tanggal cepat.
+enum _HistoryTab { setoran, penarikan }
+
 class AdminHistoryScreen extends ConsumerStatefulWidget {
-  const AdminHistoryScreen({super.key});
+  /// Tab awal dari query `?tab=penarikan`; null berarti setoran.
+  final String? initialTab;
+
+  const AdminHistoryScreen({super.key, this.initialTab});
 
   @override
   ConsumerState<AdminHistoryScreen> createState() => _AdminHistoryScreenState();
 }
 
 class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
-  static const _statuses = <String?>[
+  static const _statusesSetoran = <String?>[
     null,
     'PENDING',
     'APPROVED',
     'REJECTED',
     'EXPIRED',
   ];
+
+  static const _statusesPenarikan = <String?>[
+    null,
+    'PENDING',
+    'APPROVED',
+    'REJECTED',
+  ];
+
+  _HistoryTab _tab = _HistoryTab.setoran;
+
+  List<String?> get _statuses =>
+      _tab == _HistoryTab.setoran ? _statusesSetoran : _statusesPenarikan;
 
   /// null = Semua, 1 = hari ini, 7 = 7 hari terakhir
   static const _dayFilters = <int?>[null, 1, 7];
@@ -56,9 +75,22 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
   @override
   void initState() {
     super.initState();
+    _tab = widget.initialTab == 'penarikan'
+        ? _HistoryTab.penarikan
+        : _HistoryTab.setoran;
     _searchController = TextEditingController(
       text: ref.read(adminHistoryFilterProvider).query,
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant AdminHistoryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab == widget.initialTab) return;
+    final tab = widget.initialTab == 'penarikan'
+        ? _HistoryTab.penarikan
+        : _HistoryTab.setoran;
+    if (tab != _tab) setState(() => _tab = tab);
   }
 
   @override
@@ -74,6 +106,17 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
       final rentang = AdminHistoryFilter.rentangHari(days);
       return f.copyWith(startDate: rentang.start, endDate: rentang.end);
     });
+  }
+
+  void _pilihTab(_HistoryTab tab) {
+    if (tab == _tab) return;
+    setState(() => _tab = tab);
+    if (tab == _HistoryTab.penarikan &&
+        ref.read(adminHistoryFilterProvider).status == 'EXPIRED') {
+      ref.read(adminHistoryFilterProvider.notifier).update(
+            (f) => f.copyWith(clearStatus: true),
+          );
+    }
   }
 
   void _pilihStatus(String? status) {
@@ -195,6 +238,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final txState = ref.watch(adminHistoryTransactionsProvider);
+    final wdState = ref.watch(adminHistoryWithdrawalsProvider);
     final filter = ref.watch(adminHistoryFilterProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
@@ -207,58 +251,18 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
           children: [
             _WidthLimit(
               child: HeroHeader(
-                title: 'Riwayat Penyetoran',
-                subtitle: 'Semua setoran dan statusnya',
-                trailing: _mengekspor
-                    ? const SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      )
-                    : PopupMenuButton<String>(
-                        tooltip: 'Ekspor CSV',
-                        padding: EdgeInsets.zero,
-                        icon: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.download_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        onSelected: (jenis) {
-                          if (_mengekspor) return;
-                          if (jenis == 'penarikan') {
-                            _eksporPenarikan();
-                            return;
-                          }
-                          _eksporSetoran();
-                        },
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(
-                            value: 'setoran',
-                            child: Text('Rekap setoran'),
-                          ),
-                          PopupMenuItem(
-                            value: 'penarikan',
-                            child: Text('Rekap penarikan'),
-                          ),
-                        ],
-                      ),
+                title: 'Riwayat Transaksi',
+                subtitle: 'Setoran & penarikan',
+                trailing: _buildExportButton(),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: ContentWidth(
+                child: _HistoryTabSwitch(
+                  value: _tab,
+                  onChanged: _pilihTab,
+                ),
               ),
             ),
             Expanded(
@@ -267,7 +271,12 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 16),
-                    _searchField(showClear: filter.query.isNotEmpty),
+                    _searchField(
+                      showClear: filter.query.isNotEmpty,
+                      hint: _tab == _HistoryTab.setoran
+                          ? 'Cari nama, NIM, atau kode'
+                          : 'Cari nama atau NIM',
+                    ),
                     const SizedBox(height: 12),
                     SizedBox(
                       height: _touchTarget,
@@ -281,78 +290,9 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: txState.when(
-                        data: (list) {
-                          if (list.isEmpty) {
-                            return _centeredState(
-                              _EmptyState(
-                                searching: filter.query.trim().isNotEmpty,
-                                hasFilter: filter.status != null ||
-                                    filter.hasDateFilter,
-                                onClearQuery: _clearQuery,
-                                onResetFilters: _resetFilters,
-                                onReload: () {
-                                  ref.invalidate(
-                                    adminHistoryTransactionsProvider,
-                                  );
-                                },
-                              ),
-                            );
-                          }
-                          final limit =
-                              ref.watch(adminPageLimitProvider);
-                          final adaLagi = list.length >= limit;
-                          return ListView.builder(
-                            padding: EdgeInsets.only(
-                              bottom: 96 + bottomInset,
-                            ),
-                            itemCount: list.length + (adaLagi ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              if (index == list.length) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: 4,
-                                    bottom: 8,
-                                  ),
-                                  child: OutlinedButton(
-                                    onPressed: () => ref
-                                        .read(
-                                          adminPageLimitProvider.notifier,
-                                        )
-                                        .state += 50,
-                                    style: OutlinedButton.styleFrom(
-                                      minimumSize: const Size(0, 48),
-                                      foregroundColor: SibasColors.leaf,
-                                      side: BorderSide(
-                                        color: SibasColors.border,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Muat ${limit} riwayat lagi',
-                                    ),
-                                  ),
-                                );
-                              }
-                              return _historyRow(list[index]);
-                            },
-                          );
-                        },
-                        loading: () => _centeredState(const _LoadingCard()),
-                        error: (_, __) => _centeredState(
-                          _StateCard(
-                            icon: Icons.cloud_off_rounded,
-                            title: 'Riwayat gagal dimuat',
-                            message: 'Periksa koneksi Anda, lalu muat '
-                                'ulang riwayat.',
-                            actionLabel: 'Coba lagi',
-                            onAction: () {
-                              ref.invalidate(
-                                adminHistoryTransactionsProvider,
-                              );
-                            },
-                          ),
-                        ),
-                      ),
+                      child: _tab == _HistoryTab.setoran
+                          ? _buildSetoran(txState, filter, bottomInset)
+                          : _buildPenarikan(wdState, filter, bottomInset),
                     ),
                   ],
                 ),
@@ -360,6 +300,175 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildExportButton() {
+    if (_mengekspor) {
+      return const SizedBox(
+        width: 40,
+        height: 40,
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return PopupMenuButton<String>(
+      tooltip: 'Ekspor CSV',
+      padding: EdgeInsets.zero,
+      icon: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.download_rounded,
+          color: Colors.white,
+          size: 20,
+        ),
+      ),
+      onSelected: (jenis) {
+        if (_mengekspor) return;
+        if (jenis == 'penarikan') {
+          _eksporPenarikan();
+          return;
+        }
+        _eksporSetoran();
+      },
+      itemBuilder: (_) => const [
+        PopupMenuItem(
+          value: 'setoran',
+          child: Text('Rekap setoran'),
+        ),
+        PopupMenuItem(
+          value: 'penarikan',
+          child: Text('Rekap penarikan'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSetoran(
+    AsyncValue<List<Map<String, dynamic>>> txState,
+    AdminHistoryFilter filter,
+    double bottomInset,
+  ) {
+    return txState.when(
+      data: (list) {
+        if (list.isEmpty) {
+          return _centeredState(
+            _EmptyState(
+              searching: filter.query.trim().isNotEmpty,
+              hasFilter: filter.status != null || filter.hasDateFilter,
+              isWithdrawal: false,
+              onClearQuery: _clearQuery,
+              onResetFilters: _resetFilters,
+              onReload: () {
+                ref.invalidate(adminHistoryTransactionsProvider);
+              },
+            ),
+          );
+        }
+        final limit = ref.watch(adminPageLimitProvider);
+        final adaLagi = list.length >= limit;
+        return ListView.builder(
+          padding: EdgeInsets.only(bottom: 96 + bottomInset),
+          itemCount: list.length + (adaLagi ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == list.length) {
+              return _muatLagi(limit);
+            }
+            return _historyRow(list[index]);
+          },
+        );
+      },
+      loading: () => _centeredState(const _LoadingCard()),
+      error: (_, __) => _centeredState(
+        _StateCard(
+          icon: Icons.cloud_off_rounded,
+          title: 'Riwayat gagal dimuat',
+          message: 'Periksa koneksi Anda, lalu muat ulang riwayat.',
+          actionLabel: 'Coba lagi',
+          onAction: () {
+            ref.invalidate(adminHistoryTransactionsProvider);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPenarikan(
+    AsyncValue<List<WithdrawalModel>> state,
+    AdminHistoryFilter filter,
+    double bottomInset,
+  ) {
+    return state.when(
+      data: (list) {
+        if (list.isEmpty) {
+          return _centeredState(
+            _EmptyState(
+              searching: filter.query.trim().isNotEmpty,
+              hasFilter: filter.status != null || filter.hasDateFilter,
+              isWithdrawal: true,
+              onClearQuery: _clearQuery,
+              onResetFilters: _resetFilters,
+              onReload: () {
+                ref.invalidate(adminHistoryWithdrawalsProvider);
+              },
+            ),
+          );
+        }
+        final limit = ref.watch(adminPageLimitProvider);
+        final adaLagi = list.length >= limit;
+        return ListView.builder(
+          padding: EdgeInsets.only(bottom: 96 + bottomInset),
+          itemCount: list.length + (adaLagi ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == list.length) {
+              return _muatLagi(limit);
+            }
+            return _withdrawalRow(list[index]);
+          },
+        );
+      },
+      loading: () => _centeredState(const _LoadingCard()),
+      error: (_, __) => _centeredState(
+        _StateCard(
+          icon: Icons.cloud_off_rounded,
+          title: 'Riwayat penarikan gagal dimuat',
+          message: 'Periksa koneksi Anda, lalu muat ulang riwayat.',
+          actionLabel: 'Coba lagi',
+          onAction: () {
+            ref.invalidate(adminHistoryWithdrawalsProvider);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _muatLagi(int limit) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: OutlinedButton(
+        onPressed: () =>
+            ref.read(adminPageLimitProvider.notifier).state += 50,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 48),
+          foregroundColor: SibasColors.leaf,
+          side: BorderSide(color: SibasColors.border),
+        ),
+        child: Text('Muat $limit riwayat lagi'),
       ),
     );
   }
@@ -404,7 +513,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
     );
   }
 
-  Widget _searchField({required bool showClear}) {
+  Widget _searchField({required bool showClear, String? hint}) {
     return Container(
       constraints: const BoxConstraints(minHeight: 52),
       alignment: Alignment.center,
@@ -433,7 +542,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
           focusedBorder: InputBorder.none,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
-          hintText: 'Cari nama, NIM, atau kode',
+          hintText: hint ?? 'Cari nama, NIM, atau kode',
           hintMaxLines: 1,
           hintStyle: TextStyle(
             fontSize: 15,
@@ -481,7 +590,6 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
           (item['created_at'] as String?) ?? '',
         )?.toLocal() ??
         DateTime.fromMillisecondsSinceEpoch(0);
-    final isPending = status.toUpperCase() == 'PENDING';
     final reason = (item['rejection_reason'] as String?)?.trim() ?? '';
     final id = item['id'];
 
@@ -520,37 +628,6 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                   ),
                 ),
               ),
-              if (isPending) ...[
-                const SizedBox(width: 8),
-                SizedBox(
-                  height: _touchTarget,
-                  child: OutlinedButton.icon(
-                    onPressed: () => VerificationBottomSheet.show(
-                      context,
-                      transactionData: item,
-                      onVerificationComplete: () {
-                        ref.invalidate(adminMetricsProvider);
-                        ref.invalidate(adminTransactionsProvider);
-                        ref.invalidate(adminHistoryTransactionsProvider);
-                      },
-                    ),
-                    icon: const Icon(Icons.fact_check_outlined, size: 16),
-                    label: const Text('Validasi'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: SibasColors.leaf,
-                      side: BorderSide(color: SibasColors.border),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -571,6 +648,167 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  /// Satu baris penarikan pada tab Riwayat (read-only).
+  Widget _withdrawalRow(WithdrawalModel item) {
+    final currency = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    final date = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
+    final reason = (item.rejectionReason ?? '').trim();
+
+    return SurfaceCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/withdrawal/${item.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: SibasColors.mintWash,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.payments_rounded,
+                    color: SibasColors.leaf,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              currency.format(item.amount),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                                color: SibasColors.text,
+                              ),
+                            ),
+                          ),
+                          StatusBadge(status: item.status),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${item.studentName ?? 'Mahasiswa'} • '
+                        '${item.studentNim ?? '-'}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: SibasColors.muted,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        date.format(item.createdAt),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: SibasColors.muted,
+                          fontFeatures: const [
+                            FontFeature.tabularFigures(),
+                          ],
+                        ),
+                      ),
+                      if (reason.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Alasan: $reason',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: SibasColors.status.badText,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: SibasColors.muted,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryTabSwitch extends StatelessWidget {
+  const _HistoryTabSwitch({required this.value, required this.onChanged});
+
+  final _HistoryTab value;
+  final ValueChanged<_HistoryTab> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<_HistoryTab>(
+      expandedInsets: EdgeInsets.zero,
+      segments: const [
+        ButtonSegment<_HistoryTab>(
+          value: _HistoryTab.setoran,
+          label: Text('Setoran'),
+        ),
+        ButtonSegment<_HistoryTab>(
+          value: _HistoryTab.penarikan,
+          label: Text('Penarikan'),
+        ),
+      ],
+      selected: {value},
+      showSelectedIcon: false,
+      onSelectionChanged: (selection) => onChanged(selection.first),
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll<Size>(Size(0, 44)),
+        textStyle: const WidgetStatePropertyAll<TextStyle>(
+          TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.1,
+          ),
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? SibasColors.leaf
+              : SibasColors.surfaceAlt;
+        }),
+        foregroundColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? Colors.white
+              : SibasColors.text;
+        }),
+        side: WidgetStatePropertyAll(
+          BorderSide(color: SibasColors.border),
+        ),
+      ),
     );
   }
 }
@@ -656,6 +894,7 @@ class _EmptyState extends StatelessWidget {
   const _EmptyState({
     required this.searching,
     required this.hasFilter,
+    required this.isWithdrawal,
     required this.onClearQuery,
     required this.onResetFilters,
     required this.onReload,
@@ -663,6 +902,7 @@ class _EmptyState extends StatelessWidget {
 
   final bool searching;
   final bool hasFilter;
+  final bool isWithdrawal;
   final VoidCallback onClearQuery;
   final VoidCallback onResetFilters;
   final VoidCallback onReload;
@@ -680,9 +920,13 @@ class _EmptyState extends StatelessWidget {
     }
     if (!hasFilter) {
       return _StateCard(
-        icon: Icons.receipt_long_rounded,
-        title: 'Belum ada riwayat',
-        message: 'Setoran mahasiswa akan tampil di sini setelah dikirim.',
+        icon: isWithdrawal
+            ? Icons.account_balance_wallet_outlined
+            : Icons.receipt_long_rounded,
+        title: isWithdrawal ? 'Belum ada penarikan' : 'Belum ada riwayat',
+        message: isWithdrawal
+            ? 'Pengajuan penarikan mahasiswa akan tampil di sini.'
+            : 'Setoran mahasiswa akan tampil di sini setelah dikirim.',
         actionLabel: 'Muat ulang',
         onAction: onReload,
       );

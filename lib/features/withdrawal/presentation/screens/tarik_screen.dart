@@ -8,13 +8,10 @@ import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
-import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../bank_location/presentation/providers/bank_location_provider.dart';
 import '../../../bank_location/presentation/widgets/location_section.dart';
 import '../../../bank_location/domain/models/bank_location_model.dart';
-import '../../domain/models/withdrawal_model.dart';
-import '../providers/withdrawal_provider.dart';
 import '../widgets/withdraw_qr_sheet.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
@@ -24,7 +21,6 @@ final _currency = NumberFormat.currency(
   decimalDigits: 0,
 );
 
-final _shortDate = DateFormat('dd MMM yyyy', 'id_ID');
 
 /// Judul seksi Glass 2.0 (§3): 15.5 px, w700, tracking rapat.
 TextStyle get _sectionTitle => TextStyle(
@@ -144,7 +140,6 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
   @override
   Widget build(BuildContext context) {
     final balanceState = ref.watch(availableBalanceProvider);
-    final withdrawalsState = ref.watch(studentWithdrawalsProvider);
     final isSubmitting = ref.watch(withdrawalControllerProvider).isLoading;
     final lokasi = ref.watch(selectedLocationProvider);
     final hasLocation = lokasi != null;
@@ -201,52 +196,18 @@ class _TarikScreenState extends ConsumerState<TarikScreen> {
             child: ContentWidth(
               maxWidth: _contentMaxWidth,
               child: Padding(
-                padding: EdgeInsets.only(top: 24, bottom: 12),
-                child: Text('Riwayat Penarikan', style: _sectionTitle),
+                padding: const EdgeInsets.only(top: 12),
+                child: TextButton.icon(
+                  onPressed: () => context.push('/history?tab=penarikan'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: SibasColors.leaf,
+                    minimumSize: const Size(0, 44),
+                  ),
+                  icon: const Icon(Icons.history_rounded, size: 18),
+                  label: const Text('Lihat riwayat penarikan'),
+                ),
               ),
             ),
-          ),
-          ...withdrawalsState.when<List<Widget>>(
-            loading: () => [
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ),
-            ],
-            error: (_, __) => [
-              SliverToBoxAdapter(
-                child: ContentWidth(
-                  maxWidth: _contentMaxWidth,
-                  child: _HistoryError(
-                    onRetry: () => ref.invalidate(studentWithdrawalsProvider),
-                  ),
-                ),
-              ),
-            ],
-            data: (items) => items.isEmpty
-                ? [
-                    const SliverToBoxAdapter(
-                      child: ContentWidth(
-                        maxWidth: _contentMaxWidth,
-                        child: _EmptyHistory(),
-                      ),
-                    ),
-                  ]
-                : [
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => ContentWidth(
-                          maxWidth: _contentMaxWidth,
-                          child: _WithdrawalTile(
-                            withdrawal: items[index],
-                          ),
-                        ),
-                        childCount: items.length,
-                      ),
-                    ),
-                  ],
           ),
           SliverToBoxAdapter(
             child: SizedBox(
@@ -529,182 +490,6 @@ class _BalancePanel extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Satu baris riwayat penarikan; ketuk untuk membuka detail.
-class _WithdrawalTile extends StatelessWidget {
-  final WithdrawalModel withdrawal;
-
-  const _WithdrawalTile({required this.withdrawal});
-
-  @override
-  Widget build(BuildContext context) {
-    final reason = withdrawal.rejectionReason;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: SurfaceCard(
-        radius: _cardRadius,
-        padding: EdgeInsets.zero,
-        child: Material(
-          color: Colors.transparent,
-          clipBehavior: Clip.antiAlias,
-          borderRadius: BorderRadius.circular(_cardRadius),
-          child: InkWell(
-            onTap: () => context.push('/withdrawal/${withdrawal.id}'),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: SibasColors.mintWash,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.payments_rounded,
-                          color: SibasColors.leaf,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _currency.format(withdrawal.amount),
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                fontFeatures: _tabular,
-                                color: SibasColors.text,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _shortDate.format(withdrawal.createdAt),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: SibasColors.muted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 20,
-                        color: SibasColors.muted,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  StatusBadge(status: withdrawal.status),
-                  if (withdrawal.isPending &&
-                      (withdrawal.qrToken?.isNotEmpty ?? false)) ...[
-                    const SizedBox(height: 4),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: () => showWithdrawQrSheet(
-                          context,
-                          token: withdrawal.qrToken!,
-                          amount: withdrawal.amount,
-                          status: withdrawal.status,
-                        ),
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(0, 44),
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          foregroundColor: SibasColors.leaf,
-                          textStyle: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        icon: const Icon(Icons.qr_code_rounded, size: 18),
-                        label: const Text('Tampilkan QR'),
-                      ),
-                    ),
-                  ],
-                  if (reason != null && reason.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'Alasan: $reason',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: SibasColors.status.badText,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyHistory extends StatelessWidget {
-  const _EmptyHistory();
-
-  @override
-  Widget build(BuildContext context) {
-    return SurfaceCard(
-      radius: _cardRadius,
-      padding: EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-      child: Text(
-        'Belum ada pengajuan penarikan.',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 13, color: SibasColors.muted),
-      ),
-    );
-  }
-}
-
-class _HistoryError extends StatelessWidget {
-  final VoidCallback onRetry;
-
-  const _HistoryError({required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return SurfaceCard(
-      radius: _panelRadius,
-      color: SibasColors.status.rejectedBackground,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Gagal memuat riwayat penarikan.',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: SibasColors.status.badText,
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Coba Lagi'),
-              style: TextButton.styleFrom(foregroundColor: SibasColors.status.badText),
-            ),
-          ),
-        ],
       ),
     );
   }

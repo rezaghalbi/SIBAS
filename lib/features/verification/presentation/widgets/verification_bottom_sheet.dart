@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../bank_location/presentation/providers/bank_location_provider.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
+import '../../../history/presentation/providers/admin_history_provider.dart';
 import '../providers/verification_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
@@ -75,7 +76,9 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
       if (mounted) {
         // Metrik, daftar admin, dan data mahasiswa ikut disegarkan setelah approve.
         ref.invalidate(adminMetricsProvider);
-        ref.invalidate(adminTransactionsProvider);
+        ref.invalidate(adminPendingTransactionsProvider);
+        ref.invalidate(adminRecentTransactionsProvider);
+        ref.invalidate(adminHistoryTransactionsProvider);
         ref.invalidate(currentUserProvider);
         // Detail transaksi yang mungkin masih terbuka ikut disegarkan.
         ref.invalidate(transactionDetailRpcProvider);
@@ -132,7 +135,9 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
 
       if (mounted) {
         ref.invalidate(adminMetricsProvider);
-        ref.invalidate(adminTransactionsProvider);
+        ref.invalidate(adminPendingTransactionsProvider);
+        ref.invalidate(adminRecentTransactionsProvider);
+        ref.invalidate(adminHistoryTransactionsProvider);
         ref.invalidate(transactionDetailRpcProvider);
         Navigator.pop(context);
         widget.onVerificationComplete();

@@ -158,7 +158,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/history',
-                builder: (context, state) => const HistoryScreen(),
+                builder: (context, state) => HistoryScreen(
+                  initialTab: state.uri.queryParameters['tab'],
+                ),
               ),
             ],
           ),
@@ -269,7 +271,9 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/admin/history',
-                builder: (context, state) => const AdminHistoryScreen(),
+                builder: (context, state) => AdminHistoryScreen(
+                  initialTab: state.uri.queryParameters['tab'],
+                ),
               ),
             ],
           ),

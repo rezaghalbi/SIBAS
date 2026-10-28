@@ -175,7 +175,7 @@ class SaldoScreen extends ConsumerWidget {
                                   size: 18,
                                 ),
                                 label: const Text(
-                                  'Riwayat Setoran',
+                                  'Riwayat',
                                   maxLines: 1,
                                   style: TextStyle(
                                     fontSize: 12.5,
@@ -258,9 +258,21 @@ class SaldoScreen extends ConsumerWidget {
                       const SizedBox(height: 26),
                       _SectionTitle(
                         label: 'Penarikan Terakhir',
-                        trailing: withdrawals.isEmpty
-                            ? null
-                            : '${withdrawals.length} pengajuan',
+                        action: TextButton(
+                          onPressed: () =>
+                              context.push('/history?tab=penarikan'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: SibasColors.leaf,
+                            minimumSize: const Size(0, 44),
+                          ),
+                          child: const Text(
+                            'Lihat semua',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       ..._buildWithdrawalSection(
@@ -505,8 +517,9 @@ class _SummaryCard extends StatelessWidget {
 class _SectionTitle extends StatelessWidget {
   final String label;
   final String? trailing;
+  final Widget? action;
 
-  const _SectionTitle({required this.label, this.trailing});
+  const _SectionTitle({required this.label, this.trailing, this.action});
 
   @override
   Widget build(BuildContext context) {
@@ -523,7 +536,9 @@ class _SectionTitle extends StatelessWidget {
             ),
           ),
         ),
-        if (trailing != null)
+        if (action != null)
+          action!
+        else if (trailing != null)
           Text(
             trailing!,
             style: TextStyle(

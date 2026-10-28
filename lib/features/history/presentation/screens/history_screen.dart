@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/widgets/content_width.dart';
+import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/tx_list_item.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/transaction_provider.dart';
+import '../../../withdrawal/domain/models/withdrawal_model.dart';
+import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
+import '../../../withdrawal/presentation/widgets/withdraw_qr_sheet.dart';
 import '../../domain/models/transaction_model.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
@@ -19,23 +24,71 @@ final allStudentTransactionsProvider =
   return repo.getStudentTransactions(user.id, limit: 100);
 });
 
+enum _HistoryTab { setoran, penarikan }
+
 class HistoryScreen extends ConsumerStatefulWidget {
-  const HistoryScreen({super.key});
+  /// Tab awal dari query `?tab=penarikan`; null berarti setoran.
+  final String? initialTab;
+
+  const HistoryScreen({super.key, this.initialTab});
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  String _selectedFilter = 'Semua';
-
-  final List<String> _filters = [
+  static const _filtersSetoran = [
     'Semua',
     'Menunggu Verifikasi',
     'Disetujui',
     'Ditolak',
     'Kedaluwarsa',
   ];
+
+  static const _filtersPenarikan = [
+    'Semua',
+    'Menunggu Verifikasi',
+    'Disetujui',
+    'Ditolak',
+  ];
+
+  _HistoryTab _tab = _HistoryTab.setoran;
+  String _selectedFilter = 'Semua';
+
+  List<String> get _filters => _tab == _HistoryTab.setoran
+      ? _filtersSetoran
+      : _filtersPenarikan;
+
+  @override
+  void initState() {
+    super.initState();
+    _tab = widget.initialTab == 'penarikan'
+        ? _HistoryTab.penarikan
+        : _HistoryTab.setoran;
+  }
+
+  @override
+  void didUpdateWidget(covariant HistoryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab == widget.initialTab) return;
+    final tab = widget.initialTab == 'penarikan'
+        ? _HistoryTab.penarikan
+        : _HistoryTab.setoran;
+    if (tab != _tab) {
+      setState(() {
+        _tab = tab;
+        _selectedFilter = 'Semua';
+      });
+    }
+  }
+
+  void _pilihTab(_HistoryTab tab) {
+    if (tab == _tab) return;
+    setState(() {
+      _tab = tab;
+      _selectedFilter = 'Semua';
+    });
+  }
 
   bool _matchesFilter(TransactionModel tx) {
     if (_selectedFilter == 'Semua') return true;
@@ -47,14 +100,30 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     return true;
   }
 
+  /// Filter status untuk tab penarikan (tanpa status kedaluwarsa).
+  bool _matchesWithdrawal(WithdrawalModel w) {
+    if (_selectedFilter == 'Semua') return true;
+    final status = w.status.toUpperCase();
+    if (_selectedFilter == 'Menunggu Verifikasi') return status == 'PENDING';
+    if (_selectedFilter == 'Disetujui') return status == 'APPROVED';
+    if (_selectedFilter == 'Ditolak') return status == 'REJECTED';
+    return true;
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(allStudentTransactionsProvider);
-    await ref.read(allStudentTransactionsProvider.future);
+    ref.invalidate(studentWithdrawalsProvider);
+    if (_tab == _HistoryTab.setoran) {
+      await ref.read(allStudentTransactionsProvider.future);
+    } else {
+      await ref.read(studentWithdrawalsProvider.future);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final historyState = ref.watch(allStudentTransactionsProvider);
+    final withdrawalState = ref.watch(studentWithdrawalsProvider);
 
     return Scaffold(
       backgroundColor: SibasColors.background,
@@ -66,7 +135,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             children: [
               const SizedBox(height: 12),
               const _HistoryHead(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              _HistoryTabSwitch(value: _tab, onChanged: _pilihTab),
+              const SizedBox(height: 16),
               _StatusFilterBar(
                 filters: _filters,
                 selected: _selectedFilter,
@@ -76,25 +147,41 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: historyState.when(
-                  data: _buildList,
-                  loading: () => Center(
-                    child: CircularProgressIndicator(
-                      color: SibasColors.leaf,
-                    ),
-                  ),
-                  error: (error, stackTrace) => RefreshIndicator(
-                    onRefresh: _refresh,
-                    color: SibasColors.leaf,
-                    child: _centeredScrollable(
-                      _HistoryError(
-                        onRetry: () {
-                          _refresh();
-                        },
+                child: _tab == _HistoryTab.setoran
+                    ? historyState.when(
+                        data: _buildList,
+                        loading: () => Center(
+                          child: CircularProgressIndicator(
+                            color: SibasColors.leaf,
+                          ),
+                        ),
+                        error: (error, stackTrace) => RefreshIndicator(
+                          onRefresh: _refresh,
+                          color: SibasColors.leaf,
+                          child: _centeredScrollable(
+                            _HistoryError(
+                              onRetry: () { _refresh(); },
+                            ),
+                          ),
+                        ),
+                      )
+                    : withdrawalState.when(
+                        data: _buildWithdrawals,
+                        loading: () => Center(
+                          child: CircularProgressIndicator(
+                            color: SibasColors.leaf,
+                          ),
+                        ),
+                        error: (error, stackTrace) => RefreshIndicator(
+                          onRefresh: _refresh,
+                          color: SibasColors.leaf,
+                          child: _centeredScrollable(
+                            _HistoryError(
+                              onRetry: () { _refresh(); },
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -153,6 +240,32 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
+  Widget _buildWithdrawals(List<WithdrawalModel> items) {
+    final filtered = items.where(_matchesWithdrawal).toList();
+
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: SibasColors.leaf,
+      child: filtered.isEmpty
+          ? _centeredScrollable(
+              _HistoryEmpty(
+                filter: _selectedFilter,
+                isWithdrawal: true,
+                onResetFilter: _selectedFilter == 'Semua'
+                    ? null
+                    : () => setState(() => _selectedFilter = 'Semua'),
+              ),
+            )
+          : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(top: 4, bottom: 96),
+              itemCount: filtered.length,
+              itemBuilder: (context, index) =>
+                  _WithdrawalHistoryTile(withdrawal: filtered[index]),
+            ),
+    );
+  }
+
   /// Isi pendek (kosong atau gagal) tetap bisa ditarik untuk muat ulang dan
   /// diletakkan di tengah pada layar tinggi.
   Widget _centeredScrollable(Widget child) {
@@ -171,6 +284,188 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _HistoryTabSwitch extends StatelessWidget {
+  const _HistoryTabSwitch({required this.value, required this.onChanged});
+
+  final _HistoryTab value;
+  final ValueChanged<_HistoryTab> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<_HistoryTab>(
+      expandedInsets: EdgeInsets.zero,
+      segments: const [
+        ButtonSegment<_HistoryTab>(
+          value: _HistoryTab.setoran,
+          label: Text('Setoran'),
+        ),
+        ButtonSegment<_HistoryTab>(
+          value: _HistoryTab.penarikan,
+          label: Text('Penarikan'),
+        ),
+      ],
+      selected: {value},
+      showSelectedIcon: false,
+      onSelectionChanged: (selection) => onChanged(selection.first),
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll<Size>(Size(0, 44)),
+        textStyle: const WidgetStatePropertyAll<TextStyle>(
+          TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.1,
+          ),
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? SibasColors.leaf
+              : SibasColors.surfaceAlt;
+        }),
+        foregroundColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? Colors.white
+              : SibasColors.text;
+        }),
+        side: WidgetStatePropertyAll(
+          BorderSide(color: SibasColors.border),
+        ),
+      ),
+    );
+  }
+}
+
+/// Satu penarikan pada tab Riwayat mahasiswa.
+class _WithdrawalHistoryTile extends StatelessWidget {
+  const _WithdrawalHistoryTile({required this.withdrawal});
+
+  final WithdrawalModel withdrawal;
+
+  @override
+  Widget build(BuildContext context) {
+    final currency = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    final date = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
+    final reason = (withdrawal.rejectionReason ?? '').trim();
+
+    return SurfaceCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => context.push('/withdrawal/${withdrawal.id}'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: SibasColors.mintWash,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.payments_rounded,
+                        color: SibasColors.leaf,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            currency.format(withdrawal.amount),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.2,
+                              color: SibasColors.text,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            date.format(withdrawal.createdAt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: SibasColors.muted,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          StatusBadge(status: withdrawal.status),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: SibasColors.muted,
+                    ),
+                  ],
+                ),
+                if (reason.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Alasan: $reason',
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                      color: SibasColors.status.badText,
+                    ),
+                  ),
+                ],
+                if (withdrawal.isPending &&
+                    (withdrawal.qrToken?.isNotEmpty ?? false)) ...[
+                  const SizedBox(height: 2),
+                  TextButton.icon(
+                    onPressed: () => showWithdrawQrSheet(
+                      context,
+                      token: withdrawal.qrToken!,
+                      amount: withdrawal.amount,
+                      status: withdrawal.status,
+                    ),
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      foregroundColor: SibasColors.leaf,
+                      textStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    icon: const Icon(Icons.qr_code_rounded, size: 18),
+                    label: const Text('Tampilkan QR'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -208,7 +503,7 @@ class _HistoryHead extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Riwayat Setoran',
+          'Riwayat Transaksi',
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w800,
@@ -219,7 +514,7 @@ class _HistoryHead extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'Pantau status verifikasi setiap setoran sampah Anda.',
+          'Pantau status setoran dan penarikan sampah Anda.',
           style: TextStyle(
             fontSize: 13,
             height: 1.5,
@@ -323,9 +618,14 @@ class _StatusFilterChip extends StatelessWidget {
 
 /// Keadaan kosong: ikon, satu kalimat, dan aksi lanjut ke layar setor.
 class _HistoryEmpty extends StatelessWidget {
-  const _HistoryEmpty({required this.filter, this.onResetFilter});
+  const _HistoryEmpty({
+    required this.filter,
+    this.isWithdrawal = false,
+    this.onResetFilter,
+  });
 
   final String filter;
+  final bool isWithdrawal;
   final VoidCallback? onResetFilter;
 
   @override
@@ -344,14 +644,20 @@ class _HistoryEmpty extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Icon(
-              Icons.receipt_long_rounded,
+              isWithdrawal
+                  ? Icons.account_balance_wallet_outlined
+                  : Icons.receipt_long_rounded,
               size: 30,
               color: SibasColors.leaf,
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            isAll ? 'Belum ada setoran' : 'Belum ada setoran "$filter"',
+            isAll
+                ? (isWithdrawal ? 'Belum ada penarikan' : 'Belum ada setoran')
+                : (isWithdrawal
+                    ? 'Belum ada penarikan "$filter"'
+                    : 'Belum ada setoran "$filter"'),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -363,9 +669,14 @@ class _HistoryEmpty extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             isAll
-                ? 'Setoran yang Anda kirim akan muncul di sini beserta '
-                    'status verifikasinya.'
-                : 'Coba pilih status lain untuk melihat setoran Anda.',
+                ? (isWithdrawal
+                    ? 'Pengajuan penarikan saldo akan muncul di sini beserta '
+                        'statusnya.'
+                    : 'Setoran yang Anda kirim akan muncul di sini beserta '
+                        'status verifikasinya.')
+                : (isWithdrawal
+                    ? 'Coba pilih status lain untuk melihat penarikan Anda.'
+                    : 'Coba pilih status lain untuk melihat setoran Anda.'),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -377,7 +688,8 @@ class _HistoryEmpty extends StatelessWidget {
           SizedBox(
             height: 44,
             child: FilledButton.icon(
-              onPressed: () => context.go('/setor'),
+              onPressed: () =>
+                  context.go(isWithdrawal ? '/tarik' : '/setor'),
               style: FilledButton.styleFrom(
                 backgroundColor: SibasColors.leaf,
                 foregroundColor: Colors.white,
@@ -391,8 +703,11 @@ class _HistoryEmpty extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('Setor Sampah'),
+              icon: Icon(
+                isWithdrawal ? Icons.savings_rounded : Icons.add_rounded,
+                size: 18,
+              ),
+              label: Text(isWithdrawal ? 'Tarik Dana' : 'Setor Sampah'),
             ),
           ),
           if (onResetFilter != null) ...[

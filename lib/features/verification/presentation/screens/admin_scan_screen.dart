@@ -11,6 +11,7 @@ import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
+import '../../../history/presentation/providers/admin_history_provider.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
 import '../../../../core/theme/sibas_colors.dart';
@@ -277,7 +278,10 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen>
         transactionData: txData,
         onVerificationComplete: () {
           ref.invalidate(adminMetricsProvider);
-          ref.invalidate(adminTransactionsProvider);
+          ref.invalidate(adminPendingTransactionsProvider);
+          ref.invalidate(adminRecentTransactionsProvider);
+          ref.invalidate(adminHistoryTransactionsProvider);
+          ref.invalidate(adminHistoryWithdrawalsProvider);
         },
       );
     } catch (e) {

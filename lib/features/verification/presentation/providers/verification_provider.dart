@@ -25,16 +25,29 @@ final adminFilterProvider = StateProvider<AdminTransactionFilter>((ref) {
   return const AdminTransactionFilter();
 });
 
-/// Provider daftar transaksi admin dengan filter
-final adminTransactionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+/// Antrean setoran yang belum diverifikasi. Dipakai layar Pengajuan agar
+/// tidak menampilkan arsip status lain.
+final adminPendingTransactionsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.watch(verificationRepositoryProvider);
   final filter = ref.watch(adminFilterProvider);
-  // Ikut dibuang saat sesi berganti.
   ref.watch(sessionEpochProvider);
   return repo.getAllTransactions(
     query: filter.query,
-    statusFilter: filter.status,
+    statusFilter: 'PENDING',
     locationId: filter.locationId,
     limit: ref.watch(adminPageLimitProvider),
+  );
+});
+
+/// Lima transaksi terbaru untuk ringkasan dashboard admin.
+final adminRecentTransactionsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(verificationRepositoryProvider);
+  final filter = ref.watch(adminFilterProvider);
+  ref.watch(sessionEpochProvider);
+  return repo.getAllTransactions(
+    locationId: filter.locationId,
+    limit: 5,
   );
 });
