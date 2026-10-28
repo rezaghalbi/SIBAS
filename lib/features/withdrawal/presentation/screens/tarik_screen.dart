@@ -12,6 +12,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../../bank_location/presentation/providers/bank_location_provider.dart';
 import '../../../bank_location/presentation/widgets/location_section.dart';
 import '../../../bank_location/domain/models/bank_location_model.dart';
+import '../providers/withdrawal_provider.dart';
 import '../widgets/withdraw_qr_sheet.dart';
 import '../../../../core/theme/sibas_colors.dart';
 

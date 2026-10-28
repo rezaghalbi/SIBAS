@@ -516,10 +516,9 @@ class _SummaryCard extends StatelessWidget {
 
 class _SectionTitle extends StatelessWidget {
   final String label;
-  final String? trailing;
   final Widget? action;
 
-  const _SectionTitle({required this.label, this.trailing, this.action});
+  const _SectionTitle({required this.label, this.action});
 
   @override
   Widget build(BuildContext context) {
@@ -536,17 +535,7 @@ class _SectionTitle extends StatelessWidget {
             ),
           ),
         ),
-        if (action != null)
-          action!
-        else if (trailing != null)
-          Text(
-            trailing!,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: SibasColors.muted,
-            ),
-          ),
+        if (action != null) action!,
       ],
     );
   }
