@@ -13,7 +13,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SIBAS">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+
+  <!-- CanvasKit diambil dari gstatic; buka koneksi lebih awal -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <!-- Panaskan cache bundle utama sebelum bootstrap memintanya -->
+  <link rel="preload" href="main.dart.js" as="script">
 
   <!-- Theme color sesuai palet SIBAS (#005746 light, #0A1411 dark) -->
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#005746">
@@ -68,6 +73,27 @@
       font-weight: 700;
       font-size: 15px;
       letter-spacing: 0.5px;
+      text-align: center;
+    }
+
+    .loading-stage {
+      color: #4A6B5F;
+      font-size: 13px;
+      letter-spacing: 0.2px;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    .retry-button {
+      background: #16865D;
+      color: #FFFFFF;
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 18px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -83,15 +109,126 @@
       .loading-text {
         color: #DFF3E8;
       }
+
+      .loading-stage {
+        color: #A8C4B8;
+      }
+
+      .retry-button {
+        background: #8FE6B8;
+        color: #0A1411;
+      }
     }
   </style>
 </head>
 
 <body>
-  <div class="loading-container">
+  <div class="loading-container" id="sibas-splash">
     <div class="spinner"></div>
     <div class="loading-text">Memuat SIBAS...</div>
+    <div class="loading-stage" id="sibas-splash-stage"></div>
   </div>
+
+  <script>
+    // Splash SIBAS: teks tahap ringan + pelepasan splash saat frame pertama.
+    // Tidak pernah memblokir aplikasi; semua kegagalan diabaikan.
+    (function () {
+      try {
+        var splash = document.getElementById('sibas-splash');
+        if (!splash) return;
+
+        var stage = document.getElementById('sibas-splash-stage');
+        var tahap = ['Menyiapkan mesin…', 'Mengunduh komponen…', 'Hampir siap…'];
+        var indeks = 0;
+        var selesai = false;
+        var gagalTampil = false;
+        var timerTahap = null;
+        var timerGagal = null;
+        var observer = null;
+
+        var gantiTahap = function () {
+          if (selesai || !stage) return;
+          stage.textContent = tahap[indeks % tahap.length];
+          indeks++;
+        };
+        gantiTahap();
+        timerTahap = setInterval(gantiTahap, 2500);
+
+        var bersihkan = function () {
+          if (timerTahap) clearInterval(timerTahap);
+          if (timerGagal) clearTimeout(timerGagal);
+          timerTahap = null;
+          timerGagal = null;
+          if (observer) {
+            observer.disconnect();
+            observer = null;
+          }
+        };
+
+        // Hanya hentikan timer; observer tetap hidup agar splash error
+        // masih bisa dilepas bila frame pertama akhirnya datang.
+        var berhentiTahap = function () {
+          if (timerTahap) clearInterval(timerTahap);
+          if (timerGagal) clearTimeout(timerGagal);
+          timerTahap = null;
+          timerGagal = null;
+        };
+
+        var hapusSplash = function () {
+          if (selesai) return;
+          selesai = true;
+          bersihkan();
+          try {
+            if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+          } catch (e) {
+            // diamkan
+          }
+        };
+
+        var tampilkanGagal = function () {
+          if (selesai || gagalTampil || !splash) return;
+          gagalTampil = true;
+          berhentiTahap();
+          try {
+            splash.innerHTML = '';
+            var pesan = document.createElement('div');
+            pesan.className = 'loading-text';
+            pesan.textContent = 'Gagal memuat SIBAS. Periksa koneksi.';
+            var tombol = document.createElement('button');
+            tombol.type = 'button';
+            tombol.className = 'retry-button';
+            tombol.textContent = 'Coba lagi';
+            tombol.addEventListener('click', function () {
+              location.reload();
+            });
+            splash.appendChild(pesan);
+            splash.appendChild(tombol);
+          } catch (e) {
+            // diamkan
+          }
+        };
+
+        // Event resmi Flutter web.
+        window.addEventListener('flutter-first-frame', hapusSplash);
+
+        // Fallback: Flutter menyisipkan flt-glass-pane saat engine siap.
+        try {
+          observer = new MutationObserver(function () {
+            if (document.querySelector('flt-glass-pane, flt-scene-host, flt-glass-pane *')) {
+              hapusSplash();
+            }
+          });
+          observer.observe(document.body, { childList: true, subtree: true });
+        } catch (e) {
+          observer = null;
+        }
+
+        timerGagal = setTimeout(tampilkanGagal, 20000);
+      } catch (e) {
+        // diamkan: jangan ganggu pemuatan aplikasi
+      }
+    })();
+  </script>
 
   <script>
     // Banner update Service Worker: hanya tampil bila sudah ada kontrol sebelumnya
@@ -126,6 +263,64 @@
     } catch (e) {
       // diamkan: jangan ganggu pemuatan aplikasi
     }
+  </script>
+
+  <script>
+    // Petunjuk Add to Home Screen khusus iOS Safari (bukan saat standalone).
+    // Dismiss permanen lewat localStorage; gagal storage tidak mengganggu app.
+    (function () {
+      try {
+        var ua = navigator.userAgent || '';
+        var ios = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        if (!ios) return;
+        var standalone = window.navigator.standalone === true ||
+          (window.matchMedia &&
+            window.matchMedia('(display-mode: standalone)').matches);
+        if (standalone) return;
+
+        var kunci = 'sibas.a2hs.dismissed';
+        try {
+          if (localStorage.getItem(kunci) === '1') return;
+        } catch (e) {}
+
+        var tampil = function () {
+          if (document.getElementById('sibas-a2hs')) return;
+          var el = document.createElement('div');
+          el.id = 'sibas-a2hs';
+          el.style.cssText = 'position:fixed;left:12px;right:12px;' +
+            'bottom:calc(12px + env(safe-area-inset-bottom));z-index:9998;' +
+            'background:#005746;color:#fff;border-radius:16px;' +
+            'padding:12px 14px;display:flex;align-items:center;gap:12px;' +
+            'font-family:system-ui,-apple-system,sans-serif;font-size:13px;' +
+            'line-height:1.35;box-shadow:0 8px 24px rgba(0,0,0,.22);';
+          var teks = document.createElement('div');
+          teks.style.flex = '1';
+          teks.textContent =
+            'Pasang SIBAS: ketuk Bagikan, lalu “Tambah ke Layar Utama”.';
+          var tutup = document.createElement('button');
+          tutup.type = 'button';
+          tutup.textContent = 'Mengerti';
+          tutup.style.cssText = 'border:0;border-radius:10px;' +
+            'padding:8px 12px;font:inherit;font-weight:700;' +
+            'background:#fff;color:#005746;';
+          tutup.addEventListener('click', function () {
+            el.remove();
+            try {
+              localStorage.setItem(kunci, '1');
+            } catch (e) {}
+          });
+          el.appendChild(teks);
+          el.appendChild(tutup);
+          document.body.appendChild(el);
+        };
+
+        window.addEventListener('flutter-first-frame', function () {
+          setTimeout(tampil, 1200);
+        });
+      } catch (e) {
+        // diamkan
+      }
+    })();
   </script>
 
   <script src="flutter_bootstrap.js" async></script>

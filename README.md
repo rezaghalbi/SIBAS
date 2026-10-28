@@ -102,7 +102,7 @@ flutter build web --release \
   --dart-define=SUPABASE_URL=<url> \
   --dart-define=SUPABASE_ANON_KEY=<anon-key>
 
-flutter build apk --release --no-tree-shake-icons \
+flutter build apk --release --split-per-abi \
   --dart-define=SUPABASE_URL=<url> \
   --dart-define=SUPABASE_ANON_KEY=<anon-key>
 ```
@@ -255,7 +255,8 @@ Admin punya dua layar operasional:
 - **Data Mahasiswa** (`/admin/students`) — daftar akun role `mahasiswa` dari
   `profiles` (RLS `profiles_select` mengizinkan admin membaca semua profil),
   pencarian lokal nama/NIM/email/WA lewat `saringMahasiswa`, dan detail akun.
-  Layar ini baca-saja; perubahan data akun tidak dilakukan dari aplikasi.
+  Admin dapat mengoreksi nama, NIM, dan nomor WhatsApp lewat RPC
+  `admin_ubah_mahasiswa`; peran, saldo, dan status akun tetap terkunci.
 - **Pengaturan Aplikasi** (`/admin/settings`) — `qr_ttl_minutes` (5–1440,
   default 120) dan kontak admin (email, lokasi, jam layanan). Disimpan ke
   `app_settings` lewat RPC `update_app_settings`; hanya admin. Perubahan TTL

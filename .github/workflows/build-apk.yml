@@ -72,15 +72,24 @@ jobs:
 
       - name: Build Android APK (Release)
         run: |
-          flutter build apk --release --no-tree-shake-icons \
+          flutter build apk --release --split-per-abi \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Ringkasan ukuran APK
+        run: |
+          {
+            echo "### Ukuran APK per ABI"
+            echo '```'
+            ls -lh build/app/outputs/flutter-apk/*.apk
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: sibas-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*.apk
           retention-days: 7
 
       - name: Build Flutter Web
