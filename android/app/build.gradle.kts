@@ -41,6 +41,7 @@ android {
         if (keyProperties != null) {
             create("release") {
                 storeFile = File(rootProject.projectDir, "app/" + keyProperties.getProperty("storeFile"))
+                storeType = keyProperties.getProperty("storeType") ?: "JKS"
                 storePassword = keyProperties.getProperty("storePassword")
                 keyAlias = keyProperties.getProperty("keyAlias")
                 keyPassword = keyProperties.getProperty("keyPassword")

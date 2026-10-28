@@ -65,6 +65,7 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/keystore.jks
           cat > android/key.properties <<EOF
           storeFile=keystore.jks
+          storeType=PKCS12
           storePassword=$ANDROID_STORE_PASSWORD
           keyAlias=$ANDROID_KEY_ALIAS
           keyPassword=$ANDROID_KEY_PASSWORD
@@ -72,20 +73,29 @@ jobs:
 
       - name: Build Android APK (Release)
         run: |
-          flutter build apk --release --no-tree-shake-icons \
+          flutter build apk --release --split-per-abi \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Ringkasan ukuran APK
+        run: |
+          {
+            echo "### Ukuran APK per ABI"
+            echo '```'
+            ls -lh build/app/outputs/flutter-apk/*.apk
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: sibas-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*.apk
           retention-days: 7
 
       - name: Build Flutter Web
         run: |
-          flutter build web --release \
+          flutter build web --release --source-maps \
             --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
             --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 

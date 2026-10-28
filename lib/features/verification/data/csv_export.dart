@@ -89,11 +89,17 @@ String _tanggal(Object? nilai) {
 }
 
 /// Bungkus field yang mengandung koma, kutip, atau baris baru (RFC 4180).
+///
+/// Awalan `=`, `+`, `-`, `@`, tab, atau CR bisa dieksekusi sebagai formula
+/// saat CSV dibuka di Excel/Sheets. Tambahkan kutip tunggal agar sel
+/// diperlakukan sebagai teks (CSV injection).
 String _escape(String nilai) {
-  final perluKutip = nilai.contains(',') ||
-      nilai.contains('"') ||
-      nilai.contains('\n') ||
-      nilai.contains('\r');
-  if (!perluKutip) return nilai;
-  return '"${nilai.replaceAll('"', '""')}"';
+  if (nilai.isEmpty) return nilai;
+  final aman = '=+-@\t\r'.contains(nilai[0]) ? "'$nilai" : nilai;
+  final perluKutip = aman.contains(',') ||
+      aman.contains('"') ||
+      aman.contains('\n') ||
+      aman.contains('\r');
+  if (!perluKutip) return aman;
+  return '"${aman.replaceAll('"', '""')}"';
 }

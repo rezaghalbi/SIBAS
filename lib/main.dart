@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/constants/colors.dart';
 import 'core/constants/theme.dart';
@@ -20,6 +21,10 @@ import 'core/theme/web_background_stub.dart'
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Plus Jakarta Sans dibundel di assets/google_fonts; jangan fetch runtime
+  // ke fonts.gstatic.com (menambah RTT dan font swap di web).
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   // Jangan biarkan exception tak tertangkap menghasilkan layar putih.
   FlutterError.onError = (details) {

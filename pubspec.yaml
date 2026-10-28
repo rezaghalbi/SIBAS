@@ -45,4 +45,6 @@ flutter:
 
   assets:
     - assets/images/sibas-logo.png
+    # Plus Jakarta Sans dibundel agar tidak diunduh runtime (google_fonts).
+    - assets/google_fonts/
 
