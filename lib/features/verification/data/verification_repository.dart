@@ -16,11 +16,40 @@ class VerificationRepository {
   /// Statistik metrik dashboard admin, dihitung di server lewat RPC
   /// `admin_metrics` (klien tidak lagi menarik seluruh baris transaksi).
   /// Tanpa angka pengganti: kegagalan query jadi AsyncError di provider.
-  Future<AdminMetricsModel> getAdminMetrics({String? locationId}) {
+  /// Koreksi berat setoran APPROVED dan sesuaikan saldo/total berat.
+  Future<Map<String, dynamic>> koreksiSetoran({
+    required String transactionId,
+    required double weight,
+    required String reason,
+  }) {
     return guardRequest(() async {
       final res = await _client.rpc(
-        'admin_metrics',
-        params: {'p_location_id': locationId},
+        'koreksi_setoran',
+        params: {
+          'p_transaction_id': transactionId,
+          'p_weight': weight,
+          'p_reason': reason,
+        },
+      );
+      return res is Map
+          ? Map<String, dynamic>.from(res)
+          : <String, dynamic>{};
+    });
+  }
+
+  Future<AdminMetricsModel> getAdminMetrics({
+    String? locationId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    return guardRequest(() async {
+      final res = await _client.rpc(
+        'admin_metrics_rentang',
+        params: {
+          'p_location_id': locationId,
+          'p_start': startDate?.toUtc().toIso8601String(),
+          'p_end': endDate?.toUtc().toIso8601String(),
+        },
       );
       final map = res is Map ? Map<String, dynamic>.from(res) : <String, dynamic>{};
 

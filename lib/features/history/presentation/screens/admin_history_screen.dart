@@ -7,6 +7,7 @@ import '../../../../core/utils/status_helper.dart';
 import '../../../../core/widgets/content_width.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
+import '../../../../core/widgets/segmented_tab.dart';
 import '../../../../core/widgets/skeleton.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/tx_list_item.dart';
@@ -265,8 +266,12 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: ContentWidth(
-                child: _HistoryTabSwitch(
+                child: SegmentedTab<_HistoryTab>(
                   value: _tab,
+                  items: const {
+                    _HistoryTab.setoran: 'Setoran',
+                    _HistoryTab.penarikan: 'Penarikan',
+                  },
                   onChanged: _pilihTab,
                 ),
               ),
@@ -580,7 +585,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
   }
 
   /// Satu baris riwayat: `TxListItem` (kolom kanan tidak terpotong) dengan
-  /// catatan nama mahasiswa dan aksi validasi di bawahnya.
+  /// catatan nama mahasiswa. Aksi validasi hanya ada di layar Pengajuan.
   Widget _historyRow(Map<String, dynamic> item) {
     final profile = item['profiles'] as Map<String, dynamic>?;
     final category = item['trash_types'] as Map<String, dynamic>?;
@@ -769,59 +774,6 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
   }
 }
 
-class _HistoryTabSwitch extends StatelessWidget {
-  const _HistoryTabSwitch({required this.value, required this.onChanged});
-
-  final _HistoryTab value;
-  final ValueChanged<_HistoryTab> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<_HistoryTab>(
-      expandedInsets: EdgeInsets.zero,
-      segments: const [
-        ButtonSegment<_HistoryTab>(
-          value: _HistoryTab.setoran,
-          label: Text('Setoran'),
-        ),
-        ButtonSegment<_HistoryTab>(
-          value: _HistoryTab.penarikan,
-          label: Text('Penarikan'),
-        ),
-      ],
-      selected: {value},
-      showSelectedIcon: false,
-      onSelectionChanged: (selection) => onChanged(selection.first),
-      style: ButtonStyle(
-        minimumSize: const WidgetStatePropertyAll<Size>(Size(0, 44)),
-        textStyle: const WidgetStatePropertyAll<TextStyle>(
-          TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.1,
-          ),
-        ),
-        backgroundColor: WidgetStateProperty.resolveWith((states) {
-          return states.contains(WidgetState.selected)
-              ? SibasColors.leaf
-              : SibasColors.surfaceAlt;
-        }),
-        foregroundColor: WidgetStateProperty.resolveWith((states) {
-          return states.contains(WidgetState.selected)
-              ? Colors.white
-              : SibasColors.text;
-        }),
-        side: WidgetStatePropertyAll(
-          BorderSide(color: SibasColors.border),
-        ),
-      ),
-    );
-  }
-}
-
-// --------------------------------------------------------------------- Widget
-
-/// Batas lebar 1120 px agar hero sejajar dengan daftar di desktop (§4).
 class _WidthLimit extends StatelessWidget {
   const _WidthLimit({required this.child});
 

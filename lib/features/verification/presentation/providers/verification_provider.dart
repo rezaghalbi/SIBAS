@@ -11,13 +11,33 @@ final verificationRepositoryProvider = Provider<VerificationRepository>((ref) {
 /// Jumlah baris yang diminta daftar admin. Naik saat "Muat lebih banyak".
 final adminPageLimitProvider = StateProvider<int>((ref) => 50);
 
-/// Provider metrik admin, mengikuti filter lokasi aktif.
+enum AdminMetricsPeriod { all, month }
+
+/// Periode ringkasan dashboard admin.
+final adminMetricsPeriodProvider =
+    StateProvider<AdminMetricsPeriod>((ref) => AdminMetricsPeriod.all);
+
+/// Provider metrik admin, mengikuti filter lokasi dan periode aktif.
 final adminMetricsProvider = FutureProvider<AdminMetricsModel>((ref) async {
   final repo = ref.watch(verificationRepositoryProvider);
   final lokasi = ref.watch(adminFilterProvider).locationId;
+  final periode = ref.watch(adminMetricsPeriodProvider);
   // Ikut dibuang saat sesi berganti (logout/login akun lain).
   ref.watch(sessionEpochProvider);
-  return repo.getAdminMetrics(locationId: lokasi);
+
+  DateTime? mulai;
+  DateTime? selesai;
+  if (periode == AdminMetricsPeriod.month) {
+    final now = DateTime.now();
+    mulai = DateTime(now.year, now.month);
+    selesai = DateTime(now.year, now.month + 1);
+  }
+
+  return repo.getAdminMetrics(
+    locationId: lokasi,
+    startDate: mulai,
+    endDate: selesai,
+  );
 });
 
 /// State filter transaksi admin

@@ -36,18 +36,47 @@ class StudentRepository {
     });
   }
 
-  Future<List<StudentModel>> getStudents() {
+  Future<List<StudentModel>> getStudents({
+    String query = '',
+    int limit = 100,
+    int offset = 0,
+  }) {
     return guardRequest(() async {
-      final res = await _client
+      var builder = _client
           .from('profiles')
           .select(_kolom)
-          .eq('role', 'mahasiswa')
+          .eq('role', 'mahasiswa');
+
+      final needle = query.trim().replaceAll(RegExp(r'[,()*]'), ' ').trim();
+      if (needle.isNotEmpty) {
+        final pola = '%$needle%';
+        builder = builder.or(
+          'full_name.ilike.$pola,'
+          'nim.ilike.$pola,'
+          'email.ilike.$pola,'
+          'phone.ilike.$pola',
+        );
+      }
+
+      final res = await builder
           .order('full_name')
-          .limit(500);
+          .range(offset, offset + limit.clamp(1, 5000) - 1);
       return (res as List<dynamic>)
           .cast<Map<String, dynamic>>()
           .map(StudentModel.fromJson)
           .toList();
+    });
+  }
+
+  /// Jumlah total mahasiswa, tanpa menarik seluruh baris.
+  Future<int> getStudentCount() {
+    return guardRequest(() async {
+      final res = await _client
+          .from('profiles')
+          .select('id')
+          .eq('role', 'mahasiswa')
+          .count(CountOption.exact);
+      return res.count ?? 0;
     });
   }
 }

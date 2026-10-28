@@ -23,6 +23,7 @@ import '../../features/trash_type/presentation/screens/trash_type_form_screen.da
 import '../../features/trash_type/presentation/screens/trash_type_management_screen.dart';
 import '../../features/verification/presentation/providers/verification_provider.dart';
 import '../../features/verification/presentation/screens/admin_dashboard_screen.dart';
+import '../../features/verification/presentation/screens/admin_error_logs_screen.dart';
 import '../../features/verification/presentation/screens/admin_scan_screen.dart';
 import '../../features/verification/presentation/screens/admin_submissions_screen.dart';
 import '../../features/withdrawal/presentation/screens/tarik_screen.dart';
@@ -220,6 +221,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/locations',
         builder: (context, state) => const AdminLocationsScreen(),
+      ),
+      GoRoute(
+        path: '/admin/error-logs',
+        builder: (context, state) => const AdminErrorLogsScreen(),
       ),
       // Form jenis sampah berdiri sendiri (tanpa shell admin) supaya action
       // bar bawah tidak bertabrakan dengan nav mengambang.

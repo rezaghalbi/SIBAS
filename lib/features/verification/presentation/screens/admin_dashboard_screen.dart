@@ -32,7 +32,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     // Pintasan memakai data yang sudah ada; saat memuat/gagal tampilkan "—"
     // supaya kartu tetap bisa diketuk.
     final metrics = metricsState.valueOrNull;
-    final studentCount = ref.watch(studentsProvider).valueOrNull?.length;
+    final studentCount = ref.watch(studentCountProvider).valueOrNull;
     final qrTtlMinutes =
         ref.watch(appSettingsProvider).valueOrNull?.qrTtlMinutes;
 
@@ -200,6 +200,57 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               ),
             ),
           ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            sliver: SliverToBoxAdapter(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SegmentedButton<AdminMetricsPeriod>(
+                  segments: const [
+                    ButtonSegment<AdminMetricsPeriod>(
+                      value: AdminMetricsPeriod.all,
+                      label: Text('Semua'),
+                    ),
+                    ButtonSegment<AdminMetricsPeriod>(
+                      value: AdminMetricsPeriod.month,
+                      label: Text('Bulan ini'),
+                    ),
+                  ],
+                  selected: {ref.watch(adminMetricsPeriodProvider)},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (selection) {
+                    ref.read(adminMetricsPeriodProvider.notifier).state =
+                        selection.first;
+                  },
+                  style: ButtonStyle(
+                    minimumSize: const WidgetStatePropertyAll<Size>(
+                      Size(0, 36),
+                    ),
+                    textStyle: const WidgetStatePropertyAll<TextStyle>(
+                      TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      return states.contains(WidgetState.selected)
+                          ? SibasColors.leaf
+                          : SibasColors.surfaceAlt;
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith((states) {
+                      return states.contains(WidgetState.selected)
+                          ? Colors.white
+                          : SibasColors.text;
+                    }),
+                    side: WidgetStatePropertyAll(
+                      BorderSide(color: SibasColors.border),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
           SliverLayoutBuilder(
             builder: (context, constraints) {
               // 360 px → 2 kolom; desktop → tepat 4 kolom selebar konten, tanpa
@@ -377,7 +428,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     onPressed: () {
                       ref.invalidate(adminMetricsProvider);
                       ref.invalidate(adminRecentTransactionsProvider);
-                      ref.invalidate(studentsProvider);
+                      ref.invalidate(studentCountProvider);
                       ref.invalidate(appSettingsProvider);
                     },
                   ),

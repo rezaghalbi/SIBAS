@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/widgets/content_width.dart';
+import '../../../../core/widgets/segmented_tab.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/tx_list_item.dart';
@@ -136,7 +137,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               const SizedBox(height: 12),
               const _HistoryHead(),
               const SizedBox(height: 16),
-              _HistoryTabSwitch(value: _tab, onChanged: _pilihTab),
+              SegmentedTab<_HistoryTab>(
+                value: _tab,
+                items: const {
+                  _HistoryTab.setoran: 'Setoran',
+                  _HistoryTab.penarikan: 'Penarikan',
+                },
+                onChanged: _pilihTab,
+              ),
               const SizedBox(height: 16),
               _StatusFilterBar(
                 filters: _filters,
@@ -284,56 +292,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-class _HistoryTabSwitch extends StatelessWidget {
-  const _HistoryTabSwitch({required this.value, required this.onChanged});
-
-  final _HistoryTab value;
-  final ValueChanged<_HistoryTab> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SegmentedButton<_HistoryTab>(
-      expandedInsets: EdgeInsets.zero,
-      segments: const [
-        ButtonSegment<_HistoryTab>(
-          value: _HistoryTab.setoran,
-          label: Text('Setoran'),
-        ),
-        ButtonSegment<_HistoryTab>(
-          value: _HistoryTab.penarikan,
-          label: Text('Penarikan'),
-        ),
-      ],
-      selected: {value},
-      showSelectedIcon: false,
-      onSelectionChanged: (selection) => onChanged(selection.first),
-      style: ButtonStyle(
-        minimumSize: const WidgetStatePropertyAll<Size>(Size(0, 44)),
-        textStyle: const WidgetStatePropertyAll<TextStyle>(
-          TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.1,
-          ),
-        ),
-        backgroundColor: WidgetStateProperty.resolveWith((states) {
-          return states.contains(WidgetState.selected)
-              ? SibasColors.leaf
-              : SibasColors.surfaceAlt;
-        }),
-        foregroundColor: WidgetStateProperty.resolveWith((states) {
-          return states.contains(WidgetState.selected)
-              ? Colors.white
-              : SibasColors.text;
-        }),
-        side: WidgetStatePropertyAll(
-          BorderSide(color: SibasColors.border),
-        ),
-      ),
     );
   }
 }

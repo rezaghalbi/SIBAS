@@ -1,5 +1,15 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Batch P1 pra-demo (lokal, belum push)
+
+- Migration 40 batas PENDING, 41 index trigram, 42 otorisasi detail,
+  43 metrik rentang tanggal, 44 koreksi setoran, 45 rekonsiliasi riwayat,
+  46 baca log klien untuk admin. Semua sudah diterapkan ke remote.
+- Aplikasi: toggle periode metrik, koreksi berat setoran, paginasi/pencarian
+  mahasiswa server-side, dashboard log error, widget tab bersama.
+- Web: CSP penuh dan source map build.
+- Belum di-push/CI; PR #20 hanya memuat core sebelumnya.
+
 ## 2026-10-28 — Perbaikan pra-demo (belum push)
 
 **Keamanan**

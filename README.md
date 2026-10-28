@@ -254,7 +254,7 @@ Admin punya dua layar operasional:
 
 - **Data Mahasiswa** (`/admin/students`) — daftar akun role `mahasiswa` dari
   `profiles` (RLS `profiles_select` mengizinkan admin membaca semua profil),
-  pencarian lokal nama/NIM/email/WA lewat `saringMahasiswa`, dan detail akun.
+  pencarian server-side nama/NIM/email/WA, dan detail akun.
   Admin dapat mengoreksi nama, NIM, dan nomor WhatsApp lewat RPC
   `admin_ubah_mahasiswa`; peran, saldo, dan status akun tetap terkunci.
 - **Pengaturan Aplikasi** (`/admin/settings`) — `qr_ttl_minutes` (5–1440,
@@ -387,5 +387,5 @@ gh run view <run-id> --log-failed
   `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`) sebelum distribusi.
 - Tidak ada pemulihan akun dari aplikasi (harus lewat Dashboard Supabase) dan
   belum ada push notification.
-- Layar Data Mahasiswa bersifat baca-saja; koreksi data akun dilakukan lewat
-  Dashboard Supabase.
+- Koreksi identitas mahasiswa dilakukan lewat RPC `admin_ubah_mahasiswa`;
+  peran, saldo, dan status akun tetap terkunci.

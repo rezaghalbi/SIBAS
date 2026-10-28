@@ -9,6 +9,9 @@ import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../verification/presentation/providers/verification_provider.dart';
+import '../providers/admin_history_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
@@ -388,6 +391,13 @@ class _DetailBody extends StatelessWidget {
           const SizedBox(height: 16),
           _AuditTimeline(audits: audits),
         ],
+        if (normalized == 'APPROVED') ...[
+          const SizedBox(height: 16),
+          _CorrectionAction(
+            transactionId: transactionId,
+            weight: weight,
+          ),
+        ],
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
@@ -409,6 +419,182 @@ class _DetailBody extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Aksi admin untuk mengoreksi berat setoran yang sudah APPROVED.
+class _CorrectionAction extends ConsumerWidget {
+  final String transactionId;
+  final double weight;
+
+  const _CorrectionAction({
+    required this.transactionId,
+    required this.weight,
+  });
+
+  Future<void> _bukaKoreksi(BuildContext context, WidgetRef ref) async {
+    final berat = TextEditingController(text: weight.toStringAsFixed(2));
+    final alasan = TextEditingController();
+    final hasil = await showDialog<({double weight, String reason})>(
+      context: context,
+      builder: (ctx) {
+        String? error;
+        return StatefulBuilder(
+          builder: (ctx, setLocal) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text('Koreksi Berat Setoran'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: berat,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Berat baru (kg)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: alasan,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Alasan koreksi',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                if (error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    error!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: SibasColors.status.badText,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final w = double.tryParse(
+                    berat.text.trim().replaceAll(',', '.'),
+                  );
+                  final r = alasan.text.trim();
+                  if (w == null || w <= 0) {
+                    setLocal(() => error = 'Berat harus lebih dari 0 kg.');
+                    return;
+                  }
+                  if (r.isEmpty) {
+                    setLocal(() => error = 'Alasan koreksi wajib diisi.');
+                    return;
+                  }
+                  Navigator.pop(ctx, (weight: w, reason: r));
+                },
+                child: const Text('Simpan'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    berat.dispose();
+    alasan.dispose();
+    if (hasil == null || !context.mounted) return;
+
+    try {
+      await ref.read(verificationRepositoryProvider).koreksiSetoran(
+            transactionId: transactionId,
+            weight: hasil.weight,
+            reason: hasil.reason,
+          );
+      ref.invalidate(transactionDetailRpcProvider(transactionId));
+      ref.invalidate(adminMetricsProvider);
+      ref.invalidate(adminRecentTransactionsProvider);
+      ref.invalidate(adminHistoryTransactionsProvider);
+      ref.invalidate(currentUserProvider);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Berat setoran dikoreksi.')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().contains('Saldo')
+                ? 'Saldo mahasiswa tidak cukup untuk koreksi ini.'
+                : 'Gagal mengoreksi setoran. Coba lagi.',
+          ),
+          backgroundColor: SibasColors.status.badText,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    if (user?.isAdmin != true) return const SizedBox.shrink();
+
+    return SurfaceCard(
+      tone: SurfaceTone.subtle,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Koreksi Setoran',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: SibasColors.text,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Ubah berat jika terjadi kesalahan timbang. Saldo dan total '
+            'berat mahasiswa ikut disesuaikan.',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.4,
+              color: SibasColors.muted,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton.icon(
+              onPressed: () => _bukaKoreksi(context, ref),
+              icon: const Icon(Icons.edit_note_rounded, size: 18),
+              label: const Text('Koreksi berat'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: SibasColors.leaf,
+                side: BorderSide(color: SibasColors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
