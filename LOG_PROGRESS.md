@@ -1,5 +1,12 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Hapus menu Log Error dari aplikasi
+
+- Log Error bukan untuk mahasiswa maupun petugas bank sampah; menu dan layar
+  admin dihapus. Pengiriman error ke `client_error_logs` tetap berjalan, dan
+  developer membacanya lewat dashboard/SQL Supabase.
+- Belum di-push.
+
 ## 2026-10-28 — Hub Kelola admin
 
 - Bottom nav "Kelola" kini membuka hub `/admin/manage`, bukan langsung daftar

@@ -58,12 +58,6 @@ class AdminManageScreen extends StatelessWidget {
                   subtitle: 'Akun, saldo, dan koreksi identitas',
                   route: '/admin/students',
                 ),
-                _ManageTile(
-                  icon: Icons.bug_report_outlined,
-                  title: 'Log Error',
-                  subtitle: 'Error klien terbaru untuk admin',
-                  route: '/admin/error-logs',
-                ),
               ]),
             ),
           ),
