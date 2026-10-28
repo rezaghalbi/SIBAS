@@ -1,5 +1,71 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Perbaikan pra-demo (belum push)
+
+**Keamanan**
+- Migration `20261036000000_keamanan_pra_demo.sql`: `available_balance`
+  memeriksa pemilik/admin; PUBLIC/anon dicabut dari RPC yang hanya untuk
+  pengguna login. Uji REST: self 200, user lain 400, admin 200; anon 401.
+- Migration `20261037000000_index_daftar_admin.sql`: index `created_at` dan
+  `(status, created_at)` untuk daftar/riwayat admin.
+- Migration `20261038000000_retensi_log_klien.sql`: hapus `client_error_logs`
+  >30 hari lewat cron `bersihkan-log-klien` (aktif).
+- Migration `20261039000000_audit_admin.sql`: tabel `admin_audits` + trigger
+  untuk perubahan identitas mahasiswa, lokasi, dan pengaturan; baca hanya
+  admin. Uji no-op `update_app_settings` menghasilkan baris audit.
+- `csv_export.dart`: field berawalan `= + - @` diberi kutip tunggal; unit test
+  ditambahkan.
+
+**Web & APK**
+- `web/index.html`: splash bertahap, timeout/retry 20 dtk, preconnect gstatic,
+  preload `main.dart.js`, `apple-touch-icon` 180, petunjuk A2HS iOS
+  (dismissible).
+- `web/vercel.json`: `nosniff`, `Referrer-Policy`, `Permissions-Policy`,
+  `frame-ancestors`.
+- Plus Jakarta Sans (5 weight) dibundel di `assets/google_fonts/`; runtime
+  fetching dimatikan di `main.dart`.
+- `build-apk.yml`: `--split-per-abi`, hapus `--no-tree-shake-icons`, unggah
+  semua APK + ringkasan ukuran.
+
+**Laporan & UI**
+- Riwayat admin: filter status/tanggal di server lewat provider terpisah,
+  ekspor seluruh baris (paged 1000), fallback salin CSV ke clipboard.
+- Form tambah/ubah jenis sampah menjadi halaman penuh; kartu menu campuran
+  dihapus dari halaman daftar.
+
+**Scan**
+- Kamera berhenti saat tab tidak aktif, app background, bottom sheet, dialog,
+  atau galeri; menyala lagi hanya saat layar terlihat.
+
+**Verifikasi**
+- Belum ada run CI dan belum push. `flutter analyze`/`test`/build hanya lewat
+  PR. Migration 36–39 sudah diterapkan ke remote dan tercatat.
+
+## 2026-10-28 — Hentikan kamera pemindai saat layar tidak aktif
+
+- `AdminScanScreen` sebelumnya membiarkan `MobileScanner` hidup karena
+  `StatefulShellRoute.indexedStack` menyimpan tab di belakang layar; `dispose`
+  tidak dipanggil saat admin berpindah tab.
+- Sekarang layar memantau `TickerMode` (tab tidak aktif), lifecycle aplikasi
+  (background/resume), dan menahan kamera saat bottom sheet, dialog input
+  manual, atau galeri terbuka. Kamera dinyalakan lagi hanya jika layar masih
+  terlihat.
+- Berlaku untuk mode setoran dan penarikan karena keduanya memakai layar yang
+  sama. Perubahan belum diverifikasi CI; `flutter analyze`/`test` hanya lewat
+  PR.
+
+## 2026-10-28 — Audit pra-demo (catatan, belum ada perubahan kode)
+
+- `docs/AUDIT_PRA_DEMO.md`: audit keamanan (RLS, ACL RPC, storage, header),
+  efisiensi web Android/iOS/desktop, APK, skalabilitas 300 pengguna, checklist
+  demo, dan prioritas P0/P1/P2.
+- Bukti utama: cold load 2,9 MB (5,3 s @5 Mbps; 13,9 s @2 Mbps; 22,3 s
+  @1 Mbps), warm 0,6–1,1 s; APK 71 MB; Supabase Free tanpa backup; riwayat
+  migration remote tertinggal 12 baris (maks `20261032000000`).
+- Temuan keamanan yang perlu ditutup: `available_balance` tanpa cek pemilik,
+  beberapa RPC masih PUBLIC, CSV injection, update `profiles` langsung.
+- Belum ada kode/migration yang diubah.
+
 ## 2026-10-23 — Aplikasi wajib online
 
 - Tidak ada cache offline. `pesanWajibOnline` dipakai untuk semua kegagalan
