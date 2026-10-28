@@ -19,6 +19,7 @@ import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/saldo/presentation/screens/saldo_screen.dart';
 import '../../features/students/presentation/screens/admin_students_screen.dart';
+import '../../features/trash_type/presentation/screens/trash_type_form_screen.dart';
 import '../../features/trash_type/presentation/screens/trash_type_management_screen.dart';
 import '../../features/verification/presentation/providers/verification_provider.dart';
 import '../../features/verification/presentation/screens/admin_dashboard_screen.dart';
@@ -217,6 +218,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/locations',
         builder: (context, state) => const AdminLocationsScreen(),
+      ),
+      // Form jenis sampah berdiri sendiri (tanpa shell admin) supaya action
+      // bar bawah tidak bertabrakan dengan nav mengambang.
+      GoRoute(
+        path: '/admin/trash-types/new',
+        builder: (context, state) => const TrashTypeFormScreen(),
+      ),
+      GoRoute(
+        path: '/admin/trash-types/:id/edit',
+        builder: (context, state) {
+          final extra = state.extra;
+          return TrashTypeFormScreen(
+            isEdit: true,
+            initial: extra is Map<String, dynamic> ? extra : null,
+          );
+        },
       ),
 
       // Admin — shell terpisah agar tiap peran punya riwayat tab sendiri.
