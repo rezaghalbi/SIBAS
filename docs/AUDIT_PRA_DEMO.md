@@ -662,15 +662,16 @@ Ulangi pengukuran CDP pada 1/2/5 Mbps, cache kosong:
 
 ### P1 — setelah demo / jika waktu
 
-8. Audit admin (identitas, lokasi, settings).
-9. RPC koreksi transaksi + audit.
-10. `admin_metrics` dengan rentang tanggal.
-11. Paginasi/pencarian mahasiswa di server (>500).
-12. Index `created_at`/trgm setelah data bertambah.
-13. CSP + security headers.
-14. Retensi `client_error_logs`.
+8. RPC koreksi/pembatalan transaksi APPROVED + audit saldo.
+9. `admin_metrics` dengan rentang tanggal (rekap bulanan).
+10. Paginasi/pencarian mahasiswa di server (>500 akun).
+11. Batas jumlah PENDING per mahasiswa (anti-spam setoran).
+12. Ganti perbandingan NULL di `detail_transaksi`/`detail_penarikan`.
+13. CSP penuh (`default-src`/`script-src`) setelah diuji preview.
+14. Index pencarian `pg_trgm` setelah data bertambah banyak.
 15. `pubspec.lock` + test RPC/RLS + widget test alur kritis.
-16. Source map web + dashboard error log.
+16. Source map web + dashboard/alert `client_error_logs`.
+17. Satukan widget tab dan kartu penarikan yang masih terduplikasi.
 
 ### P2 — jangka panjang
 
