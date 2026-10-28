@@ -78,6 +78,12 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
     _tab = widget.initialTab == 'penarikan'
         ? _HistoryTab.penarikan
         : _HistoryTab.setoran;
+    if (_tab == _HistoryTab.penarikan &&
+        ref.read(adminHistoryFilterProvider).status == 'EXPIRED') {
+      ref.read(adminHistoryFilterProvider.notifier).update(
+            (f) => f.copyWith(clearStatus: true),
+          );
+    }
     _searchController = TextEditingController(
       text: ref.read(adminHistoryFilterProvider).query,
     );
