@@ -1,5 +1,11 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Splash iOS mode gelap + cache aset
+
+- Tambah 8 `apple-touch-startup-image` mode gelap untuk iPhone umum.
+- `web/vercel.json` memberi cache immutable pada `/splash/(.*)`.
+- Tidak menambah service worker/offline; kebijakan tetap wajib online.
+
 ## 2026-10-28 — Splash Add to Home Screen iOS
 
 - Tambah 8 gambar `apple-touch-startup-image` portrait untuk ukuran iPhone
