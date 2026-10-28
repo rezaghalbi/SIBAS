@@ -1,5 +1,12 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Rapikan teks login, splash, dan label teknis
+
+- Hapus kotak pemberitahuan "diarahkan otomatis sesuai akun" di login.
+- Splash web hanya menampilkan "Memuat SIBAS"; teks tahap teknis dihapus.
+- Label "(RPC)" pada tombol validasi dihapus; istilah "master data" diganti
+  dengan bahasa yang lebih biasa.
+
 ## 2026-10-28 — Preconnect API dan preload logo web
 
 - `web/index.html` membuka koneksi awal ke Supabase dan memuat logo login

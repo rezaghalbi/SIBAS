@@ -368,7 +368,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
                   icon: const Icon(Icons.check_circle_outline_rounded, size: 22),
                   label: _isLoading
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Setujui & Tambah Saldo (RPC)', style: TextStyle(fontWeight: FontWeight.w700)),
+                      : const Text('Setujui & Tambah Saldo', style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -411,7 +411,7 @@ class _VerificationBottomSheetState extends ConsumerState<VerificationBottomShee
                   icon: const Icon(Icons.cancel_outlined, size: 22),
                   label: _isLoading
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Konfirmasi Penolakan (RPC)', style: TextStyle(fontWeight: FontWeight.w700)),
+                      : const Text('Konfirmasi Penolakan', style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ),
               const SizedBox(height: 10),

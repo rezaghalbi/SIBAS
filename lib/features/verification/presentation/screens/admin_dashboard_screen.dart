@@ -50,7 +50,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           SliverToBoxAdapter(
             child: HeroHeader(
               title: 'Halo, $adminName',
-              subtitle: 'Panel Validasi & Pengelolaan Bank Sampah',
+              subtitle: 'Ringkasan dan pengelolaan bank sampah',
               trailing: IconButton(
                 onPressed: () {
                   showDialog(
@@ -280,7 +280,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ),
                     _DashboardShortcutTile(
                       title: 'Kelola',
-                      value: 'Master data & pengaturan',
+                      value: 'Data & pengaturan',
                       icon: Icons.tune_rounded,
                       iconColor: SibasColors.leaf,
                       iconBackground: SibasColors.mintWash,

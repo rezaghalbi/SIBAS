@@ -84,7 +84,7 @@ class _TrashTypeManagementScreenState
         constraints: const BoxConstraints(maxWidth: _maxContentWidth),
         child: HeroHeader(
           title: 'Jenis Sampah',
-          subtitle: 'Atur tarif dan status master data',
+          subtitle: 'Atur tarif dan status jenis sampah',
           trailing: IconButton(
             tooltip: 'Kembali',
             onPressed: () => Navigator.maybePop(context),

@@ -25,7 +25,7 @@ class AdminManageScreen extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 1120),
                 child: const HeroHeader(
                   title: 'Kelola',
-                  subtitle: 'Master data, wilayah, dan pengaturan aplikasi',
+                  subtitle: 'Atur data dan pengaturan aplikasi',
                 ),
               ),
             ),
@@ -37,25 +37,25 @@ class AdminManageScreen extends StatelessWidget {
                 _ManageTile(
                   icon: Icons.category_rounded,
                   title: 'Kelola Jenis Sampah',
-                  subtitle: 'Kategori, tarif per kg, dan foto',
+                  subtitle: 'Atur jenis, tarif, dan foto',
                   route: '/admin/trash-types',
                 ),
                 _ManageTile(
                   icon: Icons.location_on_rounded,
                   title: 'Kelola Wilayah',
-                  subtitle: 'Lokasi bank sampah dan koordinat',
+                  subtitle: 'Atur lokasi bank sampah',
                   route: '/admin/locations',
                 ),
                 _ManageTile(
                   icon: Icons.settings_rounded,
                   title: 'Pengaturan Aplikasi',
-                  subtitle: 'Masa berlaku QR dan kontak admin',
+                  subtitle: 'Atur QR dan kontak admin',
                   route: '/admin/settings',
                 ),
                 _ManageTile(
                   icon: Icons.people_alt_rounded,
                   title: 'Data Mahasiswa',
-                  subtitle: 'Akun, saldo, dan koreksi identitas',
+                  subtitle: 'Lihat akun dan koreksi data',
                   route: '/admin/students',
                 ),
               ]),
