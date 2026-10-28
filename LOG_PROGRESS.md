@@ -32,6 +32,9 @@
   ekspor seluruh baris (paged 1000), fallback salin CSV ke clipboard.
 - Form tambah/ubah jenis sampah menjadi halaman penuh; kartu menu campuran
   dihapus dari halaman daftar.
+- Dashboard admin kini ringkasan 5 transaksi terbaru; Pengajuan hanya
+  `PENDING`; Riwayat admin/mahasiswa bertab Setoran/Penarikan. Tarik hanya
+  menyisakan tautan riwayat dan Saldo menampilkan pratinjau 4 penarikan.
 
 **Scan**
 - Kamera berhenti saat tab tidak aktif, app background, bottom sheet, dialog,

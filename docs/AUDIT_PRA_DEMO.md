@@ -516,6 +516,21 @@ ini akan terlihat.
 **Rekomendasi pasca-demo:** RPC `koreksi_transaksi` dengan alasan + audit +
 penyesuaian saldo, dan tabel audit admin.
 
+### 6.3 Information architecture (diterapkan 2026-10-28)
+
+| Halaman | Peran | Isi |
+|---|---|---|
+| Dashboard admin | Ringkasan | Metrik, 5 transaksi terbaru, pintasan; tanpa pencarian/daftar penuh |
+| Pengajuan admin | Antrean kerja | Hanya `PENDING`, tab Setoran/Penarikan, aksi setujui/tolak |
+| Riwayat admin | Arsip | Semua status, tab Setoran/Penarikan, filter tanggal/status/pencarian, ekspor, read-only |
+| Dashboard mahasiswa | Ringkasan | 4–5 setoran terakhir + tautan |
+| Riwayat mahasiswa | Arsip | Tab Setoran/Penarikan, filter status |
+| Tarik | Form | Form + tautan “Lihat riwayat penarikan” |
+| Saldo | Ringkasan | Saldo + 4 penarikan terakhir + tautan |
+
+Tautan memakai `?tab=penarikan`, dibaca oleh `HistoryScreen` dan
+`AdminHistoryScreen`. Tidak ada perubahan schema untuk penyesuaian ini.
+
 ---
 
 ## 7. Checklist pra-demo
@@ -635,6 +650,7 @@ Ulangi pengukuran CDP pada 1/2/5 Mbps, cache kosong:
 | APK split + tree-shake icon | `.github/workflows/build-apk.yml` |
 | Filter tanggal/status + ekspor penuh + CSV Safari | riwayat admin, repository, provider, `csv_download_web.dart` |
 | Form jenis sampah jadi halaman penuh; menu campuran dihapus | `trash_type_form_screen.dart`, `trash_type_management_screen.dart`, router |
+| Dashboard ringkasan, pengajuan hanya PENDING, riwayat bertab | `admin_dashboard_screen.dart`, `admin_submissions_screen.dart`, `admin_history_screen.dart`, `history_screen.dart` |
 
 ### P0 operasional yang masih manual (bukan kode)
 
