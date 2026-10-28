@@ -44,23 +44,82 @@ class VerificationRepository {
     });
   }
 
+  /// Ukuran satu halaman saat menarik seluruh data untuk ekspor.
+  static const _pageSize = 1000;
+
   /// Daftar transaksi untuk admin.
   ///
-  /// Pencarian, status, dan lokasi difilter **di server** supaya hasil tidak
-  /// terpotong oleh batas baris. `limit` dipakai untuk paginasi bertahap.
+  /// Pencarian, status, lokasi, dan rentang tanggal difilter **di server**
+  /// supaya hasil tidak terpotong oleh batas baris. `limit` dipakai untuk
+  /// paginasi bertahap.
   Future<List<Map<String, dynamic>>> getAllTransactions({
     String query = '',
     String? statusFilter,
     String? locationId,
+    DateTime? startDate,
+    DateTime? endDate,
     int limit = 50,
   }) {
-    return guardRequest(() async {
+    return guardRequest(
+      () => _fetchTransactions(
+        query: query,
+        statusFilter: statusFilter,
+        locationId: locationId,
+        startDate: startDate,
+        endDate: endDate,
+        maxRows: limit.clamp(1, 5000),
+      ),
+    );
+  }
+
+  /// Seluruh transaksi yang cocok dengan filter, tanpa batas 200 baris.
+  /// Dipakai ekspor CSV: halaman 1000 baris diambil sampai habis.
+  Future<List<Map<String, dynamic>>> getAllTransactionsForExport({
+    String query = '',
+    String? statusFilter,
+    String? locationId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    return guardRequest(
+      () => _fetchTransactions(
+        query: query,
+        statusFilter: statusFilter,
+        locationId: locationId,
+        startDate: startDate,
+        endDate: endDate,
+      ),
+      // Ekspor bisa beberapa halaman; jangan putus di batas 20 detik.
+      timeout: const Duration(seconds: 60),
+    );
+  }
+
+  /// Query transaksi dengan filter server. `maxRows` null berarti tarik semua.
+  Future<List<Map<String, dynamic>>> _fetchTransactions({
+    required String query,
+    String? statusFilter,
+    String? locationId,
+    DateTime? startDate,
+    DateTime? endDate,
+    int? maxRows,
+  }) async {
+    final rows = <Map<String, dynamic>>[];
+    while (true) {
       var builder = _client.from('transactions').select(_selectWithRelations);
       if (statusFilter != null && statusFilter.isNotEmpty) {
         builder = builder.eq('status', statusFilter.toUpperCase());
       }
       if (locationId != null && locationId.isNotEmpty) {
         builder = builder.eq('location_id', locationId);
+      }
+      if (startDate != null) {
+        builder = builder.gte(
+          'created_at',
+          startDate.toUtc().toIso8601String(),
+        );
+      }
+      if (endDate != null) {
+        builder = builder.lt('created_at', endDate.toUtc().toIso8601String());
       }
 
       final needle = _bersihkanCari(query);
@@ -73,11 +132,20 @@ class VerificationRepository {
         );
       }
 
+      final sisa = maxRows == null ? _pageSize : maxRows - rows.length;
+      final ambil = sisa < _pageSize ? sisa : _pageSize;
+      if (ambil <= 0) break;
+
+      // Urutan id sebagai penentu agar baris tidak terduplikasi antarhalaman.
       final res = await builder
           .order('created_at', ascending: false)
-          .limit(limit.clamp(1, 200));
-      return (res as List<dynamic>).cast<Map<String, dynamic>>();
-    });
+          .order('id', ascending: false)
+          .range(rows.length, rows.length + ambil - 1);
+      final batch = (res as List<dynamic>).cast<Map<String, dynamic>>();
+      rows.addAll(batch);
+      if (batch.length < ambil) break;
+    }
+    return rows;
   }
 
   /// Membuang karakter yang bermakna khusus di filter PostgREST.

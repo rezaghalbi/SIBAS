@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/status_helper.dart';
@@ -12,9 +13,10 @@ import '../../../verification/data/csv_download_stub.dart'
     if (dart.library.js_interop) '../../../verification/data/csv_download_web.dart';
 import '../../../verification/presentation/providers/verification_provider.dart';
 import '../../../verification/presentation/widgets/verification_bottom_sheet.dart';
-import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
+import '../../domain/models/admin_history_filter.dart';
+import '../providers/admin_history_provider.dart';
 
 /// Target sentuh minimum (§1, §4).
 const double _touchTarget = 44;
@@ -48,15 +50,14 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
   /// null = Semua, 1 = hari ini, 7 = 7 hari terakhir
   static const _dayFilters = <int?>[null, 1, 7];
 
-  String? _status;
-  int? _days;
   late final TextEditingController _searchController;
+  bool _mengekspor = false;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(
-      text: ref.read(adminFilterProvider).query,
+      text: ref.read(adminHistoryFilterProvider).query,
     );
   }
 
@@ -66,22 +67,33 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
     super.dispose();
   }
 
-  bool _match(Map<String, dynamic> item) {
-    if (_status != null &&
-        (item['status'] as String?)?.toUpperCase() != _status) {
-      return false;
+  /// Kalender lokal untuk chip tanggal; juga dipakai ekspor.
+  void _pilihHari(int? days) {
+    ref.read(adminHistoryFilterProvider.notifier).update((f) {
+      if (days == null) return f.copyWith(clearDates: true);
+      final rentang = AdminHistoryFilter.rentangHari(days);
+      return f.copyWith(startDate: rentang.start, endDate: rentang.end);
+    });
+  }
+
+  void _pilihStatus(String? status) {
+    ref.read(adminHistoryFilterProvider.notifier).update(
+          (f) => status == null
+              ? f.copyWith(clearStatus: true)
+              : f.copyWith(status: status),
+        );
+  }
+
+  /// Chip hari yang sedang aktif, atau null bila bukan rentang preset.
+  static int? _hariAktif(AdminHistoryFilter filter) {
+    for (final days in _dayFilters) {
+      if (days == null) continue;
+      final rentang = AdminHistoryFilter.rentangHari(days);
+      if (filter.startDate == rentang.start && filter.endDate == rentang.end) {
+        return days;
+      }
     }
-    if (_days != null) {
-      final created =
-          DateTime.tryParse((item['created_at'] as String?) ?? '')?.toLocal();
-      if (created == null) return false;
-      final now = DateTime.now();
-      final start = _days == 1
-          ? DateTime(now.year, now.month, now.day)
-          : now.subtract(const Duration(days: 7));
-      if (created.isBefore(start)) return false;
-    }
-    return true;
+    return null;
   }
 
   static String _dayLabel(int? days) {
@@ -90,37 +102,69 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
     return '7 hari';
   }
 
-  /// Ekspor baris yang sedang tampil (setelah filter status/tanggal).
-  Future<void> _eksporSetoran(List<Map<String, dynamic>> data) async {
-    if (data.isEmpty) {
-      _pesan('Tidak ada data untuk diekspor');
-      return;
+  /// Ekspor seluruh setoran yang cocok dengan filter aktif (bukan hanya
+  /// baris yang sudah tampil di layar).
+  Future<void> _eksporSetoran() async {
+    final filter = ref.read(adminHistoryFilterProvider);
+    final repo = ref.read(verificationRepositoryProvider);
+    final locationId = ref.read(adminFilterProvider).locationId;
+    setState(() => _mengekspor = true);
+    try {
+      final data = await repo.getAllTransactionsForExport(
+        query: filter.query,
+        statusFilter: filter.status,
+        locationId: locationId,
+        startDate: filter.startDate,
+        endDate: filter.endDate,
+      );
+      if (!mounted) return;
+      if (data.isEmpty) {
+        _pesan('Tidak ada data untuk diekspor');
+        return;
+      }
+      await _kirimCsv('rekap-setoran', bangunCsvSetoran(data));
+    } catch (_) {
+      if (!mounted) return;
+      _pesan('Gagal memuat data setoran');
+    } finally {
+      if (mounted) setState(() => _mengekspor = false);
     }
-    final terunduh = await simpanCsv(
-      'rekap-setoran-${_capWaktu()}.csv',
-      bangunCsvSetoran(data),
-    );
-    if (!mounted) return;
-    _pesan(terunduh ? 'CSV diunduh' : 'CSV disalin ke papan klip');
   }
 
+  /// Ekspor seluruh penarikan dengan status, pencarian, dan tanggal yang sama.
   Future<void> _eksporPenarikan() async {
-    List<WithdrawalModel> data;
+    final filter = ref.read(adminHistoryFilterProvider);
+    final repo = ref.read(withdrawalRepositoryProvider);
+    final locationId = ref.read(adminFilterProvider).locationId;
+    setState(() => _mengekspor = true);
     try {
-      data = await ref.read(adminWithdrawalsProvider(null).future);
+      final data = await repo.getAllWithdrawalsForExport(
+        statusFilter: filter.status,
+        locationId: locationId,
+        query: filter.query,
+        startDate: filter.startDate,
+        endDate: filter.endDate,
+      );
+      if (!mounted) return;
+      if (data.isEmpty) {
+        _pesan('Tidak ada data untuk diekspor');
+        return;
+      }
+      await _kirimCsv('rekap-penarikan', bangunCsvPenarikan(data));
     } catch (_) {
       if (!mounted) return;
       _pesan('Gagal memuat data penarikan');
-      return;
+    } finally {
+      if (mounted) setState(() => _mengekspor = false);
     }
-    if (data.isEmpty) {
-      _pesan('Tidak ada data untuk diekspor');
-      return;
+  }
+
+  /// Unduh CSV; bila unduhan tidak bisa dimulai (mis. Safari), salin ke klip.
+  Future<void> _kirimCsv(String awalan, String csv) async {
+    final terunduh = await simpanCsv('$awalan-${_capWaktu()}.csv', csv);
+    if (!terunduh) {
+      await Clipboard.setData(ClipboardData(text: csv));
     }
-    final terunduh = await simpanCsv(
-      'rekap-penarikan-${_capWaktu()}.csv',
-      bangunCsvPenarikan(data),
-    );
     if (!mounted) return;
     _pesan(terunduh ? 'CSV diunduh' : 'CSV disalin ke papan klip');
   }
@@ -137,22 +181,21 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
 
   void _clearQuery() {
     _searchController.clear();
-    ref.read(adminFilterProvider.notifier).update(
+    ref.read(adminHistoryFilterProvider.notifier).update(
           (f) => f.copyWith(query: ''),
         );
   }
 
   void _resetFilters() {
-    setState(() {
-      _status = null;
-      _days = null;
-    });
+    ref.read(adminHistoryFilterProvider.notifier).update(
+          (f) => f.copyWith(clearStatus: true, clearDates: true),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
-    final txState = ref.watch(adminTransactionsProvider);
-    final filter = ref.watch(adminFilterProvider);
+    final txState = ref.watch(adminHistoryTransactionsProvider);
+    final filter = ref.watch(adminHistoryFilterProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
@@ -166,43 +209,56 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
               child: HeroHeader(
                 title: 'Riwayat Penyetoran',
                 subtitle: 'Semua setoran dan statusnya',
-                trailing: PopupMenuButton<String>(
-                  tooltip: 'Ekspor CSV',
-                  padding: EdgeInsets.zero,
-                  icon: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.download_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  onSelected: (jenis) {
-                    if (jenis == 'penarikan') {
-                      _eksporPenarikan();
-                      return;
-                    }
-                    final semua =
-                        ref.read(adminTransactionsProvider).valueOrNull ??
-                            const [];
-                    _eksporSetoran(semua.where(_match).toList());
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(
-                      value: 'setoran',
-                      child: Text('Rekap setoran'),
-                    ),
-                    PopupMenuItem(
-                      value: 'penarikan',
-                      child: Text('Rekap penarikan'),
-                    ),
-                  ],
-                ),
+                trailing: _mengekspor
+                    ? const SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      )
+                    : PopupMenuButton<String>(
+                        tooltip: 'Ekspor CSV',
+                        padding: EdgeInsets.zero,
+                        icon: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.download_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        onSelected: (jenis) {
+                          if (_mengekspor) return;
+                          if (jenis == 'penarikan') {
+                            _eksporPenarikan();
+                            return;
+                          }
+                          _eksporSetoran();
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: 'setoran',
+                            child: Text('Rekap setoran'),
+                          ),
+                          PopupMenuItem(
+                            value: 'penarikan',
+                            child: Text('Rekap penarikan'),
+                          ),
+                        ],
+                      ),
               ),
             ),
             Expanded(
@@ -219,24 +275,25 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                         scrollDirection: Axis.horizontal,
                         itemCount: _dayFilters.length + _statuses.length,
                         separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) => _filterChip(index),
+                        itemBuilder: (context, index) =>
+                            _filterChip(index, filter),
                       ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: txState.when(
-                        data: (all) {
-                          final list = all.where(_match).toList();
+                        data: (list) {
                           if (list.isEmpty) {
                             return _centeredState(
                               _EmptyState(
                                 searching: filter.query.trim().isNotEmpty,
-                                hasFilter: _status != null || _days != null,
+                                hasFilter: filter.status != null ||
+                                    filter.hasDateFilter,
                                 onClearQuery: _clearQuery,
                                 onResetFilters: _resetFilters,
                                 onReload: () {
                                   ref.invalidate(
-                                    adminTransactionsProvider,
+                                    adminHistoryTransactionsProvider,
                                   );
                                 },
                               ),
@@ -289,7 +346,9 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                                 'ulang riwayat.',
                             actionLabel: 'Coba lagi',
                             onAction: () {
-                              ref.invalidate(adminTransactionsProvider);
+                              ref.invalidate(
+                                adminHistoryTransactionsProvider,
+                              );
                             },
                           ),
                         ),
@@ -315,7 +374,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
     );
   }
 
-  Widget _filterChip(int index) {
+  Widget _filterChip(int index, AdminHistoryFilter filter) {
     final isDayChip = index < _dayFilters.length;
     final String label;
     final bool isSelected;
@@ -323,26 +382,24 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
     if (isDayChip) {
       final days = _dayFilters[index];
       label = _dayLabel(days);
-      isSelected = _days == days;
+      isSelected = _hariAktif(filter) == days;
     } else {
       final status = _statuses[index - _dayFilters.length];
       label = status == null
           ? 'Semua status'
           : TransactionStatusHelper.toDisplayLabel(status);
-      isSelected = _status == status;
+      isSelected = filter.status == status;
     }
 
     return _FilterChip(
       label: label,
       selected: isSelected,
       onTap: () {
-        setState(() {
-          if (isDayChip) {
-            _days = _dayFilters[index];
-          } else {
-            _status = _statuses[index - _dayFilters.length];
-          }
-        });
+        if (isDayChip) {
+          _pilihHari(_dayFilters[index]);
+        } else {
+          _pilihStatus(_statuses[index - _dayFilters.length]);
+        }
       },
     );
   }
@@ -360,7 +417,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
         controller: _searchController,
         textInputAction: TextInputAction.search,
         onChanged: (val) {
-          ref.read(adminFilterProvider.notifier).update(
+          ref.read(adminHistoryFilterProvider.notifier).update(
                 (f) => f.copyWith(query: val),
               );
         },
@@ -474,6 +531,7 @@ class _AdminHistoryScreenState extends ConsumerState<AdminHistoryScreen> {
                       onVerificationComplete: () {
                         ref.invalidate(adminMetricsProvider);
                         ref.invalidate(adminTransactionsProvider);
+                        ref.invalidate(adminHistoryTransactionsProvider);
                       },
                     ),
                     icon: const Icon(Icons.fact_check_outlined, size: 16),
