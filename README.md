@@ -383,7 +383,7 @@ gh run view <run-id> --log-failed
   Flutter SDK; target rilis saat ini Android + web.
 - Bila `ANDROID_KEYSTORE_BASE64` kosong, APK CI memakai debug key dan tidak
   bisa di-update di atas versi lama. Buat keystore rilis dan isi secrets
-  (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+  (`ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`,
   `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`) sebelum distribusi.
 - Tidak ada pemulihan akun dari aplikasi (harus lewat Dashboard Supabase) dan
   belum ada push notification.
