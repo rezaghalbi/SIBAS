@@ -76,7 +76,7 @@ class StudentRepository {
           .select('id')
           .eq('role', 'mahasiswa')
           .count(CountOption.exact);
-      return res.count ?? 0;
+      return res.count;
     });
   }
 }
