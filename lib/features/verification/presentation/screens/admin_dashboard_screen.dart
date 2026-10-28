@@ -6,8 +6,6 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../info/presentation/providers/app_settings_provider.dart';
-import '../../../students/presentation/providers/student_provider.dart';
 import '../../domain/models/admin_metrics_model.dart';
 import '../providers/verification_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
@@ -32,9 +30,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
     // Pintasan memakai data yang sudah ada; saat memuat/gagal tampilkan "—"
     // supaya kartu tetap bisa diketuk.
     final metrics = metricsState.valueOrNull;
-    final studentCount = ref.watch(studentCountProvider).valueOrNull;
-    final qrTtlMinutes =
-        ref.watch(appSettingsProvider).valueOrNull?.qrTtlMinutes;
 
     final pendingLabel =
         metrics == null ? '—' : '${metrics.pendingCount} transaksi menunggu';
@@ -42,9 +37,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         ? '—'
         : '${metrics.approvedCount} disetujui · '
             '${metrics.rejectedCount} ditolak';
-    final studentsLabel =
-        studentCount == null ? '—' : '$studentCount mahasiswa';
-    final settingsLabel = qrTtlMinutes == null ? '—' : 'QR $qrTtlMinutes menit';
     // Total berat tetap ditampilkan sebagai keterangan judul seksi.
     final weightLabel = metrics == null
         ? 'Total — kg'
@@ -255,7 +247,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             builder: (context, constraints) {
               // 360 px → 2 kolom; desktop → tepat 4 kolom selebar konten, tanpa
               // slot kosong saat lebar jendela berubah.
-              final columns = constraints.crossAxisExtent < 700 ? 2 : 4;
+              final columns = constraints.crossAxisExtent < 700 ? 2 : 3;
               const gap = 12.0;
               final available = constraints.crossAxisExtent - 40;
               final extent = (available - gap * (columns - 1)) / columns;
@@ -287,20 +279,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       onTap: () => context.push('/admin/history'),
                     ),
                     _DashboardShortcutTile(
-                      title: 'Data Mahasiswa',
-                      value: studentsLabel,
-                      icon: Icons.groups_rounded,
+                      title: 'Kelola',
+                      value: 'Master data & pengaturan',
+                      icon: Icons.tune_rounded,
                       iconColor: SibasColors.leaf,
                       iconBackground: SibasColors.mintWash,
-                      onTap: () => context.push('/admin/students'),
-                    ),
-                    _DashboardShortcutTile(
-                      title: 'Pengaturan',
-                      value: settingsLabel,
-                      icon: Icons.tune_rounded,
-                      iconColor: SibasColors.muted,
-                      iconBackground: SibasColors.mintWash,
-                      onTap: () => context.push('/admin/settings'),
+                      onTap: () => context.push('/admin/manage'),
                     ),
                   ]),
                 ),
@@ -313,93 +297,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
             sliver: SliverToBoxAdapter(
               child: ContentWidth(child: _LocationRecap()),
-            ),
-          ),
-
-          // Pintasan pengelolaan jenis sampah & tarif
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            sliver: SliverToBoxAdapter(
-              child: SurfaceCard(
-                child: Material(
-                  color: Colors.transparent,
-                  child: ListTile(
-                    onTap: () => context.push('/admin/trash-types'),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: SibasColors.mintWash,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.category_rounded, size: 18, color: SibasColors.leaf),
-                    ),
-                    title: Text(
-                      'Kelola Jenis Sampah',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: SibasColors.text),
-                    ),
-                    subtitle: Text(
-                      'Atur kategori dan tarif per kg',
-                      style: TextStyle(fontSize: 12, color: SibasColors.muted),
-                    ),
-                    trailing: Icon(Icons.chevron_right_rounded, size: 20, color: SibasColors.muted),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Pintasan pengelolaan lokasi bank sampah
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            sliver: SliverToBoxAdapter(
-              child: SurfaceCard(
-                child: Material(
-                  color: Colors.transparent,
-                  child: ListTile(
-                    onTap: () => context.push('/admin/locations'),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: SibasColors.mintWash,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.location_on_rounded,
-                        size: 18,
-                        color: SibasColors.leaf,
-                      ),
-                    ),
-                    title: Text(
-                      'Lokasi Bank Sampah',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: SibasColors.text,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Atur titik setor dan tarik sampah',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: SibasColors.muted,
-                      ),
-                    ),
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: SibasColors.muted,
-                    ),
-                  ),
-                ),
-              ),
             ),
           ),
 
@@ -428,8 +325,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     onPressed: () {
                       ref.invalidate(adminMetricsProvider);
                       ref.invalidate(adminRecentTransactionsProvider);
-                      ref.invalidate(studentCountProvider);
-                      ref.invalidate(appSettingsProvider);
                     },
                   ),
                   TextButton(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_guard.dart';
 import '../../../../core/widgets/content_width.dart';
@@ -156,32 +155,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
           const SizedBox(height: 20),
           const ThemeModeCard(),
           const SizedBox(height: 20),
-          SurfaceCard(
-            padding: EdgeInsets.zero,
-            child: ListTile(
-              onTap: () => context.push('/admin/error-logs'),
-              leading: Icon(
-                Icons.bug_report_outlined,
-                color: SibasColors.leaf,
-              ),
-              title: Text(
-                'Log Error Klien',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: SibasColors.text,
-                ),
-              ),
-              subtitle: Text(
-                'Lihat error terbaru dari aplikasi',
-                style: TextStyle(fontSize: 12, color: SibasColors.muted),
-              ),
-              trailing: Icon(
-                Icons.chevron_right_rounded,
-                color: SibasColors.muted,
-              ),
-            ),
-          ),
           const SizedBox(height: 20),
           if (_pesan != null) ...[
             _pesanBanner(),

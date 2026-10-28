@@ -1,5 +1,14 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Hub Kelola admin
+
+- Bottom nav "Kelola" kini membuka hub `/admin/manage`, bukan langsung daftar
+  jenis sampah. Isinya: Kelola Jenis Sampah, Kelola Wilayah, Pengaturan
+  Aplikasi, Data Mahasiswa, dan Log Error.
+- Daftar jenis sampah menjadi halaman turunan; kartu pengelolaan di dashboard
+  dan tautan Log Error di Pengaturan dihapus agar hanya ada satu pintu.
+- Belum di-push.
+
 ## 2026-10-28 — Batch P1 pra-demo (lokal, belum push)
 
 - Migration 40 batas PENDING, 41 index trigram, 42 otorisasi detail,

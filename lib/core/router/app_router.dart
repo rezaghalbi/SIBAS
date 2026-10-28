@@ -24,6 +24,7 @@ import '../../features/trash_type/presentation/screens/trash_type_management_scr
 import '../../features/verification/presentation/providers/verification_provider.dart';
 import '../../features/verification/presentation/screens/admin_dashboard_screen.dart';
 import '../../features/verification/presentation/screens/admin_error_logs_screen.dart';
+import '../../features/verification/presentation/screens/admin_manage_screen.dart';
 import '../../features/verification/presentation/screens/admin_scan_screen.dart';
 import '../../features/verification/presentation/screens/admin_submissions_screen.dart';
 import '../../features/withdrawal/presentation/screens/tarik_screen.dart';
@@ -226,6 +227,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/error-logs',
         builder: (context, state) => const AdminErrorLogsScreen(),
       ),
+      GoRoute(
+        path: '/admin/trash-types',
+        builder: (context, state) => const TrashTypeManagementScreen(),
+      ),
       // Form jenis sampah berdiri sendiri (tanpa shell admin) supaya action
       // bar bawah tidak bertabrakan dengan nav mengambang.
       GoRoute(
@@ -285,8 +290,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/admin/trash-types',
-                builder: (context, state) => const TrashTypeManagementScreen(),
+                path: '/admin/manage',
+                builder: (context, state) => const AdminManageScreen(),
               ),
             ],
           ),
