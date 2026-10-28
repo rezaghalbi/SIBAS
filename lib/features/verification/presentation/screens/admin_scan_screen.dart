@@ -14,6 +14,7 @@ import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
 import '../../../history/presentation/providers/admin_history_provider.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
 final _currency = NumberFormat.currency(
@@ -523,8 +524,9 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen>
   }
 
   Widget _modeSelector(double gutter) {
+    final palette = AppPalette.of(context);
     return Container(
-      color: SibasColors.background,
+      color: palette.background,
       padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 12),
       child: Center(
         child: ConstrainedBox(
@@ -558,16 +560,16 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen>
               ),
               backgroundColor: WidgetStateProperty.resolveWith((states) {
                 return states.contains(WidgetState.selected)
-                    ? SibasColors.leaf
-                    : SibasColors.surfaceAlt;
+                    ? palette.leaf
+                    : palette.surfaceAlt;
               }),
               foregroundColor: WidgetStateProperty.resolveWith((states) {
                 return states.contains(WidgetState.selected)
                     ? Colors.white
-                    : SibasColors.text;
+                    : palette.text;
               }),
               side: WidgetStatePropertyAll(
-                BorderSide(color: SibasColors.border),
+                BorderSide(color: palette.border),
               ),
             ),
           ),

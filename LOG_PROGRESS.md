@@ -1,5 +1,12 @@
 # LOG PROGRESS
 
+## 2026-10-28 — Perbaiki selector Setoran/Penarikan dan mode tampilan
+
+- Selector mode di Pemindai, periode dashboard, kartu mode tampilan, dan tab
+  Riwayat kini memakai `AppPalette` dari theme aktif; label tidak lagi hilang
+  di mode terang maupun gelap.
+- Berlaku juga untuk halaman mahasiswa (Profil/Riwayat).
+
 ## 2026-10-28 — Perbaiki teks hilang di mode terang
 
 - Hub Kelola, kartu mode tampilan, dan tab Setoran/Penarikan kini membaca

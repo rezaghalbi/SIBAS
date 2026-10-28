@@ -8,6 +8,7 @@ import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/models/admin_metrics_model.dart';
 import '../providers/verification_provider.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
 /// Halaman Dashboard Utama Petugas Admin
@@ -197,7 +198,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             sliver: SliverToBoxAdapter(
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: SegmentedButton<AdminMetricsPeriod>(
+                child: Builder(
+                  builder: (context) {
+                    final palette = AppPalette.of(context);
+                    return SegmentedButton<AdminMetricsPeriod>(
                   segments: const [
                     ButtonSegment<AdminMetricsPeriod>(
                       value: AdminMetricsPeriod.all,
@@ -226,18 +230,20 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                     ),
                     backgroundColor: WidgetStateProperty.resolveWith((states) {
                       return states.contains(WidgetState.selected)
-                          ? SibasColors.leaf
-                          : SibasColors.surfaceAlt;
+                          ? palette.leaf
+                          : palette.surfaceAlt;
                     }),
                     foregroundColor: WidgetStateProperty.resolveWith((states) {
                       return states.contains(WidgetState.selected)
                           ? Colors.white
-                          : SibasColors.text;
+                          : palette.text;
                     }),
                     side: WidgetStatePropertyAll(
-                      BorderSide(color: SibasColors.border),
+                      BorderSide(color: palette.border),
                     ),
                   ),
+                );
+                  },
                 ),
               ),
             ),
