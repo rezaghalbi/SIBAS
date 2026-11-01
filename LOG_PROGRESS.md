@@ -15,6 +15,13 @@
 - Belum diuji di perangkat; bukti hanya header CSP di preview dan analisis
   sumber `mobile_scanner` 5.1.1.
 
+**Verifikasi**
+- CI hijau: Analyze & Test `41301137007`, Build APK + preview `41301136990`.
+- Preview `https://sibas-rhm5g6z99-rezaghalbis-projects.vercel.app`: header
+  `script-src` memuat `https://unpkg.com`, dan `main.dart.js` hasil build
+  memuat URL `unpkg.com/@zxing`, jadi build ini memang mengambil ZXing dari CDN.
+- Uji kamera dan QR mode gelap di perangkat belum dilakukan.
+
 ## 2026-11-01 — Perbaiki teks hilang dan form jenis sampah
 
 - Izinkan `fonts.gstatic.com` di CSP agar font fallback Flutter Web (Roboto/Noto)
