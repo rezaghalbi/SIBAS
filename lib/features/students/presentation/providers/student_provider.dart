@@ -9,7 +9,20 @@ final studentRepositoryProvider = Provider<StudentRepository>((ref) {
   return StudentRepository(supabase);
 });
 
+/// Pencarian dan batas baris daftar mahasiswa (server-side).
+final adminStudentQueryProvider = StateProvider<String>((ref) => '');
+final adminStudentLimitProvider = StateProvider<int>((ref) => 100);
+
 final studentsProvider = FutureProvider<List<StudentModel>>((ref) async {
   ref.watch(sessionEpochProvider);
-  return ref.watch(studentRepositoryProvider).getStudents();
+  return ref.watch(studentRepositoryProvider).getStudents(
+        query: ref.watch(adminStudentQueryProvider),
+        limit: ref.watch(adminStudentLimitProvider),
+      );
+});
+
+/// Jumlah total mahasiswa untuk kartu ringkasan dashboard.
+final studentCountProvider = FutureProvider<int>((ref) async {
+  ref.watch(sessionEpochProvider);
+  return ref.watch(studentRepositoryProvider).getStudentCount();
 });

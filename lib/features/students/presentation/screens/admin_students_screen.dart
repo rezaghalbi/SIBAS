@@ -8,7 +8,6 @@ import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../domain/models/student_model.dart';
-import '../../domain/student_filter.dart';
 import '../providers/student_provider.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
@@ -34,10 +33,10 @@ TextStyle get _sectionTitle => TextStyle(
   color: SibasColors.text,
 );
 
-/// Daftar akun mahasiswa untuk admin (baca saja).
+/// Daftar akun mahasiswa untuk admin; identitas dapat dikoreksi.
 ///
-/// Pencarian dilakukan lokal lewat [saringMahasiswa]; tidak memakai filter
-/// global admin agar state halaman lain tidak ikut berubah.
+/// Pencarian dan paginasi dilakukan di server agar daftar tidak terpotong
+/// pada 500 akun. Memakai state sendiri, bukan filter admin global.
 class AdminStudentsScreen extends ConsumerStatefulWidget {
   const AdminStudentsScreen({super.key});
 
@@ -55,8 +54,15 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
   static final _berat = NumberFormat('#,##0.##', 'id_ID');
   static final _tanggal = DateFormat('dd MMM yyyy', 'id_ID');
 
-  final _cari = TextEditingController();
-  String _query = '';
+  late final TextEditingController _cari;
+
+  @override
+  void initState() {
+    super.initState();
+    _cari = TextEditingController(
+      text: ref.read(adminStudentQueryProvider),
+    );
+  }
 
   @override
   void dispose() {
@@ -135,12 +141,14 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
 
   /// Kolom pencarian: field 16 px di atas panel kaca statis.
   Widget _kolomCari() {
+    final query = ref.watch(adminStudentQueryProvider);
     return SurfaceCard(
       tone: SurfaceTone.subtle,
       radius: 16,
       child: TextField(
         controller: _cari,
-        onChanged: (value) => setState(() => _query = value),
+        onChanged: (value) =>
+            ref.read(adminStudentQueryProvider.notifier).state = value,
         textInputAction: TextInputAction.search,
         style: TextStyle(fontSize: 16, color: SibasColors.text),
         decoration: InputDecoration(
@@ -159,13 +167,13 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
             minWidth: _touch,
             minHeight: _touch,
           ),
-          suffixIcon: _query.isEmpty
+          suffixIcon: query.isEmpty
               ? null
               : IconButton(
                   tooltip: 'Hapus pencarian',
                   onPressed: () {
                     _cari.clear();
-                    setState(() => _query = '');
+                    ref.read(adminStudentQueryProvider.notifier).state = '';
                   },
                   icon: Icon(
                     Icons.close_rounded,
@@ -209,19 +217,19 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
           ),
         ),
       ],
-      data: (semua) {
-        final data = saringMahasiswa(semua, _query);
+      data: (data) {
+        final query = ref.read(adminStudentQueryProvider).trim();
         if (data.isEmpty) {
           return [
             _stateSliver(
               _kartuPesan(
-                icon: _query.trim().isEmpty
+                icon: query.isEmpty
                     ? Icons.people_outline_rounded
                     : Icons.search_off_rounded,
-                judul: _query.trim().isEmpty
+                judul: query.isEmpty
                     ? 'Belum ada mahasiswa'
                     : 'Mahasiswa tidak ditemukan',
-                pesan: _query.trim().isEmpty
+                pesan: query.isEmpty
                     ? 'Akun mahasiswa yang mendaftar akan tampil di sini.'
                     : 'Coba kata kunci lain: nama, NIM, email, atau WA.',
               ),
@@ -229,6 +237,8 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
           ];
         }
 
+        final limit = ref.watch(adminStudentLimitProvider);
+        final adaLagi = data.length >= limit;
         return [
           SliverToBoxAdapter(
             child: ContentWidth(
@@ -245,7 +255,7 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
                       ),
                     ),
                     Text(
-                      '${data.length} akun',
+                      adaLagi ? '${data.length} dimuat' : '${data.length} akun',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -264,6 +274,24 @@ class _AdminStudentsScreenState extends ConsumerState<AdminStudentsScreen> {
               child: _kartuMahasiswa(data[i]),
             ),
           ),
+          if (adaLagi)
+            SliverToBoxAdapter(
+              child: ContentWidth(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4, bottom: 8),
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        ref.read(adminStudentLimitProvider.notifier).state += 100,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                      foregroundColor: SibasColors.leaf,
+                      side: BorderSide(color: SibasColors.border),
+                    ),
+                    child: Text('Muat $limit mahasiswa lagi'),
+                  ),
+                ),
+              ),
+            ),
         ];
       },
     );

@@ -155,6 +155,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
           const SizedBox(height: 20),
           const ThemeModeCard(),
           const SizedBox(height: 20),
+          const SizedBox(height: 20),
           if (_pesan != null) ...[
             _pesanBanner(),
             const SizedBox(height: 16),

@@ -187,32 +187,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Role tidak dipilih di klien: server menentukan admin/mahasiswa
-                        // lewat tabel profiles, lalu router mengarahkan ke dashboard sesuai role.
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: SibasColors.mintWash,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.info_outline_rounded, size: 16, color: SibasColors.leaf),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Masuk sebagai mahasiswa atau admin — diarahkan otomatis sesuai akun.',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontSize: 12,
-                                    color: SibasColors.muted,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 22),
-
+                        const SizedBox(height: 20),
                         // Pemberitahuan email belum diverifikasi
                         if (_verificationNotice != null) ...[
                           Container(

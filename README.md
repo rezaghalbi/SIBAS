@@ -102,7 +102,7 @@ flutter build web --release \
   --dart-define=SUPABASE_URL=<url> \
   --dart-define=SUPABASE_ANON_KEY=<anon-key>
 
-flutter build apk --release --no-tree-shake-icons \
+flutter build apk --release --split-per-abi \
   --dart-define=SUPABASE_URL=<url> \
   --dart-define=SUPABASE_ANON_KEY=<anon-key>
 ```
@@ -254,8 +254,9 @@ Admin punya dua layar operasional:
 
 - **Data Mahasiswa** (`/admin/students`) — daftar akun role `mahasiswa` dari
   `profiles` (RLS `profiles_select` mengizinkan admin membaca semua profil),
-  pencarian lokal nama/NIM/email/WA lewat `saringMahasiswa`, dan detail akun.
-  Layar ini baca-saja; perubahan data akun tidak dilakukan dari aplikasi.
+  pencarian server-side nama/NIM/email/WA, dan detail akun.
+  Admin dapat mengoreksi nama, NIM, dan nomor WhatsApp lewat RPC
+  `admin_ubah_mahasiswa`; peran, saldo, dan status akun tetap terkunci.
 - **Pengaturan Aplikasi** (`/admin/settings`) — `qr_ttl_minutes` (5–1440,
   default 120) dan kontak admin (email, lokasi, jam layanan). Disimpan ke
   `app_settings` lewat RPC `update_app_settings`; hanya admin. Perubahan TTL
@@ -382,9 +383,9 @@ gh run view <run-id> --log-failed
   Flutter SDK; target rilis saat ini Android + web.
 - Bila `ANDROID_KEYSTORE_BASE64` kosong, APK CI memakai debug key dan tidak
   bisa di-update di atas versi lama. Buat keystore rilis dan isi secrets
-  (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+  (`ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`,
   `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`) sebelum distribusi.
 - Tidak ada pemulihan akun dari aplikasi (harus lewat Dashboard Supabase) dan
   belum ada push notification.
-- Layar Data Mahasiswa bersifat baca-saja; koreksi data akun dilakukan lewat
-  Dashboard Supabase.
+- Koreksi identitas mahasiswa dilakukan lewat RPC `admin_ubah_mahasiswa`;
+  peran, saldo, dan status akun tetap terkunci.

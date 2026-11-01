@@ -35,6 +35,26 @@ void main() {
     expect(baris.endsWith('APPROVED,,'), isTrue);
   });
 
+  test('field berawalan formula diberi kutip tunggal', () {
+    final csv = bangunCsvSetoran([
+      {
+        'id': 'tx-3',
+        'tx_code': 'TX-003',
+        'created_at': DateTime(2026, 1, 2, 3, 4),
+        'profiles': {'full_name': '=2+2', 'nim': '20230003'},
+        'trash_types': {'name': 'Kertas', 'price_per_kg': 2000},
+        'weight': 1.0,
+        'final_amount': 2000,
+        'status': 'APPROVED',
+        'rejection_reason': '@SUM(A1)',
+      },
+    ]);
+
+    final baris = csv.split('\r\n')[1];
+    expect(baris, contains("'=2+2"));
+    expect(baris, contains("'@SUM(A1)"));
+  });
+
   test('menyertakan nama lokasi di kolom terakhir', () {
     final csv = bangunCsvSetoran([
       {

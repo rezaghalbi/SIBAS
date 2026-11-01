@@ -11,8 +11,10 @@ import '../../../../core/widgets/glass_panel.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
+import '../../../history/presentation/providers/admin_history_provider.dart';
 import '../providers/verification_provider.dart';
 import '../widgets/verification_bottom_sheet.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
 final _currency = NumberFormat.currency(
@@ -45,7 +47,8 @@ class AdminScanScreen extends ConsumerStatefulWidget {
   ConsumerState<AdminScanScreen> createState() => _AdminScanScreenState();
 }
 
-class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
+class _AdminScanScreenState extends ConsumerState<AdminScanScreen>
+    with WidgetsBindingObserver {
   // mobile_scanner 5.x mendukung web (kamera peramban); controller dipakai semua platform.
   late final MobileScannerController _scannerController;
   final _uuidInputController = TextEditingController();
@@ -54,6 +57,15 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   _ScanMode _mode = _ScanMode.setoran;
   bool _isProcessing = false;
   bool _torchEnabled = false;
+
+  /// Kamera hanya hidup saat layar ini benar-benar terlihat dan app aktif.
+  ///
+  /// `StatefulShellRoute.indexedStack` memakai `TickerMode` untuk tab yang
+  /// tidak aktif; tanpa pemeriksaan ini kamera tetap menyala saat admin
+  /// berpindah tab.
+  bool _tickerAktif = true;
+  bool _appAktif = true;
+  bool _kameraDitahan = false;
 
   /// Token yang sudah disetujui; kamera tidak memproses ulang QR yang sama.
   String? _approvedToken;
@@ -66,14 +78,76 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scannerController = MobileScannerController();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scannerController.dispose();
     _uuidInputController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // TickerMode mati untuk branch StatefulShellRoute yang tidak aktif.
+    final aktif = TickerMode.of(context);
+    if (aktif == _tickerAktif) return;
+
+    _tickerAktif = aktif;
+    if (aktif) {
+      if (_appAktif && !_kameraDitahan) _mulaiKamera();
+    } else {
+      _hentikanKamera();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // `inactive` tetap dianggap aktif agar dialog izin kamera tidak
+    // menghentikan permintaan izin yang sedang berjalan.
+    final aktif = state == AppLifecycleState.resumed ||
+        state == AppLifecycleState.inactive;
+    if (aktif == _appAktif) return;
+
+    _appAktif = aktif;
+    if (aktif) {
+      if (_kameraTampil) _mulaiKamera();
+    } else {
+      _hentikanKamera();
+    }
+  }
+
+  bool get _kameraTampil => _tickerAktif && _appAktif && !_kameraDitahan;
+
+  Future<void> _hentikanKamera() async {
+    try {
+      await _scannerController.stop();
+    } catch (_) {
+      // Kamera mungkin belum siap atau sudah berhenti; abaikan.
+    }
+  }
+
+  Future<void> _mulaiKamera() async {
+    try {
+      await _scannerController.start();
+    } catch (_) {
+      // controllerInitializing/not attached: biarkan widget mencoba lagi.
+    }
+  }
+
+  /// Tahan kamera selama sheet/dialog/proses berjalan.
+  void _setKameraDitahan(bool ditahan) {
+    if (!mounted || _kameraDitahan == ditahan) return;
+    _kameraDitahan = ditahan;
+    if (ditahan) {
+      _hentikanKamera();
+    } else if (_kameraTampil) {
+      _mulaiKamera();
+    }
   }
 
   void _showError(String message) {
@@ -167,11 +241,11 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     );
   }
 
-  void _processRawValue(String rawValue, {bool notify = true}) {
+  Future<void> _processRawValue(String rawValue, {bool notify = true}) async {
     if (_isWithdrawal) {
-      _processWithdrawalQr(rawValue, notify: notify);
+      await _processWithdrawalQr(rawValue, notify: notify);
     } else {
-      _processTransactionId(rawValue);
+      await _processTransactionId(rawValue);
     }
   }
 
@@ -180,6 +254,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     if (cleanId.isEmpty || _isProcessing) return;
 
     setState(() => _isProcessing = true);
+    _setKameraDitahan(true);
     try {
       final repo = ref.read(verificationRepositoryProvider);
       final txData = await repo.getTransactionForVerification(cleanId);
@@ -204,7 +279,10 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
         transactionData: txData,
         onVerificationComplete: () {
           ref.invalidate(adminMetricsProvider);
-          ref.invalidate(adminTransactionsProvider);
+          ref.invalidate(adminPendingTransactionsProvider);
+          ref.invalidate(adminRecentTransactionsProvider);
+          ref.invalidate(adminHistoryTransactionsProvider);
+          ref.invalidate(adminHistoryWithdrawalsProvider);
         },
       );
     } catch (e) {
@@ -218,7 +296,10 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        _setKameraDitahan(false);
+      }
     }
   }
 
@@ -242,6 +323,7 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     }
 
     setState(() => _isProcessing = true);
+    _setKameraDitahan(true);
     try {
       final repo = ref.read(withdrawalRepositoryProvider);
       final data = await repo.getWithdrawalByQr(token);
@@ -270,20 +352,24 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
     } catch (error) {
       if (mounted) _showError(pesanKesalahan(error));
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        _setKameraDitahan(false);
+      }
     }
   }
 
   /// Fallback Pemindaian QR menggunakan Unggah File Gambar (Aturan PRD)
   Future<void> _pickImageFallback() async {
+    _setKameraDitahan(true);
     try {
       final XFile? image =
           await _imagePicker.pickImage(source: ImageSource.gallery);
-      if (image == null) return;
+      if (image == null || !mounted) return;
 
       // Gambar tidak didekode otomatis di perangkat ini; jangan mengarang kode.
       // Admin mengetik token QR yang tampil di layar mahasiswa.
-      _showManualInputDialog(
+      await _showManualInputDialog(
         catatan: _isWithdrawal
             ? 'Gambar tidak dapat dibaca otomatis. Masukkan token QR penarikan '
                 'yang tertera pada layar mahasiswa.'
@@ -300,13 +386,16 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
           ),
         );
       }
+    } finally {
+      _setKameraDitahan(false);
     }
   }
 
-  void _showManualInputDialog({String? catatan}) {
+  Future<void> _showManualInputDialog({String? catatan}) async {
     final isWithdrawal = _isWithdrawal;
+    _setKameraDitahan(true);
 
-    showDialog(
+    final hasil = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: SibasColors.surface,
@@ -401,10 +490,8 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
           SizedBox(
             height: 44,
             child: FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _processRawValue(_uuidInputController.text);
-              },
+              onPressed: () =>
+                  Navigator.pop(ctx, _uuidInputController.text),
               style: FilledButton.styleFrom(
                 backgroundColor: SibasColors.leaf,
                 foregroundColor: Colors.white,
@@ -424,11 +511,22 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
         ],
       ),
     );
+
+    if (!mounted) return;
+    try {
+      final teks = hasil?.trim() ?? '';
+      if (teks.isNotEmpty) {
+        await _processRawValue(teks);
+      }
+    } finally {
+      _setKameraDitahan(false);
+    }
   }
 
   Widget _modeSelector(double gutter) {
+    final palette = AppPalette.of(context);
     return Container(
-      color: SibasColors.background,
+      color: palette.background,
       padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 12),
       child: Center(
         child: ConstrainedBox(
@@ -462,16 +560,16 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
               ),
               backgroundColor: WidgetStateProperty.resolveWith((states) {
                 return states.contains(WidgetState.selected)
-                    ? SibasColors.leaf
-                    : SibasColors.surfaceAlt;
+                    ? palette.leaf
+                    : palette.surfaceAlt;
               }),
               foregroundColor: WidgetStateProperty.resolveWith((states) {
                 return states.contains(WidgetState.selected)
                     ? Colors.white
-                    : SibasColors.text;
+                    : palette.text;
               }),
               side: WidgetStatePropertyAll(
-                BorderSide(color: SibasColors.border),
+                BorderSide(color: palette.border),
               ),
             ),
           ),
@@ -559,6 +657,9 @@ class _AdminScanScreenState extends ConsumerState<AdminScanScreen> {
               fit: StackFit.expand,
               children: [
                 // 1. Kamera Scanner View — mobile_scanner 5.x jalan di web (izin peramban).
+                // Controller dihentikan saat tab tidak aktif, app di background,
+                // atau sheet terbuka; widget tetap terpasang agar tidak membuat
+                // observer baru setiap kali tab dibuka kembali.
                 MobileScanner(
                   controller: _scannerController,
                   errorBuilder: (context, error, child) => _cameraErrorPanel(),

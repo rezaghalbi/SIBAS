@@ -9,6 +9,7 @@ import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../../core/widgets/skeleton.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../history/presentation/providers/admin_history_provider.dart';
 import '../../../history/presentation/providers/transaction_provider.dart';
 import '../../../withdrawal/domain/models/withdrawal_model.dart';
 import '../../../withdrawal/presentation/providers/withdrawal_provider.dart';
@@ -54,14 +55,6 @@ class _AdminSubmissionsScreenState
   );
   static final _date = DateFormat('dd/MM/yyyy HH:mm');
 
-  static const _statusFilters = <String?, String>{
-    null: 'Semua',
-    'PENDING': 'Menunggu',
-    'APPROVED': 'Disetujui',
-    'REJECTED': 'Ditolak',
-    'EXPIRED': 'Kedaluwarsa',
-  };
-
   _SubmissionTab _tab = _SubmissionTab.setoran;
   String? _busyId;
   late final TextEditingController _searchController;
@@ -91,14 +84,17 @@ class _AdminSubmissionsScreenState
           SliverToBoxAdapter(
             child: _WidthLimit(
               child: HeroHeader(
-                title: 'Kelola Pengajuan',
-                subtitle: 'Setoran & pencairan saldo',
+                title: 'Pengajuan Menunggu',
+                subtitle: 'Setoran & pencairan yang perlu diverifikasi',
                 trailing: IconButton(
                   tooltip: 'Muat ulang',
                   onPressed: () {
                     ref.invalidate(adminMetricsProvider);
-                    ref.invalidate(adminTransactionsProvider);
-                    ref.invalidate(adminWithdrawalsProvider(null));
+                    ref.invalidate(adminPendingTransactionsProvider);
+                    ref.invalidate(adminRecentTransactionsProvider);
+                    ref.invalidate(adminWithdrawalsProvider('PENDING'));
+                    ref.invalidate(adminHistoryTransactionsProvider);
+                    ref.invalidate(adminHistoryWithdrawalsProvider);
                   },
                   icon: Container(
                     width: 40,
@@ -137,7 +133,7 @@ class _AdminSubmissionsScreenState
   // ---------------------------------------------------------------- Setoran
 
   List<Widget> _setoranSlivers() {
-    final txState = ref.watch(adminTransactionsProvider);
+    final txState = ref.watch(adminPendingTransactionsProvider);
     final filter = ref.watch(adminFilterProvider);
     final limit = ref.watch(adminPageLimitProvider);
     final searching = filter.query.trim().isNotEmpty;
@@ -149,14 +145,6 @@ class _AdminSubmissionsScreenState
           child: Padding(
             padding: const EdgeInsets.only(top: 20),
             child: _searchField(showClear: filter.query.isNotEmpty),
-          ),
-        ),
-      ),
-      SliverToBoxAdapter(
-        child: ContentWidth(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: _statusBar(selected: filter.status),
           ),
         ),
       ),
@@ -195,7 +183,7 @@ class _AdminSubmissionsScreenState
             return _stateSliver(
               _emptySetoran(
                 searching: searching,
-                hasStatus: filter.status != null,
+                hasStatus: false,
               ),
             );
           }
@@ -221,7 +209,7 @@ class _AdminSubmissionsScreenState
             title: 'Gagal memuat setoran',
             message: 'Periksa koneksi Anda, lalu muat ulang daftar.',
             actionLabel: 'Coba lagi',
-            onAction: () => ref.invalidate(adminTransactionsProvider),
+            onAction: () => ref.invalidate(adminPendingTransactionsProvider),
           ),
         ),
       ),
@@ -301,32 +289,6 @@ class _AdminSubmissionsScreenState
     );
   }
 
-  /// Chip status menggulir sendiri di dalam barisnya, bukan halaman (§8).
-  Widget _statusBar({required String? selected}) {
-    return SizedBox(
-      height: _touchTarget,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _statusFilters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final entry = _statusFilters.entries.elementAt(index);
-          return _FilterChip(
-            label: entry.value,
-            selected: selected == entry.key,
-            onTap: () {
-              ref.read(adminFilterProvider.notifier).update(
-                    (f) => entry.key == null
-                        ? f.copyWith(clearStatus: true)
-                        : f.copyWith(status: entry.key),
-                  );
-            },
-          );
-        },
-      ),
-    );
-  }
-
   void _clearQuery() {
     _searchController.clear();
     ref.read(adminFilterProvider.notifier).update(
@@ -353,7 +315,7 @@ class _AdminSubmissionsScreenState
         title: 'Belum ada setoran',
         message: 'Pengajuan setoran mahasiswa akan tampil di sini.',
         actionLabel: 'Muat ulang',
-        onAction: () => ref.invalidate(adminTransactionsProvider),
+        onAction: () => ref.invalidate(adminPendingTransactionsProvider),
       );
     }
     return _StateCard(
@@ -558,7 +520,9 @@ class _AdminSubmissionsScreenState
           .approveTransaction(transactionId: id);
 
       ref.invalidate(adminMetricsProvider);
-      ref.invalidate(adminTransactionsProvider);
+      ref.invalidate(adminPendingTransactionsProvider);
+      ref.invalidate(adminRecentTransactionsProvider);
+      ref.invalidate(adminHistoryTransactionsProvider);
       ref.invalidate(currentUserProvider);
       // Detail transaksi yang mungkin masih terbuka ikut disegarkan.
       ref.invalidate(transactionDetailRpcProvider);
@@ -598,7 +562,9 @@ class _AdminSubmissionsScreenState
           .rejectTransaction(transactionId: id, reason: reason);
 
       ref.invalidate(adminMetricsProvider);
-      ref.invalidate(adminTransactionsProvider);
+      ref.invalidate(adminPendingTransactionsProvider);
+      ref.invalidate(adminRecentTransactionsProvider);
+      ref.invalidate(adminHistoryTransactionsProvider);
       ref.invalidate(currentUserProvider);
       // Detail transaksi yang mungkin masih terbuka ikut disegarkan.
       ref.invalidate(transactionDetailRpcProvider);
@@ -623,7 +589,7 @@ class _AdminSubmissionsScreenState
   // -------------------------------------------------------------- Penarikan
 
   List<Widget> _penarikanSlivers() {
-    final state = ref.watch(adminWithdrawalsProvider(null));
+    final state = ref.watch(adminWithdrawalsProvider('PENDING'));
     final total = state.valueOrNull?.length;
 
     return [
@@ -666,7 +632,7 @@ class _AdminSubmissionsScreenState
                 message: 'Pengajuan pencairan saldo akan tampil di sini.',
                 actionLabel: 'Muat ulang',
                 onAction: () {
-                  ref.invalidate(adminWithdrawalsProvider(null));
+                  ref.invalidate(adminWithdrawalsProvider('PENDING'));
                 },
               ),
             );
@@ -695,7 +661,7 @@ class _AdminSubmissionsScreenState
             message: 'Periksa koneksi Anda, lalu muat ulang daftar.',
             actionLabel: 'Coba lagi',
             onAction: () {
-              ref.invalidate(adminWithdrawalsProvider(null));
+              ref.invalidate(adminWithdrawalsProvider('PENDING'));
             },
           ),
         ),
@@ -854,6 +820,8 @@ class _AdminSubmissionsScreenState
     setState(() => _busyId = null);
 
     if (ok) {
+      ref.invalidate(adminMetricsProvider);
+      ref.invalidate(adminHistoryWithdrawalsProvider);
       _toast('Penarikan disetujui.');
     } else {
       _toast(
@@ -880,6 +848,8 @@ class _AdminSubmissionsScreenState
     setState(() => _busyId = null);
 
     if (ok) {
+      ref.invalidate(adminMetricsProvider);
+      ref.invalidate(adminHistoryWithdrawalsProvider);
       _toast('Penarikan ditolak. Alasan sudah dicatat.');
     } else {
       _toast(
@@ -1219,63 +1189,6 @@ class _TabSegment extends StatelessWidget {
                   color: selected
                       ? SibasColors.primary
                       : Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Chip filter status 44 px; gulir hanya di dalam barisnya (§4, §8).
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: Material(
-        color: Colors.transparent,
-        child: Ink(
-          decoration: ShapeDecoration(
-            color: selected
-                ? SibasColors.leaf
-                : SibasColors.mintWash,
-            shape: StadiumBorder(
-              side: BorderSide(
-                color: selected
-                    ? SibasColors.leaf
-                    : SibasColors.border,
-              ),
-            ),
-          ),
-          child: InkWell(
-            onTap: onTap,
-            customBorder: const StadiumBorder(),
-            child: Container(
-              height: _touchTarget,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.center,
-              child: Text(
-                label,
-                maxLines: 1,
-                softWrap: false,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                  color: selected ? Colors.white : SibasColors.text,
                 ),
               ),
             ),

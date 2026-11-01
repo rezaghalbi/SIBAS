@@ -74,23 +74,82 @@ class WithdrawalRepository {
     });
   }
 
+  /// Ukuran satu halaman saat menarik seluruh data untuk ekspor.
+  static const _pageSize = 1000;
+
   /// Daftar pengajuan untuk admin.
   ///
-  /// Status, lokasi, dan pencarian (nama/NIM) difilter di server agar tidak
-  /// terpotong batas baris; `limit` dipakai untuk paginasi bertahap.
+  /// Status, lokasi, pencarian (nama/NIM), dan rentang tanggal difilter di
+  /// server agar tidak terpotong batas baris; `limit` dipakai untuk paginasi
+  /// bertahap.
   Future<List<WithdrawalModel>> getAllWithdrawals({
     String? statusFilter,
     String? locationId,
     String query = '',
+    DateTime? startDate,
+    DateTime? endDate,
     int limit = 50,
   }) {
-    return guardRequest(() async {
+    return guardRequest(
+      () => _fetchWithdrawals(
+        statusFilter: statusFilter,
+        locationId: locationId,
+        query: query,
+        startDate: startDate,
+        endDate: endDate,
+        maxRows: limit.clamp(1, 5000),
+      ),
+    );
+  }
+
+  /// Seluruh penarikan yang cocok dengan filter, tanpa batas 200 baris.
+  /// Dipakai ekspor CSV: halaman 1000 baris diambil sampai habis.
+  Future<List<WithdrawalModel>> getAllWithdrawalsForExport({
+    String? statusFilter,
+    String? locationId,
+    String query = '',
+    DateTime? startDate,
+    DateTime? endDate,
+  }) {
+    return guardRequest(
+      () => _fetchWithdrawals(
+        statusFilter: statusFilter,
+        locationId: locationId,
+        query: query,
+        startDate: startDate,
+        endDate: endDate,
+      ),
+      // Ekspor bisa beberapa halaman; jangan putus di batas 20 detik.
+      timeout: const Duration(seconds: 60),
+    );
+  }
+
+  /// Query penarikan dengan filter server. `maxRows` null berarti tarik semua.
+  Future<List<WithdrawalModel>> _fetchWithdrawals({
+    String? statusFilter,
+    String? locationId,
+    required String query,
+    DateTime? startDate,
+    DateTime? endDate,
+    int? maxRows,
+  }) async {
+    final hasil = <WithdrawalModel>[];
+    while (true) {
       var builder = _client.from('withdrawals').select(_selectWithRelations);
       if (statusFilter != null && statusFilter.isNotEmpty) {
         builder = builder.eq('status', statusFilter.toUpperCase());
       }
       if (locationId != null && locationId.isNotEmpty) {
         builder = builder.eq('location_id', locationId);
+      }
+      if (startDate != null) {
+        builder = builder.gte(
+          'created_at',
+          startDate.toUtc().toIso8601String(),
+        );
+      }
+      if (endDate != null) {
+        builder = builder.lt('created_at', endDate.toUtc().toIso8601String());
       }
 
       final needle = query.trim().replaceAll(RegExp(r'[,()*]'), ' ').trim();
@@ -101,14 +160,20 @@ class WithdrawalRepository {
         );
       }
 
+      final sisa = maxRows == null ? _pageSize : maxRows - hasil.length;
+      final ambil = sisa < _pageSize ? sisa : _pageSize;
+      if (ambil <= 0) break;
+
+      // Urutan id sebagai penentu agar baris tidak terduplikasi antarhalaman.
       final res = await builder
           .order('created_at', ascending: false)
-          .limit(limit.clamp(1, 200));
-      return (res as List<dynamic>)
-          .cast<Map<String, dynamic>>()
-          .map(WithdrawalModel.fromJson)
-          .toList();
-    });
+          .order('id', ascending: false)
+          .range(hasil.length, hasil.length + ambil - 1);
+      final batch = (res as List<dynamic>).cast<Map<String, dynamic>>();
+      hasil.addAll(batch.map(WithdrawalModel.fromJson));
+      if (batch.length < ambil) break;
+    }
+    return hasil;
   }
 
   /// Setujui penarikan. Mengembalikan status akhir dari server.

@@ -6,11 +6,9 @@ import '../../../../core/widgets/hero_header.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../core/widgets/surface_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../info/presentation/providers/app_settings_provider.dart';
-import '../../../students/presentation/providers/student_provider.dart';
 import '../../domain/models/admin_metrics_model.dart';
 import '../providers/verification_provider.dart';
-import '../widgets/verification_bottom_sheet.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/sibas_colors.dart';
 
 /// Halaman Dashboard Utama Petugas Admin
@@ -22,28 +20,17 @@ class AdminDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
-  final _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(currentUserProvider);
     final metricsState = ref.watch(adminMetricsProvider);
-    final txListState = ref.watch(adminTransactionsProvider);
+    final txListState = ref.watch(adminRecentTransactionsProvider);
 
     final adminName = userState.valueOrNull?.fullName ?? 'Petugas SIBAS';
 
     // Pintasan memakai data yang sudah ada; saat memuat/gagal tampilkan "—"
     // supaya kartu tetap bisa diketuk.
     final metrics = metricsState.valueOrNull;
-    final studentCount = ref.watch(studentsProvider).valueOrNull?.length;
-    final qrTtlMinutes =
-        ref.watch(appSettingsProvider).valueOrNull?.qrTtlMinutes;
 
     final pendingLabel =
         metrics == null ? '—' : '${metrics.pendingCount} transaksi menunggu';
@@ -51,9 +38,6 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         ? '—'
         : '${metrics.approvedCount} disetujui · '
             '${metrics.rejectedCount} ditolak';
-    final studentsLabel =
-        studentCount == null ? '—' : '$studentCount mahasiswa';
-    final settingsLabel = qrTtlMinutes == null ? '—' : 'QR $qrTtlMinutes menit';
     // Total berat tetap ditampilkan sebagai keterangan judul seksi.
     final weightLabel = metrics == null
         ? 'Total — kg'
@@ -67,7 +51,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           SliverToBoxAdapter(
             child: HeroHeader(
               title: 'Halo, $adminName',
-              subtitle: 'Panel Validasi & Pengelolaan Bank Sampah',
+              subtitle: 'Ringkasan dan pengelolaan bank sampah',
               trailing: IconButton(
                 onPressed: () {
                   showDialog(
@@ -209,11 +193,67 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               ),
             ),
           ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            sliver: SliverToBoxAdapter(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Builder(
+                  builder: (context) {
+                    final palette = AppPalette.of(context);
+                    return SegmentedButton<AdminMetricsPeriod>(
+                  segments: const [
+                    ButtonSegment<AdminMetricsPeriod>(
+                      value: AdminMetricsPeriod.all,
+                      label: Text('Semua'),
+                    ),
+                    ButtonSegment<AdminMetricsPeriod>(
+                      value: AdminMetricsPeriod.month,
+                      label: Text('Bulan ini'),
+                    ),
+                  ],
+                  selected: {ref.watch(adminMetricsPeriodProvider)},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (selection) {
+                    ref.read(adminMetricsPeriodProvider.notifier).state =
+                        selection.first;
+                  },
+                  style: ButtonStyle(
+                    minimumSize: const WidgetStatePropertyAll<Size>(
+                      Size(0, 36),
+                    ),
+                    textStyle: const WidgetStatePropertyAll<TextStyle>(
+                      TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      return states.contains(WidgetState.selected)
+                          ? palette.leaf
+                          : palette.surfaceAlt;
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith((states) {
+                      return states.contains(WidgetState.selected)
+                          ? Colors.white
+                          : palette.text;
+                    }),
+                    side: WidgetStatePropertyAll(
+                      BorderSide(color: palette.border),
+                    ),
+                  ),
+                );
+                  },
+                ),
+              ),
+            ),
+          ),
+
           SliverLayoutBuilder(
             builder: (context, constraints) {
               // 360 px → 2 kolom; desktop → tepat 4 kolom selebar konten, tanpa
               // slot kosong saat lebar jendela berubah.
-              final columns = constraints.crossAxisExtent < 700 ? 2 : 4;
+              final columns = constraints.crossAxisExtent < 700 ? 2 : 3;
               const gap = 12.0;
               final available = constraints.crossAxisExtent - 40;
               final extent = (available - gap * (columns - 1)) / columns;
@@ -245,20 +285,12 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                       onTap: () => context.push('/admin/history'),
                     ),
                     _DashboardShortcutTile(
-                      title: 'Data Mahasiswa',
-                      value: studentsLabel,
-                      icon: Icons.groups_rounded,
+                      title: 'Kelola',
+                      value: 'Data & pengaturan',
+                      icon: Icons.tune_rounded,
                       iconColor: SibasColors.leaf,
                       iconBackground: SibasColors.mintWash,
-                      onTap: () => context.push('/admin/students'),
-                    ),
-                    _DashboardShortcutTile(
-                      title: 'Pengaturan',
-                      value: settingsLabel,
-                      icon: Icons.tune_rounded,
-                      iconColor: SibasColors.muted,
-                      iconBackground: SibasColors.mintWash,
-                      onTap: () => context.push('/admin/settings'),
+                      onTap: () => context.push('/admin/manage'),
                     ),
                   ]),
                 ),
@@ -274,144 +306,53 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             ),
           ),
 
-          // Pintasan pengelolaan jenis sampah & tarif
+          // 3. Ringkasan transaksi terbaru. Arsip lengkap ada di Riwayat.
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
             sliver: SliverToBoxAdapter(
-              child: SurfaceCard(
-                child: Material(
-                  color: Colors.transparent,
-                  child: ListTile(
-                    onTap: () => context.push('/admin/trash-types'),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: SibasColors.mintWash,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.category_rounded, size: 18, color: SibasColors.leaf),
-                    ),
-                    title: Text(
-                      'Kelola Jenis Sampah',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: SibasColors.text),
-                    ),
-                    subtitle: Text(
-                      'Atur kategori dan tarif per kg',
-                      style: TextStyle(fontSize: 12, color: SibasColors.muted),
-                    ),
-                    trailing: Icon(Icons.chevron_right_rounded, size: 20, color: SibasColors.muted),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Pintasan pengelolaan lokasi bank sampah
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-            sliver: SliverToBoxAdapter(
-              child: SurfaceCard(
-                child: Material(
-                  color: Colors.transparent,
-                  child: ListTile(
-                    onTap: () => context.push('/admin/locations'),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: SibasColors.mintWash,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.location_on_rounded,
-                        size: 18,
-                        color: SibasColors.leaf,
-                      ),
-                    ),
-                    title: Text(
-                      'Lokasi Bank Sampah',
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Transaksi Terbaru',
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
                         color: SibasColors.text,
                       ),
                     ),
-                    subtitle: Text(
-                      'Atur titik setor dan tarik sampah',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: SibasColors.muted,
-                      ),
-                    ),
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: SibasColors.muted,
-                    ),
                   ),
-                ),
-              ),
-            ),
-          ),
-
-          // 3. Search & Filter Bar (Nama/NIM)
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: BoxDecoration(
-                  color: SibasColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: SibasColors.border),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (val) {
-                    ref.read(adminFilterProvider.notifier).update((f) => f.copyWith(query: val));
-                  },
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    hintText: 'Cari Nama Mahasiswa, NIM, atau ID Transaksi...',
-                    prefixIcon: Icon(Icons.search_rounded, color: SibasColors.leaf),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // 4. Header Daftar Transaksi
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            sliver: SliverToBoxAdapter(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Daftar Penyetoran Mahasiswa', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: SibasColors.text)),
                   IconButton(
-                    icon: Icon(Icons.refresh_rounded, color: SibasColors.leaf),
+                    tooltip: 'Muat ulang',
+                    icon: Icon(
+                      Icons.refresh_rounded,
+                      color: SibasColors.leaf,
+                    ),
                     onPressed: () {
                       ref.invalidate(adminMetricsProvider);
-                      ref.invalidate(adminTransactionsProvider);
-                      ref.invalidate(studentsProvider);
-                      ref.invalidate(appSettingsProvider);
+                      ref.invalidate(adminRecentTransactionsProvider);
                     },
+                  ),
+                  TextButton(
+                    onPressed: () => context.push('/admin/history'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: SibasColors.leaf,
+                      minimumSize: const Size(0, 44),
+                    ),
+                    child: const Text(
+                      'Lihat semua',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
 
-          // 5. List Transaksi
+          // 4. Lima transaksi terbaru; klik untuk detail.
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: txListState.when(
@@ -419,11 +360,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                 if (txList.isEmpty) {
                   return SliverToBoxAdapter(
                     child: SurfaceCard(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Center(
                         child: Text(
-                          'Belum ada transaksi yang sesuai kriteria '
-                          'pencarian.',
+                          'Belum ada transaksi.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: SibasColors.muted),
                         ),
@@ -436,15 +376,23 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final item = txList[index];
-                      final profile = item['profiles'] as Map<String, dynamic>?;
-                      final category = item['trash_types'] as Map<String, dynamic>?;
+                      final profile =
+                          item['profiles'] as Map<String, dynamic>?;
+                      final category =
+                          item['trash_types'] as Map<String, dynamic>?;
 
-                      final name = (profile?['full_name'] as String?) ?? 'Mahasiswa';
+                      final name =
+                          (profile?['full_name'] as String?) ?? 'Mahasiswa';
                       final nim = (profile?['nim'] as String?) ?? '-';
-                      final catName = (category?['name'] as String?) ?? (item['category_name'] as String?) ?? 'Sampah';
-                      final weight = (item['weight'] != null) ? (item['weight'] as num).toDouble() : 0.0;
-                      final status = (item['status'] as String?) ?? 'PENDING';
-                      final isPending = status.toUpperCase() == 'PENDING';
+                      final catName =
+                          (category?['name'] as String?) ??
+                              (item['category_name'] as String?) ??
+                              'Sampah';
+                      final weight = (item['weight'] != null)
+                          ? (item['weight'] as num).toDouble()
+                          : 0.0;
+                      final status =
+                          (item['status'] as String?) ?? 'PENDING';
                       final id = item['id'] as String?;
                       final canOpen = id != null && id.isNotEmpty;
 
@@ -457,13 +405,24 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                               : null,
                           leading: CircleAvatar(
                             backgroundColor: SibasColors.mintWash,
-                            child: Icon(Icons.recycling_rounded, color: SibasColors.leaf),
+                            child: Icon(
+                              Icons.recycling_rounded,
+                              color: SibasColors.leaf,
+                            ),
                           ),
                           title: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
-                                child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                child: Text(
+                                  name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               StatusBadge(status: status),
                             ],
@@ -472,32 +431,28 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-                              Text('NIM: $nim • $catName', style: TextStyle(fontSize: 12, color: SibasColors.muted)),
+                              Text(
+                                'NIM: $nim • $catName',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: SibasColors.muted,
+                                ),
+                              ),
                               const SizedBox(height: 2),
-                              Text('Berat Pengajuan: ${weight.toStringAsFixed(1)} kg', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: SibasColors.primary)),
+                              Text(
+                                'Berat: ${weight.toStringAsFixed(1)} kg',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: SibasColors.primary,
+                                ),
+                              ),
                             ],
                           ),
-                          trailing: isPending
-                              ? ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: SibasColors.leaf,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                                  ),
-                                  onPressed: () {
-                                    VerificationBottomSheet.show(
-                                      context,
-                                      transactionData: item,
-                                      onVerificationComplete: () {
-                                        ref.invalidate(adminMetricsProvider);
-                                        ref.invalidate(adminTransactionsProvider);
-                                      },
-                                    );
-                                  },
-                                  child: const Text('Validasi'),
-                                )
-                              : Icon(Icons.chevron_right_rounded, color: SibasColors.muted),
+                          trailing: Icon(
+                            Icons.chevron_right_rounded,
+                            color: SibasColors.muted,
+                          ),
                         ),
                       );
                     },
@@ -505,8 +460,17 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                   ),
                 );
               },
-              loading: () => const SliverToBoxAdapter(child: Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()))),
-              error: (e, _) => SliverToBoxAdapter(child: Text('Error: $e')),
+              loading: () => const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              ),
+              error: (e, _) => SliverToBoxAdapter(
+                child: Text('Gagal memuat transaksi terbaru.'),
+              ),
             ),
           ),
 
