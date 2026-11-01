@@ -1,5 +1,20 @@
 # LOG PROGRESS
 
+## 2026-11-01 — Kamera pemindai web dan QR mode gelap
+
+- Kamera pemindai di web tidak pernah terbuka sejak CSP penuh dipasang di
+  `942cd68`. `mobile_scanner` 5.1.1 memuat pustaka ZXing dari
+  `https://unpkg.com/@zxing/library@0.19.1` lewat `<script>` dan memanggilnya
+  sebelum `getUserMedia`; `script-src` tidak mengizinkan `unpkg.com`, jadi
+  pemuatan gagal, `getUserMedia` tidak pernah dipanggil, dan `errorBuilder`
+  menampilkan panel "Izin kamera diperlukan" tanpa prompt izin.
+  `https://unpkg.com` ditambahkan ke `script-src`.
+- QR setoran tidak terpindai di mode gelap karena warna finder pattern memakai
+  `SibasColors.primary` yang berubah jadi `#8FE6B8` (kontras 1.48:1 di atas
+  putih). Warna QR dipaku `#005746`/`#16865D` dan tidak lagi ikut tema.
+- Belum diuji di perangkat; bukti hanya header CSP di preview dan analisis
+  sumber `mobile_scanner` 5.1.1.
+
 ## 2026-11-01 — Perbaiki teks hilang dan form jenis sampah
 
 - Izinkan `fonts.gstatic.com` di CSP agar font fallback Flutter Web (Roboto/Noto)
