@@ -667,46 +667,51 @@ class _TrashTypeFormScreenState extends ConsumerState<TrashTypeFormScreen> {
       padding: const EdgeInsets.only(top: 12, bottom: 12),
       child: SafeArea(
         top: false,
-        child: ContentWidth(
-          maxWidth: _formWidth,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                flex: 4,
-                child: SizedBox(
-                  height: _touch,
-                  child: OutlinedButton(
-                    onPressed: _saving
-                        ? null
-                        : () => Navigator.maybePop(context),
-                    style: _batalStyle,
-                    child: const Text('Batal'),
+        // `ContentWidth` memakai `Center`; tanpa tinggi tetap, bottom bar
+        // mengambil seluruh sisa tinggi dan menutup isi form.
+        child: SizedBox(
+          height: 52,
+          child: ContentWidth(
+            maxWidth: _formWidth,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  flex: 4,
+                  child: SizedBox(
+                    height: _touch,
+                    child: OutlinedButton(
+                      onPressed: _saving
+                          ? null
+                          : () => Navigator.maybePop(context),
+                      style: _batalStyle,
+                      child: const Text('Batal'),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 6,
-                child: SizedBox(
-                  height: 52,
-                  child: FilledButton(
-                    onPressed: _saving ? null : _submit,
-                    style: _simpanStyle,
-                    child: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Simpan'),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 6,
+                  child: SizedBox(
+                    height: 52,
+                    child: FilledButton(
+                      onPressed: _saving ? null : _submit,
+                      style: _simpanStyle,
+                      child: _saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Simpan'),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -1,5 +1,12 @@
 # LOG PROGRESS
 
+## 2026-11-01 — Perbaiki teks hilang dan form jenis sampah
+
+- Izinkan `fonts.gstatic.com` di CSP agar font fallback Flutter Web (Roboto/Noto)
+  tidak diblokir; label tombol, tab, dan teks form kembali tampil.
+- Batasi tinggi action bar form jenis sampah; sebelumnya `ContentWidth`
+  mengambil seluruh tinggi dan menutup header serta isi form.
+
 ## 2026-10-28 — Perbaiki selector Setoran/Penarikan dan mode tampilan
 
 - Selector mode di Pemindai, periode dashboard, kartu mode tampilan, dan tab
