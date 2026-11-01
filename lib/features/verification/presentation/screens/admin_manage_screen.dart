@@ -105,7 +105,7 @@ class _ManageTile extends StatelessWidget {
                 color: palette.mintWash,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, size: 22, color: palette.leaf),
+              child: Icon(icon, size: 22, color: palette.primary),
             ),
             title: Text(
               title,

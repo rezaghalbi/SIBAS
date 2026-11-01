@@ -1,5 +1,18 @@
 # LOG PROGRESS
 
+## 2026-11-01 — Dialog dan ikon hub Kelola
+
+- `AlertDialog` tidak punya `dialogTheme`, jadi judul memakai `headlineSmall`
+  bawaan (24 px) dengan warna warisan dan tidak terbaca di mode gelap.
+  `AppTheme` light/dark kini menetapkan latar, radius, judul 16 px, dan isi
+  13.5 px dari token tema. Berlaku untuk dialog logout mahasiswa, admin, dan
+  keluar dari semua perangkat.
+- Ikon kartu hub Kelola memakai `palette.leaf` (#16865D) di atas
+  `palette.mintWash` (#17342A di mode gelap) dengan kontras rendah; diganti
+  `palette.primary` yang memang token teks ikon per tema.
+- Glyph keempat ikon sudah dipastikan ada di font hasil tree-shake produksi
+  (cmap 0xf624, 0xf884, 0xf0164, 0xf005c), jadi bukan masalah font atau CSP.
+
 ## 2026-11-01 — Kamera pemindai web dan QR mode gelap
 
 - Kamera pemindai di web tidak pernah terbuka sejak CSP penuh dipasang di
