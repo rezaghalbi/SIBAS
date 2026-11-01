@@ -22,6 +22,14 @@
   memuat URL `unpkg.com/@zxing`, jadi build ini memang mengambil ZXing dari CDN.
 - Uji kamera dan QR mode gelap di perangkat belum dilakukan.
 
+**Produksi (2026-11-01)**
+- PR #20 di-merge ke `main` (merge commit `7e42d68`); deploy produksi run
+  `41302980688` hijau.
+- `https://sibas.vercel.app`: header `script-src` memuat `https://unpkg.com`
+  dan `main.dart.js` memuat `unpkg.com/@zxing`.
+- Kamera web, QR mode gelap, dan pemasangan iOS (Safari → Add to Home Screen)
+  sudah diuji di perangkat dan dinyatakan sesuai.
+
 ## 2026-11-01 — Perbaiki teks hilang dan form jenis sampah
 
 - Izinkan `fonts.gstatic.com` di CSP agar font fallback Flutter Web (Roboto/Noto)
