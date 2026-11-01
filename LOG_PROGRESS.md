@@ -12,6 +12,9 @@
   `palette.primary` yang memang token teks ikon per tema.
 - Glyph keempat ikon sudah dipastikan ada di font hasil tree-shake produksi
   (cmap 0xf624, 0xf884, 0xf0164, 0xf005c), jadi bukan masalah font atau CSP.
+- Deploy produksi run `41311224334` hijau; `main.dart.js` di
+  `sibas.vercel.app` berubah hash dari build sebelumnya.
+- Kontras ikon hub dan tipografi dialog belum diverifikasi di layar perangkat.
 
 ## 2026-11-01 — Kamera pemindai web dan QR mode gelap
 
