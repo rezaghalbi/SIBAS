@@ -163,13 +163,17 @@ class _QrDisplayScreenState extends ConsumerState<QrDisplayScreen> {
                                 data: tx?.qrToken ?? widget.transactionId,
                                 version: QrVersions.auto,
                                 size: 220,
-                                eyeStyle: QrEyeStyle(
+                                // Warna QR sengaja tetap gelap di atas putih dan
+                                // tidak ikut tema: token tema mode gelap terlalu
+                                // terang untuk finder pattern, sehingga pemindai
+                                // gagal menemukan QR.
+                                eyeStyle: const QrEyeStyle(
                                   eyeShape: QrEyeShape.square,
-                                  color: SibasColors.primary,
+                                  color: Color(0xFF005746),
                                 ),
-                                dataModuleStyle: QrDataModuleStyle(
+                                dataModuleStyle: const QrDataModuleStyle(
                                   dataModuleShape: QrDataModuleShape.square,
-                                  color: SibasColors.leaf,
+                                  color: Color(0xFF16865D),
                                 ),
                               ),
                             ),
