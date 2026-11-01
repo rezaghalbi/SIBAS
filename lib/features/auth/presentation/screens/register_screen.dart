@@ -62,6 +62,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             backgroundColor: SibasColors.leaf,
           ),
         );
+        // Tanpa sesi (verifikasi email aktif) router tidak berpindah sendiri
+        // karena `user` masih null, jadi pendaftar diantar ke layar masuk.
+        // SnackBar tetap tampil: ScaffoldMessenger berada di level MaterialApp.
+        if (user == null) context.go('/login');
       }
     } catch (e) {
       if (mounted) {

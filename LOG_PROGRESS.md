@@ -1,5 +1,18 @@
 # LOG PROGRESS
 
+## 2026-11-01 — Arahkan pendaftar ke layar masuk setelah verifikasi
+
+- `register_screen.dart` hanya menampilkan SnackBar setelah `signUp` berhasil,
+  tanpa navigasi. Bila verifikasi email aktif tidak ada sesi, sehingga redirect
+  router tidak pernah terpicu dan pendaftar tertahan di layar daftar. Sekarang
+  `context.go('/login')` dipanggil saat `signUp` mengembalikan `null`.
+- Kebutuhan verifikasi email berasal dari setelan Supabase (Confirm email), bukan
+  dari kode: klien hanya bereaksi terhadap `session == null` dan
+  `emailConfirmedAt`.
+- Tanpa SMTP custom, layanan email bawaan Supabase dibatasi 2 email/jam dan
+  hanya ke alamat team project, jadi verifikasi belum layak untuk banyak
+  pendaftar.
+
 ## 2026-11-01 — Dialog dan ikon hub Kelola
 
 - `AlertDialog` tidak punya `dialogTheme`, jadi judul memakai `headlineSmall`
