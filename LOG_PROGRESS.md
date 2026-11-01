@@ -7,6 +7,16 @@
 - Batasi tinggi action bar form jenis sampah; sebelumnya `ContentWidth`
   mengambil seluruh tinggi dan menutup header serta isi form.
 
+**Verifikasi**
+- CI hijau: Analyze & Test `41295037604`, Build APK + preview Vercel
+  `41295037631`.
+- Header preview `https://sibas-4fwbep3hw-rezaghalbis-projects.vercel.app`
+  memuat `font-src 'self' data: https://fonts.gstatic.com` dan `connect-src`
+  yang sama; diperiksa lewat `curl` ke header respons.
+- Tampilan label tombol, tab, dan teks form belum diuji ulang di perangkat
+  nyata (iPhone Safari dan Android); header saja belum membuktikan teks
+  tergambar.
+
 ## 2026-10-28 — Perbaiki selector Setoran/Penarikan dan mode tampilan
 
 - Selector mode di Pemindai, periode dashboard, kartu mode tampilan, dan tab
