@@ -118,6 +118,27 @@ class AppTheme {
           borderRadius: BorderRadius.vertical(top: Radius.circular(bottomSheetRadius)),
         ),
       ),
+      // Judul dialog ditetapkan eksplisit: tanpa ini `AlertDialog` memakai
+      // headline bawaan (24 px) dengan warna warisan, sehingga judul besar dan
+      // tidak terbaca di mode gelap.
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppPalette.light.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardRadius),
+        ),
+        titleTextStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+          color: AppPalette.light.text,
+        ),
+        contentTextStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 13.5,
+          height: 1.5,
+          color: AppPalette.light.muted,
+        ),
+      ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           // Geser dari kanan + parallax, seragam di semua platform.
@@ -271,6 +292,26 @@ class AppTheme {
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(bottomSheetRadius),
           ),
+        ),
+      ),
+      // Sama seperti lightTheme, tetapi warna permukaan dan teks dari token
+      // gelap agar judul dialog tidak menjadi hitam di atas latar gelap.
+      dialogTheme: DialogThemeData(
+        backgroundColor: p.surfaceAlt,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardRadius),
+        ),
+        titleTextStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+          color: p.text,
+        ),
+        contentTextStyle: GoogleFonts.plusJakartaSans(
+          fontSize: 13.5,
+          height: 1.5,
+          color: p.muted,
         ),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
